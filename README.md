@@ -37,11 +37,8 @@ $ sudo mount <IP address of machine which exports /var/lib/pulp>:/var/lib/pulp /
 
 ### Installation
 
-Clone repositories for the base tool and extensions for the plugins of interest, and install them.
+Clone the repository and install it.
 ```
 $ git clone https://github.com/pulp/pulp-2to3-migrate.git
 $ pip install -e pulp-2to3-migrate
-$
-$ git clone https://github.com/pulp/pulp-2to3-migrate-iso.git
-$ pip install -e pulp-2to3-migrate-iso
 ```

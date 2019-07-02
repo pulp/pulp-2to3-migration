@@ -9,7 +9,7 @@ requirements = [
 
 setup(
     name='pulp-2to3-migrate',
-    version='0.0.1a1.dev1',
+    version='0.0.1a1.dev',
     description='Pulp 2 to Pulp 3 migration tool',
     license='GPLv2+',
     author='Pulp Team',
