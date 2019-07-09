@@ -2,9 +2,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
 from rest_framework.decorators import detail_route
 
+from pulpcore.app.viewsets.custom_filters import HyperlinkRelatedFilter
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
 from pulpcore.plugin.tasking import enqueue_with_reservation
 from pulpcore.plugin.viewsets import (
+    BaseFilterSet,
     NamedModelViewSet,
     OperationPostponedResponse,
 )
@@ -18,6 +20,16 @@ from .serializers import (
 from .tasks.migrate import migrate_from_pulp2
 
 
+class MigrationPlanFilter(BaseFilterSet):
+    tasks = HyperlinkRelatedFilter()
+
+    class Meta:
+        model = MigrationPlan
+        fields = {
+            'tasks': ['exact'],
+        }
+
+
 class MigrationPlanViewSet(NamedModelViewSet,
                            mixins.CreateModelMixin,
                            mixins.RetrieveModelMixin,
@@ -26,6 +38,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
     endpoint_name = 'migration-plans'
     queryset = MigrationPlan.objects.all()
     serializer_class = MigrationPlanSerializer
+    filter_class = MigrationPlanFilter
 
     @swagger_auto_schema(
         operation_summary="Run migration plan",

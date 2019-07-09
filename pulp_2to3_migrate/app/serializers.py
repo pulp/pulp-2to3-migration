@@ -1,28 +1,47 @@
 from gettext import gettext as _
 
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from pulpcore.plugin.serializers import (
+    IdentityField,
     ModelSerializer,
-    IdentityField
 )
 
 from .models import MigrationPlan
+
+
+class TasksFieldSerializer(IdentityField):
+    """
+    Serializer to return a list of hrefs for associated tasks.
+    """
+    def to_representation(self, data):
+        ret = []
+        for task in data.tasks.get_queryset():
+            href = reverse(self.view_name, kwargs={'pk': task.pk})
+            ret.append(href)
+        return ret
+
 
 class MigrationPlanSerializer(ModelSerializer):
     _href = IdentityField(
         view_name='migration-plans-detail'
     )
 
-    plan = serializers.CharField(
-        help_text= _('Migration Plan in JSON format'),
+    plan = serializers.JSONField(
+        help_text=_('Migration Plan in JSON format'),
         required=True,
     )
 
-    class Meta:
-        fields = ModelSerializer.Meta.fields + ('plan', )
-        model = MigrationPlan
+    tasks = TasksFieldSerializer(
+        help_text=_('Tasks which used this Migration Plan'),
+        read_only=True,
+        view_name='tasks-detail'
+    )
 
+    class Meta:
+        fields = ModelSerializer.Meta.fields + ('plan', 'tasks')
+        model = MigrationPlan
 
     def validate(self, data):
         """
