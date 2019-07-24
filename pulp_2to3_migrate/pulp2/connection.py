@@ -48,7 +48,6 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
     :param max_timeout:   the maximum number of seconds to wait between
                           connection retries
     :type  max_timeout:   int
-    :raises RuntimeError: This Exception is raised if initialize is called more than once
     """
     global _CONNECTION, _DATABASE
 
@@ -58,8 +57,9 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
     # Exception, we can ensure that only one database connection is established per process which
     # will help us to ensure that the connection does not get overridden later.
     if _CONNECTION or _DATABASE:
-        raise RuntimeError(_("The database is already initialized. It is an error to call this "
-                             "function a second time."))
+        _logger.warn(_("The database is already initialized. It should not be called more than "
+                       "once."))
+        return
     try:
         connection_kwargs = {}
 
