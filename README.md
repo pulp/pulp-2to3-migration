@@ -69,14 +69,13 @@ All the commands should be run on Pulp 3 machine.
 1. Create a Migration Plan
 ```
 $ # migrate content for Pulp 2 ISO plugin
-$ http POST :24817/pulp/api/v3/migration-plans/ plan='{ "plugins": [{"type": "iso", "content": 
-true}]}'
+$ http POST :24817/pulp/api/v3/migration-plans/ plan='{"plugins": [{"type": "iso"}]}'
 
 HTTP/1.1 201 Created
 {
     "_created": "2019-07-23T08:18:12.927007Z",
     "_href": "/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/",
-    "plan": "{ \"plugins\": [{\"type\": \"iso\", \"content\": \ntrue}]}"
+    "plan": "{ \"plugins\": [{\"type\": \"iso\"}]}"
 }
 
 ```
@@ -97,18 +96,34 @@ HTTP/1.1 202 Accepted
 If you are extending this migration tool to be able to migrate the content type of your interest
 from Pulp 2 to Pulp 3, here are some guidelines.
 
-1. Add the necessary mappings to the constants.py.
- - to PULP2_SUPPORTED_PLUGINS
- - to PULP_2TO3_MAP
 
-2. Add a Content model to communicate with Pulp 2.
- - It has to have a field `type` which will correspond to the `_content_type_id` of your Content
- in Pulp 2. Don't forget to add it to PULP_2TO3_MAP in step 1.
- - It has to have a ForeignKey to the `pulp_2to3_migrate.app.models.Pulp2Content` model with the
- `related_name` set to `'pulp3content'`
-
-3. Layout of the files/directories is important.
- - Create a plugin directory in `pulp_2to3_migrate.pulp2` if it doesn't exist. Directory name
+1. Layout of the files/directories is important.
+ - Create a plugin directory in `pulp_2to3_migrate.app.plugin` if it doesn't exist. Directory name
   has to have the same name as you specified your plugin name in PULP2_SUPPORTED_PLUGINS in step 1.
- - This directory has to have a module named `models.py` where you define you Content model to
-   for Pulp 2. Don't forget to put its name into PULP2_SUPPORTED_PLUGINS in step 1.
+ - This directory has to have a `pulp2` and a `pulp3` with a module named `models.py` in each.
+ In `pulp2/models.py` define your Content model to access Pulp 2 data. See step 3.
+ In `pulp3/models.py` define your Content model to pre-migrate Pulp 3 content to. See step 4.
+ 
+2. Add the necessary mappings to the constants.py.
+ - to PULP2_SUPPORTED_PLUGINS
+ - to PULP_2TO3_CONTENT_MODEL_MAP
+
+3. Add a Content model to communicate with Pulp 2.
+ - It has to have a field `type` which will correspond to the `_content_type_id` of your Content
+ in Pulp 2. Don't forget to add it to PULP_2TO3_CONTENT_MODEL_MAP in step 1.
+ 
+4. Add a Content model to pre-migrate Pulp 2 content to (subclass the provided `Pulp2to3Content` 
+class). It has to have:
+ - a field `type` which will correspond to the `_content_type_id` of your Content in Pulp 2.
+ - a ForeignKey to the `pulp_2to3_migrate.app.models.Pulp2Content` model with the `related_name` 
+ set to `'detail_model'` (provided by `Pulp2to3Content`).
+ - a classmethod `pre_migrate_content_detail` (see `Pulp2to3Content` for more details)
+ - a classmethod `migrate_content_to_pulp3` (see `Pulp2to3Content` for more details)
+ - a method `create_pulp3_content` (see `Pulp2to3Content` for more details)
+ 
+ If your content has one artifact and if you are willing to use the default implementation of the 
+ first stage of DeclarativeContentMigration, on your Content model you also need:
+ - an `expected_digests` property to provide expected digests for artifact creation/validation
+ - an `expected_size` property to provide the expected size for artifact creation/validation
+ - a `relative_path_for_content_artifact` property to provide the relative path for content 
+ artifact creation.

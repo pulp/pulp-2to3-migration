@@ -1,15 +1,22 @@
 import asyncio
 import importlib
 import logging
-import time
+
+from collections import namedtuple
 
 from django.db.models import Max
 
-from pulp_2to3_migrate.app.constants import SUPPORTED_PULP2_PLUGINS
+from pulp_2to3_migrate.app.constants import (
+    PULP_2TO3_CONTENT_MODEL_MAP,
+    SUPPORTED_PULP2_PLUGINS,
+)
 from pulp_2to3_migrate.app.models import Pulp2Content
 from pulp_2to3_migrate.pulp2 import connection
 
 _logger = logging.getLogger(__name__)
+
+
+ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
 
 
 def migrate_from_pulp2(migration_plan_pk, dry_run=False):
@@ -27,6 +34,7 @@ def migrate_from_pulp2(migration_plan_pk, dry_run=False):
         # TODO: Migration Plan validation
         return
 
+    # MongoDB connection initialization
     connection.initialize()
 
     # TODO: Migration Plan parsing and validation
@@ -34,48 +42,65 @@ def migrate_from_pulp2(migration_plan_pk, dry_run=False):
     plugins_to_migrate = ['iso']
 
     # import all pulp 2 content models
+    # (for each content type: one works with mongo and other - with postrgresql)
     content_models = []
     for plugin, model_names in SUPPORTED_PULP2_PLUGINS.items():
         if plugin not in plugins_to_migrate:
             continue
-        module_path = 'pulp_2to3_migrate.pulp2.{plugin}.models'.format(plugin=plugin)
-        module = importlib.import_module(module_path)
-        for content_model_name in model_names:
-            content_models.append(getattr(module, content_model_name))
+        pulp2_module_path = 'pulp_2to3_migrate.app.plugin.{plugin}.pulp2.models'.format(
+            plugin=plugin)
+        pulp2_module = importlib.import_module(pulp2_module_path)
+        pulp_2to3_module = importlib.import_module('pulp_2to3_migrate.app.models')
+        for pulp2_content_model_name in model_names:
+            # mongodb model
+            pulp2_content_model = getattr(pulp2_module, pulp2_content_model_name)
+
+            # postgresql model
+            content_type = pulp2_content_model.type
+            pulp_2to3_detail_model_name = PULP_2TO3_CONTENT_MODEL_MAP[content_type]
+            pulp_2to3_detail_model = getattr(pulp_2to3_module, pulp_2to3_detail_model_name)
+
+            content_models.append(ContentModel(pulp2=pulp2_content_model,
+                                               pulp_2to3_detail=pulp_2to3_detail_model))
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(migrate_content(content_models))
-    #loop.run_until_complete(migrate_repositories())
+    # loop.run_until_complete(migrate_repositories())
     loop.close()
 
 
 async def migrate_content(content_models):
     """
-    Coroutine to initiate content migration for each plugin.
+    A coroutine to initiate content migration for each plugin.
 
     Args:
          content_models: List of Pulp 2 content models to migrate data for
     """
-    migrators =[]
-    for model in content_models:
-        _logger.debug('Migrating generic info for {type} content'.format(type=model.type))
-        migrator.append(migrate_content_generic_info(model))
+    pre_migrators = []
+    content_migrators = []
+    for content_model in content_models:
+        pre_migrators.append(pre_migrate_content(content_model))
 
-    await asyncio.wait(migrators)
+    _logger.debug('Pre-migrating Pulp 2 content')
+    await asyncio.wait(pre_migrators)
 
-    # schedule content migration (hard links or copy; plugin specific content creation)
+    # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
+    for content_model in content_models:
+        content_migrators.append(content_model.pulp_2to3_detail.migrate_content_to_pulp3())
+
+    await asyncio.wait(content_migrators)
 
 
-async def migrate_content_generic_info(content_model):
+async def pre_migrate_content(content_model):
     """
-    Coroutine to migrate generic info about any Pulp 2 content.
+    A coroutine to pre-migrate Pulp 2 content.
 
     Args:
-        content_model: Pulp 2 model for content which is being migrated.
+        content_model: Models for content which is being migrated.
     """
     batch_size = 10000
-    content_type = content_model.type
-    pulp2_content = []
+    content_type = content_model.pulp2.type
+    pulp2content = []
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
@@ -85,7 +110,7 @@ async def migrate_content_generic_info(content_model):
         timestamp=last_updated))
 
     # query only newly created/updated items
-    mongo_content_qs = content_model.objects(_last_updated__gte=last_updated)
+    mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated)
     total_content = mongo_content_qs.count()
     _logger.debug('Total count for {type} content to migrate: {total}'.format(
         type=content_type,
@@ -96,17 +121,27 @@ async def migrate_content_generic_info(content_model):
                                                      '_last_updated',
                                                      '_content_type_id',
                                                      'downloaded').batch_size(batch_size)):
+        if record['_last_updated'] == last_updated:
+            # corner case - content with the last``last_updated`` date might be pre-migrated;
+            # check if this content is already pre-migrated
+            migrated = Pulp2Content.objects.filter(pulp2_last_updated=last_updated,
+                                                   pulp2_id=record['id'])
+            if migrated:
+                continue
+
         item = Pulp2Content(pulp2_id=record['id'],
                             pulp2_content_type_id=record['_content_type_id'],
                             pulp2_last_updated=record['_last_updated'],
                             pulp2_storage_path=record['_storage_path'],
                             downloaded=record['downloaded'])
         _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
-        pulp2_content.append(item)
+        pulp2content.append(item)
 
-        save_batch = (i and not (i+1)%batch_size or i == total_content-1)
+        save_batch = (i and not (i + 1) % batch_size or i == total_content - 1)
         if save_batch:
             _logger.debug('Bulk save for generic content info, saved so far: {index}'.format(
-                index=i+1))
-            Pulp2Content.objects.bulk_create(pulp2_content, ignore_conflicts=True)
-            pulp2_content = []
+                index=i + 1))
+            pulp2content_batch = Pulp2Content.objects.bulk_create(pulp2content,
+                                                                  ignore_conflicts=True)
+            await content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
+            pulp2content = []

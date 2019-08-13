@@ -1,5 +1,6 @@
 from pulpcore.plugin.exceptions import PulpException
 
+
 class ConfigurationError(PulpException):
     """
     Missing or wrong configuration exception.

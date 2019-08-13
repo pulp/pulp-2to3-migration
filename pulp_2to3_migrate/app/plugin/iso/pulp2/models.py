@@ -1,9 +1,14 @@
+import logging
+
 from mongoengine import (
     IntField,
     StringField,
 )
 
 from pulp_2to3_migrate.pulp2.base import FileContentUnit
+
+_logger = logging.getLogger(__name__)
+
 
 class ISO(FileContentUnit):
     """
@@ -21,6 +26,7 @@ class ISO(FileContentUnit):
     unit_key_fields = ('name', 'checksum', 'size')
     unit_display_name = 'ISO'
     unit_description = 'ISO'
+
     type = 'iso'
 
     meta = {

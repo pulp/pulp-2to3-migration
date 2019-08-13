@@ -9,20 +9,20 @@ from pulpcore.plugin.serializers import (
 
 from .models import MigrationPlan
 
+
 class MigrationPlanSerializer(ModelSerializer):
     _href = IdentityField(
         view_name='migration-plans-detail'
     )
 
     plan = serializers.CharField(
-        help_text= _('Migration Plan in JSON format'),
+        help_text=_('Migration Plan in JSON format'),
         required=True,
     )
 
     class Meta:
         fields = ModelSerializer.Meta.fields + ('plan', )
         model = MigrationPlan
-
 
     def validate(self, data):
         """
