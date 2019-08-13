@@ -5,6 +5,7 @@ from setuptools import find_packages, setup
 requirements = [
     'pulpcore~=3.0rc1',
     'mongoengine',
+    'semantic_version',
 ]
 
 setup(

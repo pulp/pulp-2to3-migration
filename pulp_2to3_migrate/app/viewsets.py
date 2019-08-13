@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
-from rest_framework.decorators import detail_route
+from rest_framework.decorators import action
 
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
 from pulpcore.plugin.tasking import enqueue_with_reservation
@@ -32,7 +32,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
         operation_description="Trigger an asynchronous task to run a migration from Pulp 2.",
         responses={202: AsyncOperationResponseSerializer}
     )
-    @detail_route(methods=('post',), serializer_class=MigrationPlanRunSerializer)
+    @action(detail=True, methods=['post'], serializer_class=MigrationPlanRunSerializer)
     def run(self, request, pk):
         migration_plan = self.get_object()
         serializer = MigrationPlanRunSerializer(
