@@ -8,7 +8,10 @@ from django.db import transaction
 from django.conf import settings
 
 from pulpcore.app.models import storage
-from pulpcore.plugin.models import Artifact
+from pulpcore.plugin.models import (
+    Artifact,
+    ProgressBar,
+)
 from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
@@ -144,18 +147,20 @@ class ContentMigrationFirstStage(Stage):
             batch_size = math.ceil(total_pulp2content / max_coro)
         batch_count = math.ceil(total_pulp2content / batch_size)
 
-        # schedule content migration
-        migrators = []
-        for batch_idx in range(batch_count):
-            start = batch_idx * batch_size
-            end = (batch_idx + 1) * batch_size
-            batch = pulp2content_qs[start:end]
-            migrators.append(self.migrate_to_pulp3(batch))
+        with ProgressBar(message='Migrating {} content to Pulp 3'.format(content_type.upper()),
+                         total=total_pulp2content) as pb:
+            # schedule content migration
+            migrators = []
+            for batch_idx in range(batch_count):
+                start = batch_idx * batch_size
+                end = (batch_idx + 1) * batch_size
+                batch = pulp2content_qs[start:end]
+                migrators.append(self.migrate_to_pulp3(batch, pb=pb))
 
-        if migrators:
-            await asyncio.wait(migrators)
+            if migrators:
+                await asyncio.wait(migrators)
 
-    async def migrate_to_pulp3(self, batch):
+    async def migrate_to_pulp3(self, batch, pb=None):
         """
         A default implementation of DeclarativeContent creation for migrating content to Pulp 3.
 
@@ -189,6 +194,8 @@ class ContentMigrationFirstStage(Stage):
 
             dc.extra_data = future_relations
             await self.put(dc)
+            if pb:
+                pb.increment()
 
 
 class RelatePulp2to3Content(Stage):
