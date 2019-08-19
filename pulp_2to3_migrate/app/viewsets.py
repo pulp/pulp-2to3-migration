@@ -1,19 +1,28 @@
+from django_filters.rest_framework import filters
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
 
+from pulpcore.app.viewsets.base import DATETIME_FILTER_OPTIONS
+from pulpcore.app.viewsets.custom_filters import (
+    HyperlinkRelatedFilter,
+    IsoDateTimeFilter
+)
+
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
 from pulpcore.plugin.tasking import enqueue_with_reservation
 from pulpcore.plugin.viewsets import (
+    BaseFilterSet,
     NamedModelViewSet,
     OperationPostponedResponse,
 )
 
 from .constants import PULP_2TO3_MIGRATION_RESOURCE
-from .models import MigrationPlan
+from .models import MigrationPlan, Pulp2Content
 from .serializers import (
     MigrationPlanSerializer,
     MigrationPlanRunSerializer,
+    Pulp2ContentSerializer
 )
 from .tasks.migrate import migrate_from_pulp2
 
@@ -50,3 +59,32 @@ class MigrationPlanViewSet(NamedModelViewSet,
             }
         )
         return OperationPostponedResponse(result, request)
+
+
+class Pulp2ContentFilter(BaseFilterSet):
+    """
+    Filter for Pulp2Content ViewSet.
+    """
+    pulp2_id = filters.CharFilter()
+    pulp2_content_type_id = filters.CharFilter()
+    pulp2_last_updated = IsoDateTimeFilter(field_name='pulp2_last_updated')
+    pulp3_content = HyperlinkRelatedFilter()
+
+    class Meta:
+        model = Pulp2Content
+        fields = {
+            'pulp2_id': ['exact', 'in'],
+            'pulp2_content_type_id': ['exact', 'in'],
+            'pulp2_last_updated': DATETIME_FILTER_OPTIONS,
+            'pulp3_content': ['exact']
+        }
+
+
+class Pulp2ContentViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    """
+    ViewSet for Pulp2Content model.
+    """
+    endpoint_name = 'pulp2content'
+    queryset = Pulp2Content.objects.all()
+    serializer_class = Pulp2ContentSerializer
+    filterset_class = Pulp2ContentFilter
