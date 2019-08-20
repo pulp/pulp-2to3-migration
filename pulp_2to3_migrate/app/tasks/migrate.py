@@ -6,6 +6,9 @@ from collections import namedtuple
 
 from django.db.models import Max
 
+from pulpcore.constants import TASK_STATES
+from pulpcore.plugin.models import ProgressBar
+
 from pulp_2to3_migrate.app.constants import (
     PULP_2TO3_CONTENT_MODEL_MAP,
     SUPPORTED_PULP2_PLUGINS,
@@ -42,7 +45,7 @@ def migrate_from_pulp2(migration_plan_pk, dry_run=False):
     plugins_to_migrate = ['iso']
 
     # import all pulp 2 content models
-    # (for each content type: one works with mongo and other - with postrgresql)
+    # (for each content type: one works with mongo and other - with postgresql)
     content_models = []
     for plugin, model_names in SUPPORTED_PULP2_PLUGINS.items():
         if plugin not in plugins_to_migrate:
@@ -84,11 +87,21 @@ async def migrate_content(content_models):
     _logger.debug('Pre-migrating Pulp 2 content')
     await asyncio.wait(pre_migrators)
 
-    # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
-    for content_model in content_models:
-        content_migrators.append(content_model.pulp_2to3_detail.migrate_content_to_pulp3())
+    with ProgressBar(message='Migrating content to Pulp 3', total=0) as pb:
+        # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
+        for content_model in content_models:
+            content_migrators.append(content_model.pulp_2to3_detail.migrate_content_to_pulp3())
 
-    await asyncio.wait(content_migrators)
+            # only used for progress bar counters
+            content_type = content_model.pulp_2to3_detail.type
+            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type,
+                                                          pulp3_content=None)
+            pb.total += pulp2content_qs.count()
+        pb.save()
+
+        await asyncio.wait(content_migrators)
+
+        pb.done = pb.total
 
 
 async def pre_migrate_content(content_model):
@@ -116,6 +129,18 @@ async def pre_migrate_content(content_model):
         type=content_type,
         total=total_content))
 
+    pulp2content_pb = ProgressBar(
+        message='Pre-migrating Pulp 2 {} content (general info)'.format(content_type.upper()),
+        total=total_content,
+        state=TASK_STATES.RUNNING)
+    pulp2content_pb.save()
+    pulp2detail_pb = ProgressBar(
+        message='Pre-migrating Pulp 2 {} content (detail info)'.format(content_type.upper()),
+        total=total_content,
+        state=TASK_STATES.RUNNING)
+    pulp2detail_pb.save()
+
+    existing_count = 0
     for i, record in enumerate(mongo_content_qs.only('id',
                                                      '_storage_path',
                                                      '_last_updated',
@@ -127,6 +152,14 @@ async def pre_migrate_content(content_model):
             migrated = Pulp2Content.objects.filter(pulp2_last_updated=last_updated,
                                                    pulp2_id=record['id'])
             if migrated:
+                existing_count += 1
+
+                # it has to be updated here and not later, in case all items were migrated before
+                # and no new content will be saved.
+                pulp2content_pb.total -= 1
+                pulp2content_pb.save()
+                pulp2detail_pb.total -= 1
+                pulp2detail_pb.save()
                 continue
 
         item = Pulp2Content(pulp2_id=record['id'],
@@ -143,5 +176,19 @@ async def pre_migrate_content(content_model):
                 index=i + 1))
             pulp2content_batch = Pulp2Content.objects.bulk_create(pulp2content,
                                                                   ignore_conflicts=True)
+            content_saved = len(pulp2content_batch) - existing_count
+            pulp2content_pb.done += content_saved
+            pulp2content_pb.save()
+
             await content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
+
+            pulp2detail_pb.done += content_saved
+            pulp2detail_pb.save()
+
             pulp2content = []
+            existing_count = 0
+
+    pulp2content_pb.state = TASK_STATES.COMPLETED
+    pulp2content_pb.save()
+    pulp2detail_pb.state = TASK_STATES.COMPLETED
+    pulp2detail_pb.save()
