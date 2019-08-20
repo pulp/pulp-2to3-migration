@@ -33,3 +33,15 @@ PULP_2TO3_CONTENT_MODEL_MAP = {
 
 # For manfatory parameters which won't be used by migration tool, e.g. in Declarative Version
 NOT_USED = 'Not Used'
+
+PULP_2TO3_PLUGIN_MAP = {
+    'iso': 'pulp_file',
+    # 'docker' : 'pulp_container',
+    # 'rpm' : 'pulp_rpm',
+}
+
+PULP2_COLLECTION_MAP = {
+    'iso': 'units_iso',
+    # 'docker': 'units_docker_manifest',
+    # 'rpm': 'units_rpm',
+}
