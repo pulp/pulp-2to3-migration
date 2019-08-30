@@ -1,13 +1,25 @@
-from gettext import gettext as _
+import json
 
+from gettext import gettext as _
+from jsonschema import Draft7Validator
+from pymongo.errors import OperationFailure
 from rest_framework import serializers
 
+from pulp_2to3_migrate.pulp2 import connection
+
+from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
 from pulpcore.plugin.serializers import (
     ModelSerializer,
     DetailRelatedField,
     IdentityField
 )
 
+from .constants import (
+    PULP_2TO3_PLUGIN_MAP,
+    PULP2_COLLECTION_MAP,
+    SUPPORTED_PULP2_PLUGINS
+)
+from .json_schema import SCHEMA
 from .models import MigrationPlan, Pulp2Content
 
 
@@ -16,7 +28,7 @@ class MigrationPlanSerializer(ModelSerializer):
         view_name='migration-plans-detail'
     )
 
-    plan = serializers.CharField(
+    plan = serializers.JSONField(
         help_text=_('Migration Plan in JSON format'),
         required=True,
     )
@@ -29,12 +41,42 @@ class MigrationPlanSerializer(ModelSerializer):
         """
         Validate that the Serializer contains valid data.
 
-        TODO:
-        Validate JSON structure of migration_plan.
-        Check validity of the JSON content:
-         - migration for requested plugins is supported
-
+        Validates JSON structure of migration_plan.
+        Checks pulp2 and pulp3 plugins are installed.
         """
+        schema = json.loads(SCHEMA)
+        validator = Draft7Validator(schema)
+        loaded_plan = json.loads(data['plan'])
+        err = []
+        for error in sorted(validator.iter_errors(loaded_plan), key=str):
+            err.append(error.message)
+        if err:
+            raise serializers.ValidationError(
+                    _("Provided Migration Plan format is invalid:'{}'".format(err))
+            )
+        plugins_to_migrate = set()
+        for plugin_type in loaded_plan['plugins']:
+            plugins_to_migrate.add(plugin_type['type'])
+        if len(loaded_plan['plugins']) != len(plugins_to_migrate):
+            raise serializers.ValidationError(
+                _("Provided Migration Plan contains same plugin type specified more that once.")
+            )
+        # MongoDB connection initialization
+        connection.initialize()
+        db = connection.get_database()
+        for plugin in plugins_to_migrate:
+            if PULP_2TO3_PLUGIN_MAP.get(plugin) not in INSTALLED_PULP_PLUGINS:
+                raise serializers.ValidationError(
+                    _("Plugin {} is not installed in pulp3.".format(plugin))
+                )
+            try:
+                collection = PULP2_COLLECTION_MAP.get(plugin)
+                db.command("collstats", collection)
+            except OperationFailure:
+                raise serializers.ValidationError(
+                    _("Plugin {} is not installed in pulp2.".format(plugin))
+                )
+        data['plan'] = loaded_plan
         return data
 
 
