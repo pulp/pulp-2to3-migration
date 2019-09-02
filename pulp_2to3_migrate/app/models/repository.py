@@ -20,6 +20,7 @@ class Pulp2Repository(Model):
     Fields:
         pulp2_repo_id (models.CharField): Repository ID in Pulp 2
         pulp2_object_id (models.CharField): Object id of a repository in Pulp 2
+        pulp2_description (models.TextField): Description of a repository in Pulp 2
         pulp2_last_unit_added (models.DateTimeField): Last time a unit was added to
             a repository in Pulp 2
         pulp2_last_unit_removed (models.DateTimeField): Last time a unit was removed from
@@ -30,7 +31,8 @@ class Pulp2Repository(Model):
             repository was migrated to
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
-    pulp2_repo_id = models.CharField(max_length=255)  # in Pulp2 it might be longer?
+    pulp2_repo_id = models.CharField(max_length=255)
+    pulp2_description = models.TextField(null=True)
     pulp2_last_unit_added = models.DateTimeField(null=True)
     pulp2_last_unit_removed = models.DateTimeField(null=True)
 
@@ -68,6 +70,7 @@ class Pulp2Importer(Model):
     Information about Pulp 2 importer.
 
     Fields:
+       pulp2_object_id (models.CharField): Object id of an importer in Pulp 2
        pulp2_type_id (models.CharField): Id of importer type in Pulp 2
        pulp2_config (JSONField): Pulp 2 importer config in JSON format
        pulp2_last_updated (models.DateTimeField): Last time the importer was updated
@@ -76,6 +79,7 @@ class Pulp2Importer(Model):
         pulp2_repository (models.OneToOneField): Pulp 2 repository this importer belongs to
         pulp3_remote (models.OneToOneField): Pulp 3 remote which this importer was migrated to
     """
+    pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = JSONField()
     pulp2_last_updated = models.DateTimeField()
@@ -103,6 +107,7 @@ class Pulp2Distributor(Model):
         pulp3_distribution (models.OneToOneField): Pulp 3 distribution this distributor was
             migrated to
     """
+    pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_id = models.CharField(max_length=255)  # in Pulp2 it might be longer?
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = JSONField()

@@ -3,3 +3,5 @@ from .content import (  # noqa
     ContentMigrationFirstStage,
     RelatePulp2to3Content,
 )
+
+from .repository import Pulp2to3Importer  # noqa
