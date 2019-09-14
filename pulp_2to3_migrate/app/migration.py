@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import importlib
 import logging
 
@@ -53,9 +54,6 @@ async def migrate_content(content_models):
 async def migrate_repositories():
     """
     A coroutine to migrate pre-migrated repositories.
-
-    NOTE: First 255 character from Pulp 2 repo_id is used for a repo name in Pulp 3.
-    For ridiculously long pulp2 names it might create collisions.
     """
     with ProgressBar(message='Creating repositories in Pulp 3', total=0) as pb:
         pulp2repos_qs = Pulp2Repository.objects.filter(pulp3_repository_version=None)
@@ -63,8 +61,14 @@ async def migrate_repositories():
         pb.save()
 
         for pulp2repo in pulp2repos_qs:
+            # if pulp2 repo_id is too long, its hash is included in pulp3 repo name
+            pulp3_repo_name = pulp2repo.pulp2_repo_id
+            if len(pulp3_repo_name) > 255:
+                repo_name_hash = hashlib.sha256(pulp3_repo_name.encode()).hexdigest()
+                pulp3_repo_name = '{}-{}'.format(pulp3_repo_name[:190], repo_name_hash)
+
             repo, created = Repository.objects.get_or_create(
-                name=pulp2repo.pulp2_repo_id[:255],
+                name=pulp3_repo_name,
                 description=pulp2repo.pulp2_description)
             if created:
                 pb.increment()

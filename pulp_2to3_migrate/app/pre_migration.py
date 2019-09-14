@@ -195,7 +195,8 @@ async def pre_migrate_repo(record):
         pulp2_object_id=record['id'],
         pulp2_repo_id=record['repo_id'],
         pulp2_last_unit_added=last_unit_added,
-        pulp2_last_unit_removed=last_unit_removed)
+        pulp2_last_unit_removed=last_unit_removed,
+        is_migrated=False)
 
     return repo
 
@@ -235,7 +236,8 @@ async def pre_migrate_importer(repo, importers):
         pulp2_type_id=importer_data['importer_type_id'],
         pulp2_last_updated=last_updated,
         pulp2_config=importer_data['config'],
-        pulp2_repository=repo)
+        pulp2_repository=repo,
+        is_migrated=False)
 
 
 async def pre_migrate_distributor(repo, distributors):
@@ -270,7 +272,8 @@ async def pre_migrate_distributor(repo, distributors):
             pulp2_last_updated=last_updated,
             pulp2_config=dist_data['config'],
             pulp2_auto_publish=dist_data['auto_publish'],
-            pulp2_repository=repo)
+            pulp2_repository=repo,
+            is_migrated=False)
 
 
 async def pre_migrate_repocontent(repo):
@@ -280,6 +283,10 @@ async def pre_migrate_repocontent(repo):
     Args:
         repo(Pulp2Repository): A pre-migrated pulp 2 repository which importer should be migrated
     """
+    # At this stage the pre-migrated repo is either new or changed since the last run.
+    # For the case when something changed, old repo-content relations should be removed.
+    Pulp2RepoContent.objects.filter(pulp2_repository=repo).delete()
+
     mongo_repocontent_q = mongo_Q(repo_id=repo.pulp2_repo_id)
     mongo_repocontent_qs = RepositoryContentUnit.objects(mongo_repocontent_q)
     if not mongo_repocontent_qs:
@@ -295,4 +302,4 @@ async def pre_migrate_repocontent(repo):
                                 pulp2_repository=repo)
         repocontent.append(item)
 
-    Pulp2RepoContent.objects.bulk_create(repocontent, ignore_conflicts=True)
+    Pulp2RepoContent.objects.bulk_create(repocontent)
