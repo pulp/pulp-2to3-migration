@@ -1,6 +1,7 @@
 from django.db import models
 
 from pulp_2to3_migrate.app.models import Pulp2to3Content
+
 from pulp_2to3_migrate.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,

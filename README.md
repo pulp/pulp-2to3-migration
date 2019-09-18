@@ -127,3 +127,6 @@ class). It has to have:
  - an `expected_size` property to provide the expected size for artifact creation/validation
  - a `relative_path_for_content_artifact` property to provide the relative path for content 
  artifact creation.
+ 
+ 5. Subclass the provided `Pulp2to3Importer` class and define `migrate_to_pulp3` method which
+  create a plugin Remote instance based on the provided pre-migrated `Pulp2Importer`. 
