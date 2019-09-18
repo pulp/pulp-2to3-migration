@@ -9,7 +9,7 @@ from django.utils import timezone
 from mongoengine.queryset.visitor import Q as mongo_Q
 
 from pulpcore.constants import TASK_STATES
-from pulpcore.plugin.models import ProgressBar
+from pulpcore.plugin.models import ProgressReport
 
 from pulp_2to3_migrate.app.models import (
     Pulp2Content,
@@ -53,13 +53,15 @@ async def pre_migrate_content(content_model):
         type=content_type,
         total=total_content))
 
-    pulp2content_pb = ProgressBar(
+    pulp2content_pb = ProgressReport(
         message='Pre-migrating Pulp 2 {} content (general info)'.format(content_type.upper()),
+        code='premigrating.content.general',
         total=total_content,
         state=TASK_STATES.RUNNING)
     pulp2content_pb.save()
-    pulp2detail_pb = ProgressBar(
+    pulp2detail_pb = ProgressReport(
         message='Pre-migrating Pulp 2 {} content (detail info)'.format(content_type.upper()),
+        code='premigrating.content.detail',
         total=total_content,
         state=TASK_STATES.RUNNING)
     pulp2detail_pb.save()
@@ -146,7 +148,8 @@ async def pre_migrate_all_without_content(plan):
     last_updated = max(last_added, last_removed)
     last_updated_naive = timezone.make_naive(last_updated, timezone=timezone.utc)
 
-    with ProgressBar(message='Pre-migrating Pulp 2 repositories, importers, distributors') as pb:
+    with ProgressReport(message='Pre-migrating Pulp 2 repositories, importers, distributors',
+                        code='premigrating.repositories') as pb:
         # we pre-migrate:
         #  - empty repos (last_unit_added is not set)
         #  - repos which were updated since last migration (last_unit_added/removed >= last_updated)
