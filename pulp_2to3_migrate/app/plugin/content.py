@@ -170,7 +170,7 @@ class ContentMigrationFirstStage(Stage):
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
         for pulp2content in batch:
-            pulp_2to3_detail_content = pulp2content.detail_model.get()
+            pulp_2to3_detail_content = pulp2content.detail_model
             pulp3content = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
 

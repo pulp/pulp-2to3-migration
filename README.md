@@ -115,8 +115,7 @@ from Pulp 2 to Pulp 3, here are some guidelines.
 4. Add a Content model to pre-migrate Pulp 2 content to (subclass the provided `Pulp2to3Content` 
 class). It has to have:
  - a field `type` which will correspond to the `_content_type_id` of your Content in Pulp 2.
- - a ForeignKey to the `pulp_2to3_migrate.app.models.Pulp2Content` model with the `related_name` 
- set to `'detail_model'` (provided by `Pulp2to3Content`).
+ - on a Meta class a `default_related_name` set to `<your pulp 2 content type>_detail_model`
  - a classmethod `pre_migrate_content_detail` (see `Pulp2to3Content` for more details)
  - a classmethod `migrate_content_to_pulp3` (see `Pulp2to3Content` for more details)
  - a method `create_pulp3_content` (see `Pulp2to3Content` for more details)
@@ -129,4 +128,4 @@ class). It has to have:
  artifact creation.
  
  5. Subclass the provided `Pulp2to3Importer` class and define `migrate_to_pulp3` method which
-  create a plugin Remote instance based on the provided pre-migrated `Pulp2Importer`. 
+  create a plugin Remote instance based on the provided pre-migrated `Pulp2Importer`.
