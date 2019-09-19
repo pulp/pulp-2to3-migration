@@ -24,7 +24,7 @@ class Pulp2Content(Model):
     pulp2_content_type_id = models.CharField(max_length=255)
     pulp2_last_updated = models.PositiveIntegerField()
     pulp2_storage_path = models.TextField(null=True)
-    downloaded = models.BooleanField(default=True)
+    downloaded = models.BooleanField(default=False)
     pulp3_content = models.ForeignKey(Content, on_delete=models.SET_NULL, null=True)
 
     class Meta:

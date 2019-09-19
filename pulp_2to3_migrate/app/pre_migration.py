@@ -63,18 +63,16 @@ async def pre_migrate_content(content_model):
         total=total_content,
         state=TASK_STATES.RUNNING)
     pulp2detail_pb.save()
-
     existing_count = 0
-    for i, record in enumerate(mongo_content_qs.only('id',
-                                                     '_storage_path',
-                                                     '_last_updated',
-                                                     '_content_type_id',
-                                                     'downloaded').batch_size(batch_size)):
-        if record['_last_updated'] == last_updated:
+    fields = set(['id','_storage_path','_last_updated','_content_type_id'])
+    if hasattr(content_model.pulp2, 'downloaded'):
+        fields.add('downloaded')
+    for i, record in enumerate(mongo_content_qs.only(*fields).batch_size(batch_size)):
+        if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
             migrated = Pulp2Content.objects.filter(pulp2_last_updated=last_updated,
-                                                   pulp2_id=record['id'])
+                                                   pulp2_id=record.id)
             if migrated:
                 existing_count += 1
 
@@ -86,11 +84,11 @@ async def pre_migrate_content(content_model):
                 pulp2detail_pb.save()
                 continue
 
-        item = Pulp2Content(pulp2_id=record['id'],
-                            pulp2_content_type_id=record['_content_type_id'],
-                            pulp2_last_updated=record['_last_updated'],
-                            pulp2_storage_path=record['_storage_path'],
-                            downloaded=record['downloaded'])
+        item = Pulp2Content(pulp2_id=record.id,
+                            pulp2_content_type_id=record._content_type_id,
+                            pulp2_last_updated=record._last_updated,
+                            pulp2_storage_path=record._storage_path,
+                            downloaded=record.downloaded if hasattr(record, 'downloaded') else False)
         _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
         pulp2content.append(item)
 
@@ -181,23 +179,24 @@ async def pre_migrate_repo(record):
     Pre-migrate a pulp 2 repo.
 
     Args:
-        record(dict): Pulp 2 repository data
+        record(Repository): Pulp 2 repository data
 
     Return:
         repo(Pulp2Repository): A pre-migrated repository
     """
-    last_unit_added = (record['last_unit_added'] and
-                       timezone.make_aware(record['last_unit_added'], timezone.utc))
-    last_unit_removed = (record['last_unit_removed'] and
-                         timezone.make_aware(record['last_unit_removed'], timezone.utc))
+
+    last_unit_added = (record.last_unit_added and
+                       timezone.make_aware(record.last_unit_added, timezone.utc))
+    last_unit_removed = (record.last_unit_removed and
+                         timezone.make_aware(record.last_unit_removed, timezone.utc))
 
     # repo is mutable, it needs to be created or updated
     repo, created = Pulp2Repository.objects.update_or_create(
-        pulp2_object_id=record['id'],
-        pulp2_repo_id=record['repo_id'],
+        pulp2_object_id=record.id,
+        pulp2_repo_id=record.repo_id,
         pulp2_last_unit_added=last_unit_added,
         pulp2_last_unit_removed=last_unit_removed,
-        pulp2_description = record['description'],
+        pulp2_description = record.description,
         is_migrated=False)
 
     return repo
@@ -229,15 +228,15 @@ async def pre_migrate_importer(repo, importers):
                                            'last_updated',
                                            'config').first()
 
-    last_updated = (importer_data['last_updated'] and
-                    timezone.make_aware(importer_data['last_updated'], timezone.utc))
+    last_updated = (importer_data.last_updated and
+                    timezone.make_aware(importer_data.last_updated, timezone.utc))
 
     # importer is mutable, it needs to be created or updated
     Pulp2Importer.objects.update_or_create(
-        pulp2_object_id=importer_data['id'],
-        pulp2_type_id=importer_data['importer_type_id'],
+        pulp2_object_id=importer_data.id,
+        pulp2_type_id=importer_data.importer_type_id,
         pulp2_last_updated=last_updated,
-        pulp2_config=importer_data['config'],
+        pulp2_config=importer_data.config,
         pulp2_repository=repo,
         is_migrated=False)
 
@@ -263,17 +262,17 @@ async def pre_migrate_distributor(repo, distributors):
         return
 
     for dist_data in mongo_distributor_qs:
-        last_updated = (dist_data['last_updated'] and
-                        timezone.make_aware(dist_data['last_updated'], timezone.utc))
+        last_updated = (dist_data.last_updated and
+                        timezone.make_aware(dist_data.last_updated, timezone.utc))
 
         # distributor is mutable, it needs to be created or updated
         Pulp2Distributor.objects.update_or_create(
-            pulp2_object_id=dist_data['id'],
-            pulp2_id=dist_data['distributor_id'],
-            pulp2_type_id=dist_data['distributor_type_id'],
+            pulp2_object_id=dist_data.id,
+            pulp2_id=dist_data.distributor_id,
+            pulp2_type_id=dist_data.distributor_type_id,
             pulp2_last_updated=last_updated,
-            pulp2_config=dist_data['config'],
-            pulp2_auto_publish=dist_data['auto_publish'],
+            pulp2_config=dist_data.config,
+            pulp2_auto_publish=dist_data.auto_publish,
             pulp2_repository=repo,
             is_migrated=False)
 
@@ -299,8 +298,8 @@ async def pre_migrate_repocontent(repo):
     repocontent = []
     for repocontent_data in mongo_repocontent_qs.only('unit_id',
                                                       'unit_type_id'):
-        item = Pulp2RepoContent(pulp2_unit_id=repocontent_data['unit_id'],
-                                pulp2_content_type_id=repocontent_data['unit_type_id'],
+        item = Pulp2RepoContent(pulp2_unit_id=repocontent_data.unit_id,
+                                pulp2_content_type_id=repocontent_data.unit_type_id,
                                 pulp2_repository=repo)
         repocontent.append(item)
 
