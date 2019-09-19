@@ -165,7 +165,8 @@ async def pre_migrate_all_without_content(plan):
         for repo_data in mongo_repo_qs.only('id',
                                             'repo_id',
                                             'last_unit_added',
-                                            'last_unit_removed'):
+                                            'last_unit_removed',
+                                            'description'):
             # await pre_migrate_one(repo_data, importers, distributors)
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
@@ -196,6 +197,7 @@ async def pre_migrate_repo(record):
         pulp2_repo_id=record['repo_id'],
         pulp2_last_unit_added=last_unit_added,
         pulp2_last_unit_removed=last_unit_removed,
+        pulp2_description = record['description'],
         is_migrated=False)
 
     return repo
