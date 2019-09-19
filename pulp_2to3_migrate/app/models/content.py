@@ -31,13 +31,17 @@ class Pulp2Content(Model):
         unique_together = ('pulp2_id', 'pulp2_content_type_id')
 
 
+    @property
+    def detail_model(self):
+        return getattr(self, f'{self.pulp2_content_type_id}_detail_model').get()
+
+
 class Pulp2to3Content(Model):
     """
     Pulp 2to3 detail content model to store pulp 2 content details for Pulp 3 content creation.
     """
-    pulp2content = models.ForeignKey(Pulp2Content,
-                                     related_name='detail_model',
-                                     on_delete=models.CASCADE)
+    pulp2content = models.ForeignKey(Pulp2Content, on_delete=models.CASCADE)
+
     type = '<your pulp 2 content type>'
 
     class Meta:
