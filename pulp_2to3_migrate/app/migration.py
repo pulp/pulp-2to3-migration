@@ -97,7 +97,8 @@ async def migrate_importers(plugins_to_migrate):
             importer_models[importer_type_id] = importer_model
 
     with ProgressBar(message='Migrating importers to Pulp 3', total=0) as pb:
-        pulp2importers_qs = Pulp2Importer.objects.filter(pulp3_remote=None)
+        pulp2importers_qs = Pulp2Importer.objects.filter(pulp2_type_id__in=importer_models.keys(),
+                                                         pulp3_remote=None)
         pb.total += pulp2importers_qs.count()
         pb.save()
 
