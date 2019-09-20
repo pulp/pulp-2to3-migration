@@ -4,7 +4,7 @@ import importlib
 import logging
 
 from pulpcore.plugin.models import (
-    ProgressBar,
+    ProgressReport,
     Repository,
 )
 
@@ -34,7 +34,8 @@ async def migrate_content(content_models):
     _logger.debug('Pre-migrating Pulp 2 content')
     await asyncio.wait(pre_migrators)
 
-    with ProgressBar(message='Migrating content to Pulp 3', total=0) as pb:
+    progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
+    with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
         for content_model in content_models:
             content_migrators.append(content_model.pulp_2to3_detail.migrate_content_to_pulp3())
@@ -55,7 +56,10 @@ async def migrate_repositories():
     """
     A coroutine to migrate pre-migrated repositories.
     """
-    with ProgressBar(message='Creating repositories in Pulp 3', total=0) as pb:
+    progress_data = dict(
+        message='Creating repositories in Pulp 3', code='creating.repositories', total=0
+    )
+    with ProgressReport(**progress_data) as pb:
         pulp2repos_qs = Pulp2Repository.objects.filter(pulp3_repository_version=None)
         pb.total += pulp2repos_qs.count()
         pb.save()
@@ -96,7 +100,10 @@ async def migrate_importers(plugins_to_migrate):
             importer_model = getattr(plugin_module, model_name)
             importer_models[importer_type_id] = importer_model
 
-    with ProgressBar(message='Migrating importers to Pulp 3', total=0) as pb:
+    progress_data = dict(
+        message='Migrating importers to Pulp 3', code='migrating.importers', total=0
+    )
+    with ProgressReport(**progress_data) as pb:
         pulp2importers_qs = Pulp2Importer.objects.filter(pulp3_remote=None)
         pb.total += pulp2importers_qs.count()
         pb.save()

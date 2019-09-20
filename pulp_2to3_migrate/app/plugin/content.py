@@ -10,7 +10,7 @@ from django.conf import settings
 from pulpcore.app.models import storage
 from pulpcore.plugin.models import (
     Artifact,
-    ProgressBar,
+    ProgressReport,
 )
 from pulpcore.plugin.stages import (
     ArtifactSaver,
@@ -147,8 +147,11 @@ class ContentMigrationFirstStage(Stage):
             batch_size = math.ceil(total_pulp2content / max_coro)
         batch_count = math.ceil(total_pulp2content / batch_size)
 
-        with ProgressBar(message='Migrating {} content to Pulp 3'.format(content_type.upper()),
-                         total=total_pulp2content) as pb:
+        with ProgressReport(
+            message='Migrating {} content to Pulp 3'.format(content_type.upper()),
+            code='migrating.{}.content'.format(content_type),
+            total=total_pulp2content
+        ) as pb:
             # schedule content migration
             migrators = []
             for batch_idx in range(batch_count):
