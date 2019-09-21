@@ -30,7 +30,6 @@ class Pulp2Content(Model):
     class Meta:
         unique_together = ('pulp2_id', 'pulp2_content_type_id')
 
-
     @property
     def detail_model(self):
         return getattr(self, f'{self.pulp2_content_type_id}_detail_model').get()
@@ -65,19 +64,6 @@ class Pulp2to3Content(Model):
         >>>                              pulp2content=pulp2_map[iso.id])
         >>>                     for iso in pulp2_iso_content_batch]
         >>> cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    async def migrate_content_to_pulp3(cls):
-        """
-        Migrate pre-migrated Pulp 2 content.
-
-        Create a DeclatativeContentMigration pipeline here and instantiate it with your first stage.
-        Here the default implementation of the first stage is used:
-        >>> first_stage = ContentMigrationFirstStage(cls)
-        >>> dv = DeclarativeContentMigration(first_stage=first_stage)
-        >>> await dv.create()
         """
         raise NotImplementedError()
 

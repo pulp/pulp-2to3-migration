@@ -1,11 +1,6 @@
 from django.db import models
 
 from pulp_2to3_migrate.app.models import Pulp2to3Content
-
-from pulp_2to3_migrate.app.plugin.api import (
-    ContentMigrationFirstStage,
-    DeclarativeContentMigration,
-)
 from pulp_2to3_migrate.app.plugin.iso.pulp2.models import ISO
 
 from pulp_file.app.models import FileContent
@@ -57,15 +52,6 @@ class Pulp2ISO(Pulp2to3Content):
                                      pulp2content=pulp2_id_obj_map[iso.id])
                             for iso in pulp2_iso_content_batch]
         cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
-
-    @classmethod
-    async def migrate_content_to_pulp3(cls):
-        """
-        Migrate pre-migrated Pulp 2 ISO content.
-        """
-        first_stage = ContentMigrationFirstStage(cls)
-        dv = DeclarativeContentMigration(first_stage=first_stage)
-        await dv.create()
 
     def create_pulp3_content(self):
         """

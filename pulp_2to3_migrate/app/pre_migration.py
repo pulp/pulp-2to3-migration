@@ -1,5 +1,8 @@
+import asyncio
+import importlib
 import logging
 
+from collections import namedtuple
 from datetime import datetime
 
 from django.db import transaction
@@ -11,6 +14,10 @@ from mongoengine.queryset.visitor import Q as mongo_Q
 from pulpcore.constants import TASK_STATES
 from pulpcore.plugin.models import ProgressReport
 
+from pulp_2to3_migrate.app.constants import (
+    PULP_2TO3_CONTENT_MODEL_MAP,
+    SUPPORTED_PULP2_PLUGINS,
+)
 from pulp_2to3_migrate.app.models import (
     Pulp2Content,
     Pulp2Distributor,
@@ -26,6 +33,43 @@ from pulp_2to3_migrate.pulp2.base import (
 )
 
 _logger = logging.getLogger(__name__)
+
+ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
+
+
+async def pre_migrate_all_content(plugins_to_migrate):
+    """
+    Pre-migrate all content for the specified plugins.
+
+    Args:
+        plugins_to_migrate(list): List of Pulp 2 plugin names to migrate content for
+    """
+    pre_migrators = []
+
+    # import all pulp 2 content models
+    # (for each content type: one works with mongo and other - with postgresql)
+    for plugin, model_names in SUPPORTED_PULP2_PLUGINS.items():
+        if plugin not in plugins_to_migrate:
+            continue
+        pulp2_module_path = 'pulp_2to3_migrate.app.plugin.{plugin}.pulp2.models'.format(
+            plugin=plugin)
+        pulp2_module = importlib.import_module(pulp2_module_path)
+        pulp_2to3_module = importlib.import_module('pulp_2to3_migrate.app.models')
+        for pulp2_content_model_name in model_names:
+            # mongodb model
+            pulp2_content_model = getattr(pulp2_module, pulp2_content_model_name)
+
+            # postgresql model
+            content_type = pulp2_content_model.type
+            pulp_2to3_detail_model_name = PULP_2TO3_CONTENT_MODEL_MAP[content_type]
+            pulp_2to3_detail_model = getattr(pulp_2to3_module, pulp_2to3_detail_model_name)
+
+            content_model = ContentModel(pulp2=pulp2_content_model,
+                                         pulp_2to3_detail=pulp_2to3_detail_model)
+            pre_migrators.append(pre_migrate_content(content_model))
+
+    _logger.debug('Pre-migrating Pulp 2 content')
+    await asyncio.wait(pre_migrators)
 
 
 async def pre_migrate_content(content_model):
@@ -66,7 +110,7 @@ async def pre_migrate_content(content_model):
         state=TASK_STATES.RUNNING)
     pulp2detail_pb.save()
     existing_count = 0
-    fields = set(['id','_storage_path','_last_updated','_content_type_id'])
+    fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
     if hasattr(content_model.pulp2, 'downloaded'):
         fields.add('downloaded')
     for i, record in enumerate(mongo_content_qs.only(*fields).batch_size(batch_size)):
@@ -86,11 +130,12 @@ async def pre_migrate_content(content_model):
                 pulp2detail_pb.save()
                 continue
 
+        downloaded = record.downloaded if hasattr(record, 'downloaded') else False
         item = Pulp2Content(pulp2_id=record.id,
                             pulp2_content_type_id=record._content_type_id,
                             pulp2_last_updated=record._last_updated,
                             pulp2_storage_path=record._storage_path,
-                            downloaded=record.downloaded if hasattr(record, 'downloaded') else False)
+                            downloaded=downloaded)
         _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
         pulp2content.append(item)
 
@@ -168,7 +213,7 @@ async def pre_migrate_all_without_content(plan):
                                             'last_unit_added',
                                             'last_unit_removed',
                                             'description'):
-            # await pre_migrate_one(repo_data, importers, distributors)
+
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
                 await pre_migrate_importer(repo, importers)
@@ -199,7 +244,7 @@ async def pre_migrate_repo(record):
         pulp2_repo_id=record.repo_id,
         pulp2_last_unit_added=last_unit_added,
         pulp2_last_unit_removed=last_unit_removed,
-        pulp2_description = record.description,
+        pulp2_description=record.description,
         is_migrated=False)
 
     return repo
