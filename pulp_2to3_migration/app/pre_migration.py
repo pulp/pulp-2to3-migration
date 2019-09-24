@@ -185,9 +185,9 @@ async def pre_migrate_all_without_content(plan):
     # the latest time we have in the migration tool in Pulp2Repository table
     zero_datetime = timezone.make_aware(datetime(1970, 1, 1), timezone.utc)
     last_added = Pulp2Repository.objects.aggregate(Max('pulp2_last_unit_added'))[
-                     'pulp2_last_unit_added__max'] or zero_datetime
+        'pulp2_last_unit_added__max'] or zero_datetime
     last_removed = Pulp2Repository.objects.aggregate(Max('pulp2_last_unit_removed'))[
-                       'pulp2_last_unit_removed__max'] or zero_datetime
+        'pulp2_last_unit_removed__max'] or zero_datetime
     last_updated = max(last_added, last_removed)
     last_updated_naive = timezone.make_naive(last_updated, timezone=timezone.utc)
 
@@ -196,9 +196,9 @@ async def pre_migrate_all_without_content(plan):
         # we pre-migrate:
         #  - empty repos (last_unit_added is not set)
         #  - repos which were updated since last migration (last_unit_added/removed >= last_updated)
-        mongo_repo_q = (mongo_Q(last_unit_added__exists=False) |
-                        mongo_Q(last_unit_added__gte=last_updated_naive) |
-                        mongo_Q(last_unit_removed__gte=last_updated_naive))
+        mongo_repo_q = (mongo_Q(last_unit_added__exists=False)
+                        | mongo_Q(last_unit_added__gte=last_updated_naive)
+                        | mongo_Q(last_unit_removed__gte=last_updated_naive))
 
         # in case only certain repositories are specified in the migration plan
         if repos:
@@ -233,10 +233,10 @@ async def pre_migrate_repo(record):
         repo(Pulp2Repository): A pre-migrated repository
     """
 
-    last_unit_added = (record.last_unit_added and
-                       timezone.make_aware(record.last_unit_added, timezone.utc))
-    last_unit_removed = (record.last_unit_removed and
-                         timezone.make_aware(record.last_unit_removed, timezone.utc))
+    last_unit_added = (record.last_unit_added
+                       and timezone.make_aware(record.last_unit_added, timezone.utc))
+    last_unit_removed = (record.last_unit_removed
+                         and timezone.make_aware(record.last_unit_removed, timezone.utc))
 
     # repo is mutable, it needs to be created or updated
     repo, created = Pulp2Repository.objects.update_or_create(
@@ -276,8 +276,8 @@ async def pre_migrate_importer(repo, importers):
                                            'last_updated',
                                            'config').first()
 
-    last_updated = (importer_data.last_updated and
-                    timezone.make_aware(importer_data.last_updated, timezone.utc))
+    last_updated = (importer_data.last_updated
+                    and timezone.make_aware(importer_data.last_updated, timezone.utc))
 
     # importer is mutable, it needs to be created or updated
     Pulp2Importer.objects.update_or_create(
@@ -310,8 +310,8 @@ async def pre_migrate_distributor(repo, distributors):
         return
 
     for dist_data in mongo_distributor_qs:
-        last_updated = (dist_data.last_updated and
-                        timezone.make_aware(dist_data.last_updated, timezone.utc))
+        last_updated = (dist_data.last_updated
+                        and timezone.make_aware(dist_data.last_updated, timezone.utc))
 
         # distributor is mutable, it needs to be created or updated
         Pulp2Distributor.objects.update_or_create(

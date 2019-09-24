@@ -5,6 +5,7 @@ class Pulp2to3PluginMigrator:
     Attributes:
         type(str): migrator type which corresponds to a Pulp 2 plugin name
         content_models(tuple): Pulp2to3Content models this migrator is responsible for
+
     """
     type = 'pulp2 plugin name'
     content_models = ()

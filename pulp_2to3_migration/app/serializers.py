@@ -17,13 +17,13 @@ from pulpcore.plugin.serializers import (
 from .constants import (
     PULP_2TO3_PLUGIN_MAP,
     PULP2_COLLECTION_MAP,
-    SUPPORTED_PULP2_PLUGINS
 )
 from .json_schema import SCHEMA
 from .models import MigrationPlan, Pulp2Content
 
 
 class MigrationPlanSerializer(ModelSerializer):
+    """Serializer for migration plan model."""
     _href = IdentityField(
         view_name='migration-plans-detail'
     )
@@ -52,7 +52,7 @@ class MigrationPlanSerializer(ModelSerializer):
             err.append(error.message)
         if err:
             raise serializers.ValidationError(
-                    _("Provided Migration Plan format is invalid:'{}'".format(err))
+                _("Provided Migration Plan format is invalid:'{}'".format(err))
             )
         plugins_to_migrate = set()
         for plugin_type in loaded_plan['plugins']:
@@ -92,6 +92,7 @@ class MigrationPlanRunSerializer(serializers.Serializer):
         write_only=True
     )
 
+
 class Pulp2ContentSerializer(ModelSerializer):
     """
     A serializer for the Pulp2Content model
@@ -104,7 +105,9 @@ class Pulp2ContentSerializer(ModelSerializer):
     pulp2_last_updated = serializers.IntegerField()
     pulp2_storage_path = serializers.CharField()
     downloaded = serializers.BooleanField(default=False)
-    pulp3_content = DetailRelatedField(required=False, allow_null=True, queryset=Pulp2Content.objects.all())
+    pulp3_content = DetailRelatedField(
+        required=False, allow_null=True, queryset=Pulp2Content.objects.all()
+    )
 
     class Meta:
         fields = ModelSerializer.Meta.fields + ('pulp2_id', 'pulp2_content_type_id',

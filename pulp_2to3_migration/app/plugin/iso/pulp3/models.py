@@ -23,14 +23,17 @@ class Pulp2ISO(Pulp2to3Content):
 
     @property
     def expected_digests(self):
+        """Return expected digests."""
         return {self.checksum_type: self.checksum}
 
     @property
     def expected_size(self):
+        """Return expected size."""
         return self.size
 
     @property
     def relative_path_for_content_artifact(self):
+        """Return relative path."""
         return self.name
 
     @classmethod
