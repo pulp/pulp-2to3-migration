@@ -14,18 +14,18 @@ from mongoengine.queryset.visitor import Q as mongo_Q
 from pulpcore.constants import TASK_STATES
 from pulpcore.plugin.models import ProgressReport
 
-from pulp_2to3_migrate.app.constants import (
+from pulp_2to3_migration.app.constants import (
     PULP_2TO3_CONTENT_MODEL_MAP,
     SUPPORTED_PULP2_PLUGINS,
 )
-from pulp_2to3_migrate.app.models import (
+from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Distributor,
     Pulp2Importer,
     Pulp2RepoContent,
     Pulp2Repository,
 )
-from pulp_2to3_migrate.pulp2.base import (
+from pulp_2to3_migration.pulp2.base import (
     Distributor,
     Importer,
     Repository,
@@ -51,10 +51,10 @@ async def pre_migrate_all_content(plugins_to_migrate):
     for plugin, model_names in SUPPORTED_PULP2_PLUGINS.items():
         if plugin not in plugins_to_migrate:
             continue
-        pulp2_module_path = 'pulp_2to3_migrate.app.plugin.{plugin}.pulp2.models'.format(
+        pulp2_module_path = 'pulp_2to3_migration.app.plugin.{plugin}.pulp2.models'.format(
             plugin=plugin)
         pulp2_module = importlib.import_module(pulp2_module_path)
-        pulp_2to3_module = importlib.import_module('pulp_2to3_migrate.app.models')
+        pulp_2to3_module = importlib.import_module('pulp_2to3_migration.app.models')
         for pulp2_content_model_name in model_names:
             # mongodb model
             pulp2_content_model = getattr(pulp2_module, pulp2_content_model_name)

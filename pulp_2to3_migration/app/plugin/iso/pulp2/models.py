@@ -5,7 +5,7 @@ from mongoengine import (
     StringField,
 )
 
-from pulp_2to3_migrate.pulp2.base import FileContentUnit
+from pulp_2to3_migration.pulp2.base import FileContentUnit
 
 _logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 
-from pulp_2to3_migrate.app.constants import PULP_2TO3_POLICIES
-from pulp_2to3_migrate.app.plugin.api import Pulp2to3Importer
+from pulp_2to3_migration.app.constants import PULP_2TO3_POLICIES
+from pulp_2to3_migration.app.plugin.api import Pulp2to3Importer
 
 from pulp_file.app.models import FileRemote
 
