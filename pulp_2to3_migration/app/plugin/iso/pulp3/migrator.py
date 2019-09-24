@@ -1,4 +1,4 @@
-from pulp_2to3_migrate.app.plugin.api import (
+from pulp_2to3_migration.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,
     Pulp2to3PluginMigrator,
