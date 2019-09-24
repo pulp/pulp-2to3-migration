@@ -1,7 +1,7 @@
 from django.db import models
 
-from pulp_2to3_migrate.app.models import Pulp2to3Content
-from pulp_2to3_migrate.app.plugin.iso.pulp2.models import ISO
+from pulp_2to3_migration.app.models import Pulp2to3Content
+from pulp_2to3_migration.app.plugin.iso.pulp2.models import ISO
 
 from pulp_file.app.models import FileContent
 

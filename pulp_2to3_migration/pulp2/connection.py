@@ -23,7 +23,7 @@ from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector
 
-from pulp_2to3_migrate.exceptions import ConfigurationError
+from pulp_2to3_migration.exceptions import ConfigurationError
 
 _CONNECTION = None
 _DATABASE = None

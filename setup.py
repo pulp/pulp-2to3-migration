@@ -10,7 +10,7 @@ requirements = [
 ]
 
 setup(
-    name='pulp-2to3-migrate',
+    name='pulp-2to3-migration',
     version='0.0.1a1.dev',
     description='Pulp 2 to Pulp 3 migration tool',
     license='GPLv2+',
@@ -32,7 +32,7 @@ setup(
     ),
     entry_points={
         'pulpcore.plugin': [
-            'pulp_2to3_migrate = pulp_2to3_migrate:default_app_config',
+            'pulp_2to3_migration = pulp_2to3_migration:default_app_config',
         ]
     }
 )

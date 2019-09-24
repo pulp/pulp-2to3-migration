@@ -5,7 +5,7 @@ from pulp_2to3_migrate.app.plugin.iso.pulp3.migrator import IsoMigrator
 PULP_2TO3_MIGRATION_RESOURCE = 'pulp_2to3_migration'
 
 # Pulp2 plugins and their content types which can be migrated
-# 'pulp2_plugin': 'pulp_2to3_migrate pulp2 model class name'
+# 'pulp2_plugin': 'pulp_2to3_migration pulp2 model class name'
 SUPPORTED_PULP2_PLUGINS = {
     'iso': ['ISO'],
     # 'rpm': [
@@ -29,7 +29,7 @@ SUPPORTED_PULP2_PLUGINS = {
     #     'Tag'],
 }
 
-# 'pulp2_content_type_id': 'pulp_2to3_migrate pulp3 model class name '
+# 'pulp2_content_type_id': 'pulp_2to3_migration pulp3 model class name '
 PULP_2TO3_CONTENT_MODEL_MAP = {
     'iso': 'Pulp2ISO',
 }

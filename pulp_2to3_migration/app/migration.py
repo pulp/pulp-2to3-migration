@@ -8,15 +8,16 @@ from pulpcore.plugin.models import (
     Repository,
 )
 
-from pulp_2to3_migrate.app.constants import (
+from pulp_2to3_migration.app.constants import (
     PLUGIN_MIGRATORS_MAP,
     PULP_2TO3_IMPORTER_TYPE_MODEL_MAP,
 )
-from pulp_2to3_migrate.app.models import (
+from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Importer,
     Pulp2Repository,
 )
+
 
 _logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ async def migrate_importers(plugins_to_migrate):
     for plugin, importer_info in PULP_2TO3_IMPORTER_TYPE_MODEL_MAP.items():
         if plugin not in plugins_to_migrate:
             continue
-        module_path = 'pulp_2to3_migrate.app.plugin.{plugin}.pulp3.repository'.format(plugin=plugin)
+        module_path = 'pulp_2to3_migration.app.plugin.{plugin}.pulp3.repository'.format(plugin=plugin)
         plugin_module = importlib.import_module(module_path)
         for record in importer_info:
             importer_type_id, model_name = record

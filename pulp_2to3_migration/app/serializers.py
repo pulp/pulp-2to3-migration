@@ -5,7 +5,7 @@ from jsonschema import Draft7Validator
 from pymongo.errors import OperationFailure
 from rest_framework import serializers
 
-from pulp_2to3_migrate.pulp2 import connection
+from pulp_2to3_migration.pulp2 import connection
 
 from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
 from pulpcore.plugin.serializers import (

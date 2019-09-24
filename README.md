@@ -1,4 +1,4 @@
-# pulp-2to3-migrate
+# pulp-2to3-migration
 
 A [Pulp 3](https://pulpproject.org/) plugin to migrate from Pulp 2 to Pulp 3.
 
@@ -58,8 +58,8 @@ PULP2_MONGODB = {
 
 Clone the repository and install it.
 ```
-$ git clone https://github.com/pulp/pulp-2to3-migrate.git
-$ pip install -e pulp-2to3-migrate
+$ git clone https://github.com/pulp/pulp-2to3-migration.git
+$ pip install -e pulp-2to3-migration
 ```
 
 ### User Guide
@@ -98,7 +98,7 @@ from Pulp 2 to Pulp 3, here are some guidelines.
 
 
 1. Layout of the files/directories is important.
- - Create a plugin directory in `pulp_2to3_migrate.app.plugin` if it doesn't exist. Directory name
+ - Create a plugin directory in `pulp_2to3_migration.app.plugin` if it doesn't exist. Directory name
   has to have the same name as you specified your plugin name in PULP2_SUPPORTED_PLUGINS in step 1.
  - This directory has to have a `pulp2` and a `pulp3` with a module named `models.py` in each.
  In `pulp2/models.py` define your Content model to access Pulp 2 data. See step 3.
