@@ -25,11 +25,11 @@ from pulpcore.plugin.stages import (
 )
 from pulpcore.plugin.tasking import WorkingDirectory
 
-from pulp_2to3_migration.app.constants import NOT_USED
 from pulp_2to3_migration.app.models import Pulp2Content
 
 
 _logger = logging.getLogger(__name__)
+NOT_USED = 'Not Used'
 
 
 class DeclarativeContentMigration:

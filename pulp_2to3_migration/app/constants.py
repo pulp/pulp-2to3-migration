@@ -1,5 +1,5 @@
 # temporary hack, to move gradually to one migrator
-from pulp_2to3_migrate.app.plugin.iso.pulp3.migrator import IsoMigrator
+from pulp_2to3_migration.app.plugin.iso.pulp3.migrator import IsoMigrator
 
 # for tasking system to ensure only one migration is run at a time
 PULP_2TO3_MIGRATION_RESOURCE = 'pulp_2to3_migration'
@@ -33,9 +33,6 @@ SUPPORTED_PULP2_PLUGINS = {
 PULP_2TO3_CONTENT_MODEL_MAP = {
     'iso': 'Pulp2ISO',
 }
-
-# For mandatory parameters which won't be used by migration tool, e.g. in Declarative Version
-NOT_USED = 'Not Used'
 
 
 PULP_2TO3_PLUGIN_MAP = {
