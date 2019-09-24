@@ -82,13 +82,13 @@ class ContentMigrationFirstStage(Stage):
     Creates hard links (or copies) for Pulp 2 content and creates DeclarativeContent for content
     being migrated.
     """
-    def __init__(self, model):
+    def __init__(self, migrator):
         """
         Args:
-            model: The Pulp 2to3 detailed content model to be migrated
+            migrator: A plugin migrator to be used
         """
         super().__init__()
-        self.model = model
+        self.migrator = migrator
 
     async def create_artifact(self, pulp2_storage_path, expected_digests={}, expected_size=None):
         """
@@ -97,7 +97,6 @@ class ContentMigrationFirstStage(Stage):
         If it's not possible to create a hard link, file is copied to the Pulp 3 storage.
         """
         if not expected_digests.get('sha256'):
-            # TODO: all checksums are calculated for the pulp 2 storage path, is it ok?
             artifact = Artifact.init_and_validate(pulp2_storage_path, size=expected_size)
 
         sha256digest = expected_digests.get('sha256') or artifact.sha256
@@ -133,9 +132,13 @@ class ContentMigrationFirstStage(Stage):
     async def run(self):
         """
         Schedules multiple coroutines to migrate pre-migrated content to Pulp 3
+
+        It migrates content type by type.
+        If a plugin needs to have more control over the order of content migration, it should
+        override this method.
         """
-        content_type = self.model.type
-        pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type,
+        content_types = [model.type for model in self.migrator.content_models]
+        pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
                                                       pulp3_content=None)
         total_pulp2content = pulp2content_qs.count()
 
@@ -148,8 +151,8 @@ class ContentMigrationFirstStage(Stage):
         batch_count = math.ceil(total_pulp2content / batch_size)
 
         with ProgressReport(
-            message='Migrating {} content to Pulp 3'.format(content_type.upper()),
-            code='migrating.{}.content'.format(content_type),
+            message='Migrating {} content to Pulp 3'.format(self.migrator.type),
+            code='migrating.{}.content'.format(self.migrator.type),
             total=total_pulp2content
         ) as pb:
             # schedule content migration

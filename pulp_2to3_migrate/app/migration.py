@@ -8,46 +8,43 @@ from pulpcore.plugin.models import (
     Repository,
 )
 
-from pulp_2to3_migrate.app.constants import PULP_2TO3_IMPORTER_TYPE_MODEL_MAP
+from pulp_2to3_migrate.app.constants import (
+    PLUGIN_MIGRATORS_MAP,
+    PULP_2TO3_IMPORTER_TYPE_MODEL_MAP,
+)
 from pulp_2to3_migrate.app.models import (
     Pulp2Content,
     Pulp2Importer,
     Pulp2Repository,
 )
-from pulp_2to3_migrate.app.pre_migration import pre_migrate_content
 
 _logger = logging.getLogger(__name__)
 
 
-async def migrate_content(content_models):
+async def migrate_content(plugins_to_migrate):
     """
     A coroutine to initiate content migration for each plugin.
 
     Args:
-         content_models: List of Pulp 2 content models to migrate data for
+         plugins_to_migrate(list): List of plugins to migrate
     """
-    pre_migrators = []
-    content_migrators = []
-    for content_model in content_models:
-        pre_migrators.append(pre_migrate_content(content_model))
-
-    _logger.debug('Pre-migrating Pulp 2 content')
-    await asyncio.wait(pre_migrators)
+    content_migration_coros = []
 
     progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
     with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
-        for content_model in content_models:
-            content_migrators.append(content_model.pulp_2to3_detail.migrate_content_to_pulp3())
+        for plugin in plugins_to_migrate:
+            plugin_migrator = PLUGIN_MIGRATORS_MAP.get(plugin)
+            content_migration_coros.append(plugin_migrator.migrate_content_to_pulp3())
 
             # only used for progress bar counters
-            content_type = content_model.pulp_2to3_detail.type
-            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type,
+            content_types = [model.type for model in plugin_migrator.content_models]
+            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
                                                           pulp3_content=None)
             pb.total += pulp2content_qs.count()
         pb.save()
 
-        await asyncio.wait(content_migrators)
+        await asyncio.wait(content_migration_coros)
 
         pb.done = pb.total
 
@@ -112,6 +109,7 @@ async def migrate_importers(plugins_to_migrate):
             importer_model = importer_models.get(pulp2importer.pulp2_type_id)
             remote, created = await importer_model.migrate_to_pulp3(pulp2importer)
             pulp2importer.pulp3_remote = remote
+            pulp2importer.is_migrated = True
             pulp2importer.save()
             if created:
                 pb.increment()
