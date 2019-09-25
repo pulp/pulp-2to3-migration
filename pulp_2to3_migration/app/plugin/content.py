@@ -4,8 +4,11 @@ import math
 import os
 import shutil
 
-from django.db import transaction
+from gettext import gettext as _
+
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 
 from pulpcore.app.models import storage
 from pulpcore.plugin.models import (
@@ -19,14 +22,18 @@ from pulpcore.plugin.stages import (
     DeclarativeArtifact,
     DeclarativeContent,
     EndStage,
-    Stage,
     QueryExistingArtifacts,
-    QueryExistingContents
+    QueryExistingContents,
+    RemoteArtifactSaver,
+    Stage,
 )
 from pulpcore.plugin.tasking import WorkingDirectory
 
-from pulp_2to3_migration.app.models import Pulp2Content
-
+from pulp_2to3_migration.app.models import (
+    Pulp2Content,
+    Pulp2Importer,
+    Pulp2LazyCatalog,
+)
 
 _logger = logging.getLogger(__name__)
 NOT_USED = 'Not Used'
@@ -60,6 +67,7 @@ class DeclarativeContentMigration:
             ArtifactSaver(),
             QueryExistingContents(),
             ContentSaver(),
+            RemoteArtifactSaver(),
             RelatePulp2to3Content()
         ]
 
@@ -91,12 +99,22 @@ class ContentMigrationFirstStage(Stage):
         super().__init__()
         self.migrator = migrator
 
-    async def create_artifact(self, pulp2_storage_path, expected_digests={}, expected_size=None):
+    async def create_artifact(self, pulp2_storage_path, expected_digests={}, expected_size=None,
+                              downloaded=True):
         """
         Create a hard link if possible and then create an Artifact.
 
         If it's not possible to create a hard link, file is copied to the Pulp 3 storage.
+        For non-downloaded content, artifact with its expected checksum and size is created.
         """
+        if not downloaded:
+            if not expected_digests:
+                raise ValueError(_('No digest is provided for on_demand content creation. Pulp 2 '
+                                   'storage path: {}'.format(pulp2_storage_path)))
+            artifact = Artifact(**expected_digests)
+            artifact.size = expected_size
+            return artifact
+
         if not expected_digests.get('sha256'):
             artifact = Artifact.init_and_validate(pulp2_storage_path, size=expected_size)
 
@@ -112,7 +130,7 @@ class ContentMigrationFirstStage(Stage):
         except FileExistsError:
             pass
         except OSError:
-            _logger.debug('Hard link cannot be created, file will be copied.')
+            _logger.debug(_('Hard link cannot be created, file will be copied.'))
             shutil.copy2(pulp2_storage_path, pulp3_storage_path)
             is_copied = True
 
@@ -176,31 +194,74 @@ class ContentMigrationFirstStage(Stage):
         Args:
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
+        def get_remote_by_importer_id(importer_id):
+            """
+            Args:
+                importer_id(str): Id of an importer in Pulp 2
+
+            Returns:
+                remote(pulpcore.app.models.Remote): A corresponding remote in Pulp 3
+
+            """
+            try:
+                pulp2importer = Pulp2Importer.objects.get(pulp2_object_id=importer_id)
+            except ObjectDoesNotExist:
+                return
+            return pulp2importer.pulp3_remote
+
         for pulp2content in batch:
             pulp_2to3_detail_content = pulp2content.detail_model
             pulp3content = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
 
-            if not pulp2content.downloaded:
-                # on_demand content is partially migrated - only Content is created at this stage.
-                # Remote Artifact and Content Artifact should be created at the time of
-                # importers/remotes migration. Rely on downloaded flag on Pulp2Content to
-                # identify on_demand content.
-                dc = DeclarativeContent(content=pulp3content)
-            else:
-                artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
-                                                      pulp_2to3_detail_content.expected_digests,
-                                                      pulp_2to3_detail_content.expected_size)
+            # get all Lazy Catalog Entries (LCEs) for this content
+            pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
+                pulp2_unit_id=pulp2content.pulp2_id)
+
+            if not pulp2lazycatalog and not pulp2content.downloaded:
+                _logger.warn(_('On_demand content cannot be migrated without an entry in the lazy '
+                               'catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
+                break
+
+            artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
+                                                  pulp_2to3_detail_content.expected_digests,
+                                                  pulp_2to3_detail_content.expected_size,
+                                                  downloaded=pulp2content.downloaded)
+
+            # Downloaded content with no LCE
+            if not pulp2lazycatalog and pulp2content.downloaded:
                 da = DeclarativeArtifact(
                     artifact=artifact,
                     url=NOT_USED,
                     relative_path=pulp_2to3_detail_content.relative_path_for_content_artifact,
-                    remote=NOT_USED,
+                    remote=None,
                     deferred_download=False)
                 dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
+                dc.extra_data = future_relations
+                await self.put(dc)
 
-            dc.extra_data = future_relations
-            await self.put(dc)
+            # Downloaded or on_demand content with LCEs.
+            #
+            # To create multiple remote artifacts, create multiple instances of declarative
+            # content which will differ by url/remote in their declarative artifacts
+            for lce in pulp2lazycatalog:
+                remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                deferred_download = not pulp2content.downloaded
+                if not remote and deferred_download:
+                    _logger.warn(_('On_demand content cannot be migrated without a remote '
+                                   'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
+                    continue
+
+                da = DeclarativeArtifact(
+                    artifact=artifact,
+                    url=lce.pulp2_url,
+                    relative_path=pulp_2to3_detail_content.relative_path_for_content_artifact,
+                    remote=remote,
+                    deferred_download=deferred_download)
+                dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
+                dc.extra_data = future_relations
+                await self.put(dc)
+
             if pb:
                 pb.increment()
 

@@ -115,3 +115,26 @@ class Distributor(Document):
 
     meta = {'collection': 'repo_distributors',
             'allow_inheritance': False}
+
+
+class LazyCatalogEntry(Document):
+    """
+    A Pulp 2 catalog of content that can be downloaded from a specific URL.
+    """
+    path = StringField(required=True)
+    importer_id = StringField(required=True)
+    unit_id = StringField(required=True)
+    unit_type_id = StringField(required=True)
+    url = StringField(required=True)
+    checksum = StringField()  # not used in the migration plugin
+    checksum_algorithm = StringField()  # not used in the migration plugin
+    revision = IntField(default=0)
+    data = DictField()  # not used in the migration plugin
+
+    # For backward compatibility
+    _ns = StringField(default='lazy_content_catalog')
+
+    meta = {
+        'collection': 'lazy_content_catalog',
+        'allow_inheritance': False,
+    }

@@ -22,12 +22,14 @@ from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Distributor,
     Pulp2Importer,
+    Pulp2LazyCatalog,
     Pulp2RepoContent,
     Pulp2Repository,
 )
 from pulp_2to3_migration.pulp2.base import (
     Distributor,
     Importer,
+    LazyCatalogEntry,
     Repository,
     RepositoryContentUnit,
 )
@@ -74,7 +76,7 @@ async def pre_migrate_all_content(plugins_to_migrate):
 
 async def pre_migrate_content(content_model):
     """
-    A coroutine to pre-migrate Pulp 2 content.
+    A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
     Args:
         content_model: Models for content which is being migrated.
@@ -157,10 +159,45 @@ async def pre_migrate_content(content_model):
             pulp2content = []
             existing_count = 0
 
+    await pre_migrate_lazycatalog(content_type)
+
     pulp2content_pb.state = TASK_STATES.COMPLETED
     pulp2content_pb.save()
     pulp2detail_pb.state = TASK_STATES.COMPLETED
     pulp2detail_pb.save()
+
+
+async def pre_migrate_lazycatalog(content_type):
+    """
+    A coroutine to pre-migrate Pulp 2 Lazy Catalog Entries (LCE) for a specific content type.
+
+    There is no [quick] way to identify whether the LCE were changed or not in Pulp 2. So every
+    time all LCE for the specified type are pre-migrated, nothing is skipped.
+
+    Args:
+        content_type: A content type for which LCE should be pre-migrated
+    """
+    batch_size = 10000
+    pulp2lazycatalog = []
+
+    # delete previous pre-migration results since it might be outdated
+    Pulp2LazyCatalog.objects.filter(pulp2_content_type_id=content_type).delete()
+
+    mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)
+    total_lce = mongo_lce_qs.count()
+    for i, lce in enumerate(mongo_lce_qs.batch_size(batch_size)):
+        item = Pulp2LazyCatalog(pulp2_importer_id=lce.importer_id,
+                                pulp2_unit_id=lce.unit_id,
+                                pulp2_content_type_id=lce.unit_type_id,
+                                pulp2_storage_path=lce.path,
+                                pulp2_url=lce.url,
+                                pulp2_revision=lce.revision)
+        pulp2lazycatalog.append(item)
+
+        save_batch = (i and not (i + 1) % batch_size or i == total_lce - 1)
+        if save_batch:
+            Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
+            pulp2lazycatalog = []
 
 
 async def pre_migrate_all_without_content(plan):
@@ -241,11 +278,11 @@ async def pre_migrate_repo(record):
     # repo is mutable, it needs to be created or updated
     repo, created = Pulp2Repository.objects.update_or_create(
         pulp2_object_id=record.id,
-        pulp2_repo_id=record.repo_id,
-        pulp2_last_unit_added=last_unit_added,
-        pulp2_last_unit_removed=last_unit_removed,
-        pulp2_description=record.description,
-        is_migrated=False)
+        defaults={'pulp2_repo_id': record.repo_id,
+                  'pulp2_last_unit_added': last_unit_added,
+                  'pulp2_last_unit_removed': last_unit_removed,
+                  'pulp2_description': record.description,
+                  'is_migrated': False})
 
     return repo
 
@@ -282,11 +319,11 @@ async def pre_migrate_importer(repo, importers):
     # importer is mutable, it needs to be created or updated
     Pulp2Importer.objects.update_or_create(
         pulp2_object_id=importer_data.id,
-        pulp2_type_id=importer_data.importer_type_id,
-        pulp2_last_updated=last_updated,
-        pulp2_config=importer_data.config,
-        pulp2_repository=repo,
-        is_migrated=False)
+        defaults={'pulp2_type_id': importer_data.importer_type_id,
+                  'pulp2_last_updated': last_updated,
+                  'pulp2_config': importer_data.config,
+                  'pulp2_repository': repo,
+                  'is_migrated': False})
 
 
 async def pre_migrate_distributor(repo, distributors):
@@ -316,13 +353,13 @@ async def pre_migrate_distributor(repo, distributors):
         # distributor is mutable, it needs to be created or updated
         Pulp2Distributor.objects.update_or_create(
             pulp2_object_id=dist_data.id,
-            pulp2_id=dist_data.distributor_id,
-            pulp2_type_id=dist_data.distributor_type_id,
-            pulp2_last_updated=last_updated,
-            pulp2_config=dist_data.config,
-            pulp2_auto_publish=dist_data.auto_publish,
-            pulp2_repository=repo,
-            is_migrated=False)
+            defaults={'pulp2_id': dist_data.distributor_id,
+                      'pulp2_type_id': dist_data.distributor_type_id,
+                      'pulp2_last_updated': last_updated,
+                      'pulp2_config': dist_data.config,
+                      'pulp2_auto_publish': dist_data.auto_publish,
+                      'pulp2_repository': repo,
+                      'is_migrated': False})
 
 
 async def pre_migrate_repocontent(repo):
