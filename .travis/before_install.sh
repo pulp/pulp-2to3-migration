@@ -98,6 +98,7 @@ pip install ansible
 
 cd pulp-2to3-migration
 
+export DIR_BEFORE_INSTALL="$(echo ../*/)"
 if [ -f $POST_BEFORE_INSTALL ]; then
     $POST_BEFORE_INSTALL
 fi

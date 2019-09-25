@@ -56,13 +56,6 @@ else
   PULP_CERTGUARD=git+https://github.com/pulp/pulp-certguard.git
 fi
 
-if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
-  PULP_FILE=./pulp_file
-else
-  # Otherwise, master branch release
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git
-fi
-
 cat > vars/vars.yaml << VARSYAML
 ---
 images:
@@ -73,9 +66,10 @@ images:
       pulpcore_plugin: ./pulpcore-plugin
       plugins:
         - $PULP_CERTGUARD
-        - $PULP_FILE
         - ./$PLUGIN
 VARSYAML
+export PLUGINS=$(echo $DIR_BEFORE_INSTALL ../*/ | tr ' ' '\n' | sort | uniq -u)
+echo PLUGINS | sed "s/\../\t\t\t\t/g" | sed "s/\//- .\//g" | sed 's/[[:blank:]]*$//' >> vars/vars.yaml
 
 ansible-playbook build.yaml
 
