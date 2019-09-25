@@ -48,9 +48,9 @@ PULP2_COLLECTION_MAP = {
 }
 
 PULP_2TO3_POLICIES = {
-   'immediate': 'immediate',
-   'on_demand': 'on_demand',
-   'background': 'on_demand',
+    'immediate': 'immediate',
+    'on_demand': 'on_demand',
+    'background': 'on_demand',
 }
 
 # 'pulp2 plugin': [('pulp2 importer_type_id', 'pulp_2to3 plugin importer migration model'), ... ]

@@ -32,6 +32,9 @@ class MigrationPlanViewSet(NamedModelViewSet,
                            mixins.RetrieveModelMixin,
                            mixins.DestroyModelMixin,
                            mixins.ListModelMixin):
+    """
+    MigrationPlan ViewSet.
+    """
     endpoint_name = 'migration-plans'
     queryset = MigrationPlan.objects.all()
     serializer_class = MigrationPlanSerializer
@@ -43,6 +46,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
     )
     @action(detail=True, methods=('post',), serializer_class=MigrationPlanRunSerializer)
     def run(self, request, pk):
+        """Run the migration plan."""
         migration_plan = self.get_object()
         serializer = MigrationPlanRunSerializer(
             data=request.data,

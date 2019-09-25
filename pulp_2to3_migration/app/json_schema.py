@@ -1,4 +1,4 @@
-SCHEMA='''{
+SCHEMA = '''{
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "MigrationPlan",
     "type": "object",
@@ -55,7 +55,7 @@ SCHEMA='''{
                             "additionalProperties": false,
                             "$comment": "pulp2_repository_id field should be specified so we know which importer to use when migrating multiple pulp2repos into repo versions",
                             "if": {
-    			        "properties": {
+                            "properties": {
                                     "repository_versions": {
                                         "type": "array",
                                         "minItems": 2
@@ -63,7 +63,7 @@ SCHEMA='''{
                                 }
                             },
                             "then": {
-    		                "dependencies": {
+                            "dependencies": {
                                     "repository_versions": ["pulp2_repository_id"]
                                 }
                              }

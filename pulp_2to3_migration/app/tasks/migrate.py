@@ -41,7 +41,6 @@ def migrate_from_pulp2(migration_plan_pk, dry_run=False):
     # For now, the list of plugins to migrate is hard-coded.
     plugins_to_migrate = ['iso']
 
-
     loop = asyncio.get_event_loop()
     loop.run_until_complete(pre_migrate_all_without_content(plan))
     loop.run_until_complete(migrate_repositories())

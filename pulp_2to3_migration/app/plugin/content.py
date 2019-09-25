@@ -41,6 +41,7 @@ class DeclarativeContentMigration:
     be migrated to Pulp 3.
     """
     def __init__(self, first_stage):
+        """Initializes DeclarativeContentMigration."""
         self.first_stage = first_stage
 
     def pipeline_stages(self):

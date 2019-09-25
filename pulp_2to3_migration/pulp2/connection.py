@@ -249,6 +249,7 @@ class PulpCollection(Collection):
     """
 
     def __init__(self, database, name, create=False, **kwargs):
+        """Initializes PulpCollection."""
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
         UnsafeRetry.decorate_instance(instance=self, full_name=self.full_name)
 
