@@ -92,7 +92,10 @@ async def migrate_importers(plugins_to_migrate):
         message='Migrating importers to Pulp 3', code='migrating.importers', total=0
     )
     with ProgressReport(**progress_data) as pb:
-        pulp2importers_qs = Pulp2Importer.objects.filter(pulp3_remote=None)
+        # Temp fix until https://pulp.plan.io/issues/5485 is done
+        pulp2importers_qs = Pulp2Importer.objects.filter(
+            pulp2_type_id__in=importer_migrators.keys(),
+            pulp3_remote=None)
         pb.total += pulp2importers_qs.count()
         pb.save()
 

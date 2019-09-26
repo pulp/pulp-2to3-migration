@@ -36,6 +36,7 @@ setup(
         ],
         'migrators': [
             'iso = pulp_2to3_migration.app.plugin.iso.migrator:IsoMigrator',
+            'docker = pulp_2to3_migration.app.plugin.docker.migrator:DockerMigrator',
         ]
     }
 )
