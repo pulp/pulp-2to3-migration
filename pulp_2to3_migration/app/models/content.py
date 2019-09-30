@@ -75,3 +75,27 @@ class Pulp2to3Content(Model):
         Return an unsaved Pulp 3 Content
         """
         raise NotImplementedError()
+
+
+class Pulp2LazyCatalog(Model):
+    """
+    Information for downloading Pulp 2 on_demand content.
+
+    Fields:
+        pulp2_importer_id (models.CharField): Importer ID in Pulp 2
+        pulp2_unit_id (models.CharField): Content unit ID in Pulp 2
+        pulp2_content_type_id (models.CharField): Content type in Pulp 2
+        pulp2_storage_path (models.TextField): Content storage path on Pulp 2 system
+        pulp2_url (models.TextField): URL to download content from
+        pulp2_revision (models.IntegerField): A revision of the entry for the specific
+                                              pulp2_storage_path and pulp2_importer_id
+    """
+    pulp2_importer_id = models.CharField(max_length=255)
+    pulp2_unit_id = models.CharField(max_length=255)
+    pulp2_content_type_id = models.CharField(max_length=255)
+    pulp2_storage_path = models.TextField()
+    pulp2_url = models.TextField()
+    pulp2_revision = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('pulp2_storage_path', 'pulp2_importer_id', 'pulp2_revision')
