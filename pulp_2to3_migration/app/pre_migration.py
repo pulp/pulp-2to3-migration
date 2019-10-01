@@ -1,5 +1,4 @@
 import asyncio
-import importlib
 import logging
 
 from collections import namedtuple
@@ -14,10 +13,6 @@ from mongoengine.queryset.visitor import Q as mongo_Q
 from pulpcore.constants import TASK_STATES
 from pulpcore.plugin.models import ProgressReport
 
-from pulp_2to3_migration.app.constants import (
-    PULP_2TO3_CONTENT_MODEL_MAP,
-    SUPPORTED_PULP2_PLUGINS,
-)
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Distributor,
@@ -26,6 +21,7 @@ from pulp_2to3_migration.app.models import (
     Pulp2RepoContent,
     Pulp2Repository,
 )
+from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 from pulp_2to3_migration.pulp2.base import (
     Distributor,
     Importer,
@@ -48,23 +44,16 @@ async def pre_migrate_all_content(plugins_to_migrate):
     """
     pre_migrators = []
 
-    # import all pulp 2 content models
-    # (for each content type: one works with mongo and other - with postgresql)
-    for plugin, model_names in SUPPORTED_PULP2_PLUGINS.items():
+    # get all the content models for the migrating plugins
+    for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
         if plugin not in plugins_to_migrate:
             continue
-        pulp2_module_path = 'pulp_2to3_migration.app.plugin.{plugin}.pulp2.models'.format(
-            plugin=plugin)
-        pulp2_module = importlib.import_module(pulp2_module_path)
-        pulp_2to3_module = importlib.import_module('pulp_2to3_migration.app.models')
-        for pulp2_content_model_name in model_names:
+        for content_type in plugin_migrator.pulp2_content_models:
             # mongodb model
-            pulp2_content_model = getattr(pulp2_module, pulp2_content_model_name)
+            pulp2_content_model = plugin_migrator.pulp2_content_models[content_type]
 
             # postgresql model
-            content_type = pulp2_content_model.type
-            pulp_2to3_detail_model_name = PULP_2TO3_CONTENT_MODEL_MAP[content_type]
-            pulp_2to3_detail_model = getattr(pulp_2to3_module, pulp_2to3_detail_model_name)
+            pulp_2to3_detail_model = plugin_migrator.content_models[content_type]
 
             content_model = ContentModel(pulp2=pulp2_content_model,
                                          pulp_2to3_detail=pulp_2to3_detail_model)

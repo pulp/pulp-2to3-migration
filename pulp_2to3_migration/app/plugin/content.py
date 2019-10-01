@@ -29,6 +29,7 @@ from pulpcore.plugin.stages import (
 )
 from pulpcore.plugin.tasking import WorkingDirectory
 
+from pulp_2to3_migration.app.constants import NOT_USED
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Importer,
@@ -36,7 +37,6 @@ from pulp_2to3_migration.app.models import (
 )
 
 _logger = logging.getLogger(__name__)
-NOT_USED = 'Not Used'
 
 
 class DeclarativeContentMigration:
@@ -156,7 +156,7 @@ class ContentMigrationFirstStage(Stage):
         If a plugin needs to have more control over the order of content migration, it should
         override this method.
         """
-        content_types = [model.type for model in self.migrator.content_models]
+        content_types = self.migrator.content_models.keys()
         pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
                                                       pulp3_content=None)
         total_pulp2content = pulp2content_qs.count()
@@ -170,8 +170,8 @@ class ContentMigrationFirstStage(Stage):
         batch_count = math.ceil(total_pulp2content / batch_size)
 
         with ProgressReport(
-            message='Migrating {} content to Pulp 3'.format(self.migrator.type),
-            code='migrating.{}.content'.format(self.migrator.type),
+            message='Migrating {} content to Pulp 3'.format(self.migrator.pulp2_plugin),
+            code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=total_pulp2content
         ) as pb:
             # schedule content migration

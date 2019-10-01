@@ -5,6 +5,7 @@ from jsonschema import Draft7Validator
 from pymongo.errors import OperationFailure
 from rest_framework import serializers
 
+from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 from pulp_2to3_migration.pulp2 import connection
 
 from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
@@ -14,10 +15,6 @@ from pulpcore.plugin.serializers import (
     IdentityField
 )
 
-from .constants import (
-    PULP_2TO3_PLUGIN_MAP,
-    PULP2_COLLECTION_MAP,
-)
 from .json_schema import SCHEMA
 from .models import MigrationPlan, Pulp2Content
 
@@ -65,13 +62,17 @@ class MigrationPlanSerializer(ModelSerializer):
         connection.initialize()
         db = connection.get_database()
         for plugin in plugins_to_migrate:
-            if PULP_2TO3_PLUGIN_MAP.get(plugin) not in INSTALLED_PULP_PLUGINS:
+            plugin_migrator = PLUGIN_MIGRATORS.get(plugin)
+            if not plugin_migrator:
+                raise serializers.ValidationError(
+                    _("Migraiton of {} plugin is not supported.".format(plugin))
+                )
+            if plugin_migrator.pulp3_plugin not in INSTALLED_PULP_PLUGINS:
                 raise serializers.ValidationError(
                     _("Plugin {} is not installed in pulp3.".format(plugin))
                 )
             try:
-                collection = PULP2_COLLECTION_MAP.get(plugin)
-                db.command("collstats", collection)
+                db.command("collstats", plugin_migrator.pulp2_collection)
             except OperationFailure:
                 raise serializers.ValidationError(
                     _("Plugin {} is not installed in pulp2.".format(plugin))

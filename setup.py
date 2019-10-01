@@ -33,6 +33,9 @@ setup(
     entry_points={
         'pulpcore.plugin': [
             'pulp_2to3_migration = pulp_2to3_migration:default_app_config',
+        ],
+        'migrators': [
+            'iso = pulp_2to3_migration.app.plugin.iso.migrator:IsoMigrator',
         ]
     }
 )
