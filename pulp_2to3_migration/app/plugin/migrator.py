@@ -2,14 +2,18 @@ class Pulp2to3PluginMigrator:
     """
     Class to serve as a plugin interface for migration to Pulp 3.
 
+    The attributes described below are expected to be defined by plugin writers.
+
     Attributes:
-        type(str): migrator type which corresponds to a Pulp 2 plugin name
-        content_models(tuple): Pulp2to3Content models this migrator is responsible for
+        pulp2_plugin(str): Pulp 2 plugin name
+        pulp2_content_models(dict): {'pulp2 content_type_id': 'content class to access MongoDB'}
+        pulp2_collection(str): a pulp2 collection which existence signifies that a plugin
+                               is installed in pulp2
+        pulp3_plugin(str): Pulp 3 plugin name
+        content_models(dict): {'pulp2 content_type_id': 'detail content class to pre-migrate to'}
+        importer_migrators(dict): {'importer_type_id': 'pulp_2to3 importer interface/migrator'}
 
     """
-    type = 'pulp2 plugin name'
-    content_models = ()
-
     @classmethod
     async def migrate_to_pulp3(cls):
         """

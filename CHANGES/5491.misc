@@ -1,0 +1,1 @@
+Refactor to have plugin discovery via entry_points.
