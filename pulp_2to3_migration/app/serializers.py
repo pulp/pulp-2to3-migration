@@ -21,7 +21,7 @@ from .models import MigrationPlan, Pulp2Content
 
 class MigrationPlanSerializer(ModelSerializer):
     """Serializer for migration plan model."""
-    _href = IdentityField(
+    pulp_href = IdentityField(
         view_name='migration-plans-detail'
     )
 
@@ -98,7 +98,7 @@ class Pulp2ContentSerializer(ModelSerializer):
     """
     A serializer for the Pulp2Content model
     """
-    _href = IdentityField(
+    pulp_href = IdentityField(
         view_name='migration-plans-detail'
     )
     pulp2_id = serializers.CharField(max_length=255)
