@@ -292,7 +292,7 @@ async def pre_migrate_importer(repo, importers):
 
     # in case only certain importers are specified in the migration plan
     if importers:
-        mongo_importer_q &= mongo_Q(pulp2_id__in=importers)
+        mongo_importer_q &= mongo_Q(repo_id__in=importers)
 
     mongo_importer_qs = Importer.objects(mongo_importer_q)
     if not mongo_importer_qs:
@@ -340,7 +340,7 @@ async def pre_migrate_distributor(repo, distributors):
 
     # in case only certain distributors are specified in the migration plan
     if distributors:
-        mongo_distributor_q &= mongo_Q(pulp2_id__in=distributors)
+        mongo_distributor_q &= mongo_Q(repo_id__in=distributors)
 
     mongo_distributor_qs = Distributor.objects(mongo_distributor_q)
     if not mongo_distributor_qs:
