@@ -46,6 +46,7 @@ class DeclarativeContentMigration:
     :class:`~pulpcore.plugin.stages.DeclarativeContent` object for each Content unit that should
     be migrated to Pulp 3.
     """
+
     def __init__(self, first_stage):
         """Initializes DeclarativeContentMigration."""
         self.first_stage = first_stage
@@ -89,6 +90,7 @@ class ContentMigrationFirstStage(Stage):
     Creates hard links (or copies) for Pulp 2 content and creates DeclarativeContent for content
     being migrated.
     """
+
     def __init__(self, migrator):
         """
         Args:

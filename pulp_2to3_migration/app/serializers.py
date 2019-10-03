@@ -15,7 +15,7 @@ from pulpcore.plugin.serializers import (
     IdentityField
 )
 
-from .json_schema import SCHEMA
+from pulp_2to3_migration.app.json_schema import SCHEMA
 from .models import MigrationPlan, Pulp2Content
 
 
@@ -85,9 +85,16 @@ class MigrationPlanRunSerializer(serializers.Serializer):
     """
     A serializer for running a migration plan.
     """
+    validate = serializers.BooleanField(
+        help_text=_('If ``True``, migration cannot happen without successful validation '
+                    'of the Migration Plan'),
+        required=False,
+        default=False,
+        write_only=True
+    )
     dry_run = serializers.BooleanField(
         help_text=_('If ``True``, performs validation of a Migration Plan only, no migration is '
-                    'run. If ``False``, both validation and migration are run.'),
+                    'run.'),
         required=False,
         default=False,
         write_only=True

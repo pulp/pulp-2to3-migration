@@ -35,13 +35,14 @@ _logger = logging.getLogger(__name__)
 ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
 
 
-async def pre_migrate_all_content(plugins_to_migrate):
+async def pre_migrate_all_content(plan):
     """
     Pre-migrate all content for the specified plugins.
 
     Args:
-        plugins_to_migrate(list): List of Pulp 2 plugin names to migrate content for
+        plan (MigrationPlan): Migration Plan to use for migration.
     """
+    plugins_to_migrate = plan.get_plugins()
     pre_migrators = []
 
     # get all the content models for the migrating plugins
@@ -329,7 +330,7 @@ async def pre_migrate_distributor(repo, distributors):
     Pre-migrate a pulp 2 distributor.
 
     Args:
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository which importer should be migrated
+        repo(Pulp2Repository): A pre-migrated pulp 2 repository which distributor should be migrated
         distributors(list): A list of distributors which are expected to be migrated. If empty,
                             all are migrated.
     """

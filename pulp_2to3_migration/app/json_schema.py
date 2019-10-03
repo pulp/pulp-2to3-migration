@@ -23,7 +23,7 @@ SCHEMA = '''{
                                 "name": {
                                     "type": "string"
                                 },
-                                "pulp2_repository_id": {
+                                "pulp2_importer_repository_id": {
                                     "type": "string"
                                 },
                                 "repository_versions": {
@@ -51,22 +51,9 @@ SCHEMA = '''{
                                     }
                                 }
                             },
-                            "required": ["name", "repository_versions"],
+                            "required": ["name", "pulp2_importer_repository_id", "repository_versions"],
                             "additionalProperties": false,
-                            "$comment": "pulp2_repository_id field should be specified so we know which importer to use when migrating multiple pulp2repos into repo versions",
-                            "if": {
-                            "properties": {
-                                    "repository_versions": {
-                                        "type": "array",
-                                        "minItems": 2
-                                    }
-                                }
-                            },
-                            "then": {
-                            "dependencies": {
-                                    "repository_versions": ["pulp2_repository_id"]
-                                }
-                             }
+                            "$comment": "pulp2_importer_repository_id field should be specified so we know which importer to use when migrating multiple pulp2 repos into repo versions"
                         }
                     }
                 },

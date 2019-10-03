@@ -17,14 +17,15 @@ from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 _logger = logging.getLogger(__name__)
 
 
-async def migrate_content(plugins_to_migrate):
+async def migrate_content(plan):
     """
     A coroutine to initiate content migration for each plugin.
 
     Args:
-         plugins_to_migrate(list): List of plugins to migrate
+         plan (MigrationPlan): Migration Plan to use
     """
     content_migration_coros = []
+    plugins_to_migrate = plan.get_plugins()
 
     progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
     with ProgressReport(**progress_data) as pb:
@@ -45,7 +46,7 @@ async def migrate_content(plugins_to_migrate):
         pb.done = pb.total
 
 
-async def migrate_repositories():
+async def migrate_repositories(plan):
     """
     A coroutine to migrate pre-migrated repositories.
     """
@@ -74,15 +75,17 @@ async def migrate_repositories():
                 pb.save()
 
 
-async def migrate_importers(plugins_to_migrate):
+async def migrate_importers(plan):
     """
     A coroutine to migrate pre-migrated importers.
 
     Args:
-        plugins_to_migrate(list): A list of plugins which are being migrated.
+        plan (MigrationPlan): Migration Plan to use.
     """
     # gather all needed plugin importer migrators
     importer_migrators = {}
+    plugins_to_migrate = plan.get_plugins()
+
     for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
         if plugin not in plugins_to_migrate:
             continue

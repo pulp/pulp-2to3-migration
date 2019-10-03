@@ -53,12 +53,14 @@ class MigrationPlanViewSet(NamedModelViewSet,
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
+        validate = serializer.validated_data.get('validate', False)
         dry_run = serializer.validated_data.get('dry_run', False)
         result = enqueue_with_reservation(
             migrate_from_pulp2,
             [PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
                 'migration_plan_pk': migration_plan.pk,
+                'validate': validate,
                 'dry_run': dry_run
             }
         )
