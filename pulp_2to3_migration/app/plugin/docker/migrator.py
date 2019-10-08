@@ -11,6 +11,7 @@ from .pulp_2to3_models import (
     Pulp2Tag,
 )
 
+from .repository import DockerImporter
 from pulp_docker.app.models import (
     Blob,
     BlobManifest,
@@ -52,13 +53,17 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     pulp2_collection = 'units_docker_manifest'
     # will be renamed to pulp_container
     pulp3_plugin = 'pulp_docker'
+
     content_models = OrderedDict([
         ('docker_blob', Pulp2Blob),
         ('docker_manifest', Pulp2Manifest),
         ('docker_manifest_list', Pulp2ManifestList),
         ('docker_tag', Pulp2Tag),
     ])
-    importer_migrators = {}
+
+    importer_migrators = {
+        'docker_importer': DockerImporter,
+    }
 
     @classmethod
     async def migrate_content_to_pulp3(cls):
