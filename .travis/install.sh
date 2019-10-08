@@ -63,6 +63,13 @@ else
   PULP_FILE=git+https://github.com/pulp/pulp_file.git
 fi
 
+if [ -e $TRAVIS_BUILD_DIR/../pulp_docker ]; then
+  PULP_DOCKER=./pulp_docker
+else
+  # Otherwise, master branch release
+  PULP_DOCKER=git+https://github.com/pulp/pulp_docker.git
+fi
+
 cat > vars/vars.yaml << VARSYAML
 ---
 images:
@@ -74,6 +81,7 @@ images:
       plugins:
         - $PULP_CERTGUARD
         - $PULP_FILE
+        - $PULP_DOCKER
         - ./$PLUGIN
 VARSYAML
 

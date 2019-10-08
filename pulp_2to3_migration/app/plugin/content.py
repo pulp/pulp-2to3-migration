@@ -27,7 +27,6 @@ from pulpcore.plugin.stages import (
     RemoteArtifactSaver,
     Stage,
 )
-from pulpcore.plugin.tasking import WorkingDirectory
 
 from pulp_2to3_migration.app.constants import NOT_USED
 from pulp_2to3_migration.app.models import (
@@ -77,11 +76,10 @@ class DeclarativeContentMigration:
         """
         Perform the work specified by pipeline.
         """
-        with WorkingDirectory():  # TODO: Working Directory is probably not needed
-            stages = self.pipeline_stages()
-            stages.append(EndStage())
-            pipeline = create_pipeline(stages)
-            await pipeline
+        stages = self.pipeline_stages()
+        stages.append(EndStage())
+        pipeline = create_pipeline(stages)
+        await pipeline
 
 
 class ContentMigrationFirstStage(Stage):
@@ -116,7 +114,7 @@ class ContentMigrationFirstStage(Stage):
             return artifact
 
         if not expected_digests.get('sha256'):
-            artifact = Artifact.init_and_validate(pulp2_storage_path, size=expected_size)
+            artifact = Artifact.init_and_validate(pulp2_storage_path, expected_size=expected_size)
 
         sha256digest = expected_digests.get('sha256') or artifact.sha256
 
@@ -156,34 +154,38 @@ class ContentMigrationFirstStage(Stage):
         If a plugin needs to have more control over the order of content migration, it should
         override this method.
         """
+
         content_types = self.migrator.content_models.keys()
-        pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
-                                                      pulp3_content=None)
-        total_pulp2content = pulp2content_qs.count()
+        for ctype in content_types:
 
-        # determine the batch size if we can have up to 36 coroutines and the number of batches (or
-        # coroutines)
-        max_coro = 36
-        batch_size = 1
-        if total_pulp2content > max_coro:
-            batch_size = math.ceil(total_pulp2content / max_coro)
-        batch_count = math.ceil(total_pulp2content / batch_size)
+            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=ctype,
+                                                          pulp3_content=None)
+            total_pulp2content = pulp2content_qs.count()
 
-        with ProgressReport(
-            message='Migrating {} content to Pulp 3'.format(self.migrator.pulp2_plugin),
-            code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
-            total=total_pulp2content
-        ) as pb:
-            # schedule content migration
-            migrators = []
-            for batch_idx in range(batch_count):
-                start = batch_idx * batch_size
-                end = (batch_idx + 1) * batch_size
-                batch = pulp2content_qs[start:end]
-                migrators.append(self.migrate_to_pulp3(batch, pb=pb))
+            # determine the batch size if we can have up to 36 coroutines and the number
+            # of batches (or coroutines)
+            max_coro = 36
+            batch_size = 1
+            if total_pulp2content > max_coro:
+                batch_size = math.ceil(total_pulp2content / max_coro)
+            batch_count = math.ceil(total_pulp2content / batch_size)
 
-            if migrators:
-                await asyncio.wait(migrators)
+            with ProgressReport(
+                message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
+                                                                   ctype),
+                code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
+                total=total_pulp2content
+            ) as pb:
+                # schedule content migration
+                migrators = []
+                for batch_idx in range(batch_count):
+                    start = batch_idx * batch_size
+                    end = (batch_idx + 1) * batch_size
+                    batch = pulp2content_qs[start:end]
+                    migrators.append(self.migrate_to_pulp3(batch, pb=pb))
+
+                if migrators:
+                    await asyncio.wait(migrators)
 
     async def migrate_to_pulp3(self, batch, pb=None):
         """

@@ -65,7 +65,7 @@ class MigrationPlanSerializer(ModelSerializer):
             plugin_migrator = PLUGIN_MIGRATORS.get(plugin)
             if not plugin_migrator:
                 raise serializers.ValidationError(
-                    _("Migraiton of {} plugin is not supported.".format(plugin))
+                    _("Migration of {} plugin is not supported.".format(plugin))
                 )
             if plugin_migrator.pulp3_plugin not in INSTALLED_PULP_PLUGINS:
                 raise serializers.ValidationError(
