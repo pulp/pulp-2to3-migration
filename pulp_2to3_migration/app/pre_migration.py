@@ -286,6 +286,10 @@ async def pre_migrate_importer(repo, importers):
                          all are migrated.
     """
     mongo_importer_q = mongo_Q(repo_id=repo.pulp2_repo_id)
+
+    # importers with empty config are not needed - nothing to migrate
+    mongo_importer_q &= mongo_Q(config__ne={})
+
     # in case only certain importers are specified in the migration plan
     if importers:
         mongo_importer_q &= mongo_Q(pulp2_id__in=importers)
@@ -293,7 +297,8 @@ async def pre_migrate_importer(repo, importers):
     mongo_importer_qs = Importer.objects(mongo_importer_q)
     if not mongo_importer_qs:
         # Either the importer no longer exists in Pulp2,
-        # or it was filtered out by the Migration Plan
+        # or it was filtered out by the Migration Plan,
+        # or it has an empty config
         return
 
     importer_data = mongo_importer_qs.only('id',
@@ -301,6 +306,10 @@ async def pre_migrate_importer(repo, importers):
                                            'importer_type_id',
                                            'last_updated',
                                            'config').first()
+
+    if not importer_data.config.get('feed'):
+        # Pulp 3 remotes require URL
+        return
 
     last_updated = (importer_data.last_updated
                     and timezone.make_aware(importer_data.last_updated, timezone.utc))
@@ -325,6 +334,10 @@ async def pre_migrate_distributor(repo, distributors):
                             all are migrated.
     """
     mongo_distributor_q = mongo_Q(repo_id=repo.pulp2_repo_id)
+
+    # distributors with empty config are not needed - nothing to migrate
+    mongo_distributor_q &= mongo_Q(config__ne={})
+
     # in case only certain distributors are specified in the migration plan
     if distributors:
         mongo_distributor_q &= mongo_Q(pulp2_id__in=distributors)
@@ -332,7 +345,8 @@ async def pre_migrate_distributor(repo, distributors):
     mongo_distributor_qs = Distributor.objects(mongo_distributor_q)
     if not mongo_distributor_qs:
         # Either the distributor no longer exists in Pulp2,
-        # or it was filtered out by the Migration Plan
+        # or it was filtered out by the Migration Plan,
+        # or it has an empty config
         return
 
     for dist_data in mongo_distributor_qs:
