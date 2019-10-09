@@ -288,7 +288,7 @@ async def pre_migrate_importer(repo, importers):
     mongo_importer_q = mongo_Q(repo_id=repo.pulp2_repo_id)
 
     # importers with empty config are not needed - nothing to migrate
-    mongo_importer_q &= mongo_Q(config__ne={})
+    mongo_importer_q &= mongo_Q(config__exists=True) & mongo_Q(config__ne={})
 
     # in case only certain importers are specified in the migration plan
     if importers:
