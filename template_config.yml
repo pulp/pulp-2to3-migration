@@ -1,30 +1,33 @@
 # This config represents the latest values used when running the plugin-template. Any settings that
 # were not present before running plugin-template have been added with their default values.
 
-plugin_name: pulp-2to3-migration
+additional_plugins: []
+black: false
+check_commit_message: true
+coverage: false
+deploy_client_to_pypi: true
+deploy_client_to_rubygems: true
+deploy_daily_client_to_pypi: true
+deploy_daily_client_to_rubygems: true
+deploy_to_pypi: true
+docs_test: false
 plugin_app_label: pulp_2to3_migration
-plugin_snake: pulp_2to3_migration
-plugin_caps: PULP-2TO3-MIGRATION
-plugin_caps_short: 2TO3-MIGRATION
 plugin_camel: Pulp-2To3-Migration
 plugin_camel_short: 2To3-Migration
+plugin_caps: PULP-2TO3-MIGRATION
+plugin_caps_short: 2TO3-MIGRATION
 plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
-black: False
-check_commit_message: True
-coverage: False
-deploy_client_to_pypi: True
-deploy_client_to_rubygems: True
-deploy_daily_client_to_pypi: True
-deploy_daily_client_to_rubygems: True
-deploy_to_pypi: True
-docs_test: False
-pydocstyle: False
-test_bindings: True
+plugin_name: pulp-2to3-migration
+plugin_snake: pulp_2to3_migration
+pydocstyle: false
 pypi_username: pulp
+test_bindings: true
+test_performance: false
 travis_notifications:
   irc:
     channels:
-      - "chat.freenode.net#pulp-build"
-    on_success: change
+    - chat.freenode.net#pulp-build
     on_failure: always
+    on_success: change
+
