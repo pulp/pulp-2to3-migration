@@ -30,10 +30,13 @@ cd $TRAVIS_BUILD_DIR/../pulpcore/containers/
 # starting point:
 # https://stackoverflow.com/a/50687120
 #
+# If we are on a tag
+if [ -n "$TRAVIS_TAG" ]; then
+  TAG=$(echo $TRAVIS_TAG | tr / _)
 # If we are on a PR
-if [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ]; then
+elif [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ]; then
   TAG=$(echo $TRAVIS_PULL_REQUEST_BRANCH | tr / _)
-# For push builds, tag builds, and hopefully cron builds
+# For push builds and hopefully cron builds
 elif [ -n "$TRAVIS_BRANCH" ]; then
   TAG=$(echo $TRAVIS_BRANCH | tr / _)
   if [ "$TAG" = "master" ]; then
@@ -48,29 +51,37 @@ fi
 PLUGIN=pulp-2to3-migration
 
 
-# For pulpcore, and any other repo that might check out a pulp-certguard PR
-if [ -e $TRAVIS_BUILD_DIR/../pulp-certguard ]; then
-  PULP_CERTGUARD=./pulp-certguard
-else
-  # Otherwise, master branch release
-  PULP_CERTGUARD=git+https://github.com/pulp/pulp-certguard.git
-fi
+# For pulpcore, and any other repo that might check out some plugin PR
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  # Otherwise, master branch release
   PULP_FILE=git+https://github.com/pulp/pulp_file.git
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_docker ]; then
   PULP_DOCKER=./pulp_docker
 else
-  # Otherwise, master branch release
   PULP_DOCKER=git+https://github.com/pulp/pulp_docker.git
 fi
 
-cat > vars/vars.yaml << VARSYAML
+
+if [ -n "$TRAVIS_TAG" ]; then
+  # Install the plugin only and use published PyPI packages for the rest
+  cat > vars/vars.yaml << VARSYAML
+---
+images:
+  - ${PLUGIN}-${TAG}:
+      image_name: $PLUGIN
+      tag: $TAG
+      plugins:
+        - ./$PLUGIN
+        - pulp_file
+        - pulp_docker
+        
+VARSYAML
+else
+  cat > vars/vars.yaml << VARSYAML
 ---
 images:
   - ${PLUGIN}-${TAG}:
@@ -79,11 +90,12 @@ images:
       pulpcore: ./pulpcore
       pulpcore_plugin: ./pulpcore-plugin
       plugins:
-        - $PULP_CERTGUARD
+        - ./$PLUGIN
         - $PULP_FILE
         - $PULP_DOCKER
-        - ./$PLUGIN
+        
 VARSYAML
+fi
 
 ansible-playbook build.yaml
 
