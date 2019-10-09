@@ -113,12 +113,11 @@ class ContentMigrationFirstStage(Stage):
             artifact.size = expected_size
             return artifact
 
-        if not expected_digests.get('sha256'):
-            artifact = Artifact.init_and_validate(pulp2_storage_path, expected_size=expected_size)
+        artifact = Artifact.init_and_validate(pulp2_storage_path,
+                                              expected_digests=expected_digests,
+                                              expected_size=expected_size)
 
-        sha256digest = expected_digests.get('sha256') or artifact.sha256
-
-        pulp3_storage_relative_path = storage.get_artifact_path(sha256digest)
+        pulp3_storage_relative_path = storage.get_artifact_path(artifact.sha256)
         pulp3_storage_path = os.path.join(settings.MEDIA_ROOT, pulp3_storage_relative_path)
         os.makedirs(os.path.dirname(pulp3_storage_path), exist_ok=True)
 
@@ -132,7 +131,8 @@ class ContentMigrationFirstStage(Stage):
             shutil.copy2(pulp2_storage_path, pulp3_storage_path)
             is_copied = True
 
-        expected_digests = {'sha256': sha256digest}
+        if not expected_digests:
+            expected_digests = {'sha256': artifact.sha256}
 
         if is_copied:
             # recalculate checksums to ensure that after being copied a file is still fine
