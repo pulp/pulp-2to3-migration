@@ -53,12 +53,8 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
 
     # We do not allow a second call to initialize(), as mongoengine.connect() will cache the last
     # initialized connection for all calls. Thus, any process that attempts to call initialize()
-    # again might alter which database all further queries are made against. By raising this
-    # Exception, we can ensure that only one database connection is established per process which
-    # will help us to ensure that the connection does not get overridden later.
+    # again might alter which database all further queries are made against.
     if _CONNECTION or _DATABASE:
-        _logger.warn(_("The database is already initialized. It should not be called more than "
-                       "once."))
         return
     try:
         connection_kwargs = {}

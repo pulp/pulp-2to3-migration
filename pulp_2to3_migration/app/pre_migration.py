@@ -35,13 +35,14 @@ _logger = logging.getLogger(__name__)
 ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
 
 
-async def pre_migrate_all_content(plugins_to_migrate):
+async def pre_migrate_all_content(plan):
     """
     Pre-migrate all content for the specified plugins.
 
     Args:
-        plugins_to_migrate(list): List of Pulp 2 plugin names to migrate content for
+        plan (MigrationPlan): Migration Plan to use for migration.
     """
+    plugins_to_migrate = plan.get_plugins()
     pre_migrators = []
 
     # get all the content models for the migrating plugins
@@ -292,7 +293,7 @@ async def pre_migrate_importer(repo, importers):
 
     # in case only certain importers are specified in the migration plan
     if importers:
-        mongo_importer_q &= mongo_Q(pulp2_id__in=importers)
+        mongo_importer_q &= mongo_Q(repo_id__in=importers)
 
     mongo_importer_qs = Importer.objects(mongo_importer_q)
     if not mongo_importer_qs:
@@ -329,7 +330,7 @@ async def pre_migrate_distributor(repo, distributors):
     Pre-migrate a pulp 2 distributor.
 
     Args:
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository which importer should be migrated
+        repo(Pulp2Repository): A pre-migrated pulp 2 repository which distributor should be migrated
         distributors(list): A list of distributors which are expected to be migrated. If empty,
                             all are migrated.
     """
@@ -340,7 +341,7 @@ async def pre_migrate_distributor(repo, distributors):
 
     # in case only certain distributors are specified in the migration plan
     if distributors:
-        mongo_distributor_q &= mongo_Q(pulp2_id__in=distributors)
+        mongo_distributor_q &= mongo_Q(repo_id__in=distributors)
 
     mongo_distributor_qs = Distributor.objects(mongo_distributor_q)
     if not mongo_distributor_qs:
