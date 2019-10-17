@@ -43,7 +43,14 @@ class MigrationPlanSerializer(ModelSerializer):
         """
         schema = json.loads(SCHEMA)
         validator = Draft7Validator(schema)
-        loaded_plan = json.loads(data['plan'])
+        if isinstance(data['plan'], str):
+            loaded_plan = json.loads(data['plan'])
+        elif isinstance(data['plan'], dict):
+            loaded_plan = data['plan']
+        else:
+            raise serializers.ValidationError(
+                _("Must provide a (JSON-encoded) string or dict for 'plan', not list")
+            )
         err = []
         for error in sorted(validator.iter_errors(loaded_plan), key=str):
             err.append(error.message)

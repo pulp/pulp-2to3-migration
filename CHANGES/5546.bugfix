@@ -1,0 +1,1 @@
+Fix bug preventing the serializer from accepting non-JSON data
