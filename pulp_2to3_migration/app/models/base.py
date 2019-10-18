@@ -134,7 +134,7 @@ class _InternalMigrationPlan:
             self.repositories_to_migrate.append(pulp2_repository_id)
             repository_versions.append(pulp2_repository_id)
 
-            distributor_ids = repository_version.get('distributor_ids')
+            distributor_ids = repository_version.get('distributor_ids', [])
             self.distributors_to_migrate.extend(distributor_ids)
 
         return repository_versions
