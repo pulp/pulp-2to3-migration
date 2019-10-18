@@ -105,7 +105,6 @@ class _InternalMigrationPlan:
             self.plugins_to_migrate.append(plugin_data['type'])
             if plugin_data.get('repositories'):
                 self._parse_repository_data(plugin_data.get('repositories'))
-                # TODO: do something with protection
 
     def _parse_repository_data(self, repository_data):
         for repository in repository_data:
@@ -121,7 +120,6 @@ class _InternalMigrationPlan:
             repository_data = {
                 "pulp2_importer_repository_id": _find_importer_repo,
                 "versions": repository_versions
-                # TODO: do something with protection
             }
 
             self.repositories_to_create[name] = repository_data

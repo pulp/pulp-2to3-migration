@@ -12,9 +12,6 @@ SCHEMA = '''{
                     "type": {
                         "type": "string"
                     },
-                    "protection": {
-                        "type": "boolean"
-                    },
                     "repositories": {
                         "type": "array",
                         "items": {
@@ -38,16 +35,9 @@ SCHEMA = '''{
                                              "distributor_ids": {
                                                  "type": "array"
                                              },
-                                             "protection": {
-                                                 "type": "array"
-                                              }
                                         },
                                         "required": ["pulp2_repository_id"],
                                         "additionalProperties": false,
-                                        "$comment": "if protection field is present then distributor_ids field should be present",
-                                        "dependencies": {
-                                            "protection": ["distributor_ids"]
-                                        }
                                     }
                                 }
                             },
@@ -59,11 +49,6 @@ SCHEMA = '''{
                 },
                 "required": ["type"],
                 "additionalProperties": false,
-                "$comment": "if protection field is present then repositories field should be present",
-                "dependencies": {
-                    "protection": ["repositories"],
-                    "repositories": ["protection"]
-                }
             }
         }
     },
