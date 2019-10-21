@@ -7,6 +7,7 @@ from pulp_2to3_migration.app.pre_migration import (
 )
 
 from pulp_2to3_migration.app.migration import (
+    create_repo_versions,
     migrate_content,
     migrate_importers,
     migrate_repositories,
@@ -51,7 +52,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     loop.run_until_complete(migrate_repositories(plan))
     loop.run_until_complete(migrate_importers(plan))
     loop.run_until_complete(pre_migrate_all_content(plan))
-    loop.run_until_complete(migrate_content(plan))  # without RemoteArtifacts yet
-#    loop.run_until_complete(create_repo_versions(plan))
+    loop.run_until_complete(migrate_content(plan))
+    loop.run_until_complete(create_repo_versions(plan))
 #    loop.run_until_complete(migrate_distributors(plugins_to_migrate))
     loop.close()
