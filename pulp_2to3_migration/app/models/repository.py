@@ -27,6 +27,7 @@ class Pulp2Repository(Model):
             a repository in Pulp 2
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
+        type (models.CharField): repo type in Pulp 2
 
     Relations:
         pulp3_repository_version (models.OneToOneField): Pulp 3 repository version which Pulp 2
@@ -38,6 +39,7 @@ class Pulp2Repository(Model):
     pulp2_last_unit_added = models.DateTimeField(null=True)
     pulp2_last_unit_removed = models.DateTimeField(null=True)
     is_migrated = models.BooleanField(default=False)
+    type = models.CharField(max_length=25)
 
     pulp3_repository_version = models.OneToOneField(RepositoryVersion,
                                                     on_delete=models.SET_NULL,

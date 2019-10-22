@@ -231,6 +231,10 @@ async def pre_migrate_all_without_content(plan):
         if repos:
             mongo_repo_q &= mongo_Q(repo_id__in=repos)
 
+        # filter repo type
+        repo_types = [f'{type}-repo' for type in plan.get_plugins()]
+        mongo_repo_q &= mongo_Q(__raw__={"notes._repo-type": {'$in': repo_types}})
+
         mongo_repo_qs = Repository.objects(mongo_repo_q)
         pb.total = mongo_repo_qs.count()
         pb.save()
@@ -239,7 +243,8 @@ async def pre_migrate_all_without_content(plan):
                                             'repo_id',
                                             'last_unit_added',
                                             'last_unit_removed',
-                                            'description'):
+                                            'description',
+                                            'notes'):
 
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
@@ -272,7 +277,8 @@ async def pre_migrate_repo(record):
                   'pulp2_last_unit_added': last_unit_added,
                   'pulp2_last_unit_removed': last_unit_removed,
                   'pulp2_description': record.description,
-                  'is_migrated': False})
+                  'is_migrated': False,
+                  'type': record.notes.get('_repo-type')[:-5]})
 
     return repo
 
