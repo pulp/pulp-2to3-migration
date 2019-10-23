@@ -16,8 +16,8 @@ python:
   - "3.7"
 env:
   matrix:
-    - DB=postgres TEST=pulp
-    - DB=postgres TEST=bindings
+    - TEST=pulp
+    - TEST=bindings
 matrix:
   exclude:
     - python: '3.6'
@@ -56,25 +56,21 @@ jobs:
     - stage: publish-daily-client-gem
       script: bash .travis/publish_client_gem.sh
       env:
-        - DB=postgres
         - TEST=bindings
       if: type = cron
     - stage: publish-daily-client-pypi
       script: bash .travis/publish_client_pypi.sh
       env:
-        - DB=postgres
         - TEST=bindings
       if: type = cron
     - stage: publish-client-gem
       script: bash .travis/publish_client_gem.sh
       env:
-        - DB=postgres
         - TEST=bindings
       if: tag IS present
     - stage: publish-client-pypi
       script: bash .travis/publish_client_pypi.sh
       env:
-        - DB=postgres
         - TEST=bindings
       if: tag IS present
 notifications:
