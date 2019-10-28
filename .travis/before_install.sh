@@ -25,7 +25,6 @@ if [[ -n $(echo -e $COMMIT_MSG | grep -P "Required PR:.*" | grep -v "https") ]];
 fi
 
 export PULP_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulpcore\/pull\/(\d+)' | awk -F'/' '{print $7}')
-export PULP_PLUGIN_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulpcore-plugin\/pull\/(\d+)' | awk -F'/' '{print $7}')
 export PULP_SMASH_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/PulpQE\/pulp-smash\/pull\/(\d+)' | awk -F'/' '{print $7}')
 export PULP_ROLES_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/ansible-pulp\/pull\/(\d+)' | awk -F'/' '{print $7}')
 export PULP_BINDINGS_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp-openapi-generator\/pull\/(\d+)' | awk -F'/' '{print $7}')
@@ -75,16 +74,6 @@ fi
 # When building a (release) tag, we don't need the development modules for the
 # build (they will be installed as dependencies of the plugin).
 if [ -z "$TRAVIS_TAG" ]; then
-
-  git clone --depth=1 https://github.com/pulp/pulpcore-plugin.git
-
-  if [ -n "$PULP_PLUGIN_PR_NUMBER" ]; then
-    cd pulpcore-plugin
-    git fetch --depth=1 origin +refs/pull/$PULP_PLUGIN_PR_NUMBER/merge
-    git checkout FETCH_HEAD
-    cd ..
-  fi
-
 
   git clone --depth=1 https://github.com/PulpQE/pulp-smash.git
 
