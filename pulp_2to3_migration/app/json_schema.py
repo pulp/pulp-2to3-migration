@@ -34,10 +34,10 @@ SCHEMA = '''{
                                              },
                                              "distributor_ids": {
                                                  "type": "array"
-                                             },
+                                             }
                                         },
                                         "required": ["pulp2_repository_id"],
-                                        "additionalProperties": false,
+                                        "additionalProperties": false
                                     }
                                 }
                             },
@@ -48,7 +48,7 @@ SCHEMA = '''{
                     }
                 },
                 "required": ["type"],
-                "additionalProperties": false,
+                "additionalProperties": false
             }
         }
     },
