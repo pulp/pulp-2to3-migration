@@ -18,7 +18,7 @@ class Pulp2Repository(Model):
     Information about Pulp 2 repository.
 
     Fields:
-        pulp2_repo_id (models.CharField): Repository ID in Pulp 2
+        pulp2_repo_id (models.TextField): Repository ID in Pulp 2
         pulp2_object_id (models.CharField): Object id of a repository in Pulp 2
         pulp2_description (models.TextField): Description of a repository in Pulp 2
         pulp2_last_unit_added (models.DateTimeField): Last time a unit was added to
@@ -34,7 +34,7 @@ class Pulp2Repository(Model):
             repository was migrated to
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
-    pulp2_repo_id = models.CharField(max_length=255)
+    pulp2_repo_id = models.TextField()
     pulp2_description = models.TextField(null=True)
     pulp2_last_unit_added = models.DateTimeField(null=True)
     pulp2_last_unit_removed = models.DateTimeField(null=True)
@@ -55,7 +55,7 @@ class Pulp2RepoContent(Model):
     the migration plugin needs to distinguish between those.
 
     Fields:
-        pulp2_unit_id (models.CharField): Repository id in Pulp 2
+        pulp2_unit_id (models.CharField): Unit_id in Pulp 2
         pulp2_content_type_id (models.CharField): Id of a content type in Pulp 2
 
     Relations:
@@ -101,7 +101,7 @@ class Pulp2Distributor(Model):
     Information about Pulp 2 distributor.
 
     Fields:
-        pulp2_id (models.CharField): Id of distributor in Pulp 2
+        pulp2_id (models.TextField): Id of distributor in Pulp 2
         pulp2_type_id (models.CharField): Id of distributor type in Pulp 2
         pulp2_config (JSONField): Pulp 2 distributor config in JSON format
         pulp2_auto_publish (models.BooleanField): A flag to determine if auto-publish is enabled
@@ -118,7 +118,7 @@ class Pulp2Distributor(Model):
             migrated to
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
-    pulp2_id = models.CharField(max_length=255)  # in Pulp2 it might be longer?
+    pulp2_id = models.TextField()
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = JSONField()
     pulp2_auto_publish = models.BooleanField()

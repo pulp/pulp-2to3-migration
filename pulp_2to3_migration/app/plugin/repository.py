@@ -35,9 +35,8 @@ class Pulp2to3Importer:
                 proxy_url = '{}://{}@{}'.format(scheme, credentials, host)
             else:
                 proxy_url = '{}://{}'.format(scheme, host)
-        # remote name in Pulp 3 is limited to 255 characters
         remote_name = '{}-{}'.format(pulp2importer.pulp2_object_id,
-                                     pulp2importer.pulp2_repository.pulp2_repo_id)[:255]
+                                     pulp2importer.pulp2_repository.pulp2_repo_id)
         base_config['proxy_url'] = proxy_url
         base_config['name'] = remote_name
         base_config['url'] = pulp2_config.get('feed', '')  # what to do if there is no feed?

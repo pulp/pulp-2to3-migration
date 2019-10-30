@@ -214,9 +214,9 @@ class Pulp2Tag(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 Tag content details
     for Pulp 3 content creation.
     """
-    name = models.CharField(max_length=255)
+    name = models.TextField()
     tagged_manifest = models.CharField(max_length=255)
-    repo_id = models.CharField(max_length=255)
+    repo_id = models.TextField()
 
     type = 'docker_tag'
     checksum_type = 'sha256'

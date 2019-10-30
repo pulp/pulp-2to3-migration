@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import logging
 
 from pulpcore.plugin.models import (
@@ -67,12 +66,7 @@ async def migrate_repositories(plan):
             pb.save()
 
             for pulp2repo in pulp2repos_qs:
-                # if pulp2 repo_id is too long, its hash is included in pulp3 repo name
                 pulp3_repo_name = pulp2repo.pulp2_repo_id
-                if len(pulp3_repo_name) > 255:
-                    repo_name_hash = hashlib.sha256(pulp3_repo_name.encode()).hexdigest()
-                    pulp3_repo_name = '{}-{}'.format(pulp3_repo_name[:190], repo_name_hash)
-
                 repo, created = Repository.objects.get_or_create(
                     name=pulp3_repo_name,
                     description=pulp2repo.pulp2_description)
@@ -96,7 +90,7 @@ async def migrate_repositories(plan):
                     description = pulp2repo.pulp2_description
 
                 repo, created = Repository.objects.get_or_create(
-                    name=pulp3_repo_name[:255],
+                    name=pulp3_repo_name,
                     description=description)
                 if created:
                     pb.increment()
