@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from pulp_2to3_migration.app.pre_migration import (
+    mark_removed_resources,
     pre_migrate_all_content,
     pre_migrate_all_without_content,
 )
@@ -49,6 +50,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(pre_migrate_all_without_content(plan))
+    loop.run_until_complete(mark_removed_resources(plan))
     loop.run_until_complete(migrate_repositories(plan))
     loop.run_until_complete(migrate_importers(plan))
     loop.run_until_complete(pre_migrate_all_content(plan))

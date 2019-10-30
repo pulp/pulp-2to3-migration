@@ -159,6 +159,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp2_object_id = serializers.CharField(max_length=255)
     pulp2_repo_id = serializers.CharField()
     is_migrated = serializers.BooleanField(default=False)
+    not_in_pulp2 = serializers.BooleanField(default=False)
 
     pulp3_repository_version = NestedRelatedField(
         view_name='versions-detail',
@@ -178,7 +179,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         Get pulp3_remote_href from Pulp2Importer
         """
         importer = Pulp2Importer.objects.filter(pulp2_repository=obj).first()
-        return get_pulp_href(importer.pulp3_remote)
+        return importer and get_pulp_href(importer.pulp3_remote)
 
     def get_pulp3_publisher_href(self, obj):
         """
@@ -218,6 +219,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
             "pulp2_object_id",
             "pulp2_repo_id",
             "is_migrated",
+            "not_in_pulp2",
             "pulp3_repository_version",
             "pulp3_remote_href",
             "pulp3_publisher_href",

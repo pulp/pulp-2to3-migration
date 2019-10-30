@@ -399,3 +399,63 @@ async def pre_migrate_repocontent(repo):
         repocontent.append(item)
 
     Pulp2RepoContent.objects.bulk_create(repocontent)
+
+
+async def mark_removed_resources(plan):
+    """
+    Marks repositories, importers and distributors which are no longer present in Pulp2.
+
+    Args:
+        plan(MigrationPlan): A Migration Plan
+    """
+    # Mark repositories
+    mongo_repo_types = [f'{type}-repo' for type in plan.get_plugins()]
+    mongo_repo_q = mongo_Q(__raw__={"notes._repo-type": {'$in': mongo_repo_types}})
+    mongo_repo_object_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
+
+    psql_repo_types = plan.get_plugins()
+    premigrated_repos = Pulp2Repository.objects.filter(type__in=psql_repo_types)
+    premigrated_repo_object_ids = set(premigrated_repos.values_list('pulp2_object_id',
+                                                                    flat=True))
+    removed_repo_object_ids = premigrated_repo_object_ids - mongo_repo_object_ids
+
+    removed_repos = []
+    for pulp2repo in Pulp2Repository.objects.filter(pulp2_object_id__in=removed_repo_object_ids):
+        pulp2repo.not_in_pulp2 = True
+        removed_repos.append(pulp2repo)
+
+    Pulp2Repository.objects.bulk_update(objs=removed_repos,
+                                        fields=['not_in_pulp2'],
+                                        batch_size=1000)
+
+    # Mark importers
+    mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
+    premigrated_imps = Pulp2Importer.objects.filter(pulp2_repository__type__in=psql_repo_types)
+    premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
+                                                                  flat=True))
+    removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
+
+    removed_imps = []
+    for pulp2importer in Pulp2Importer.objects.filter(pulp2_object_id__in=removed_imp_object_ids):
+        pulp2importer.not_in_pulp2 = True
+        removed_imps.append(pulp2importer)
+
+    Pulp2Importer.objects.bulk_update(objs=removed_imps,
+                                      fields=['not_in_pulp2'],
+                                      batch_size=1000)
+
+    # Mark distributors
+    mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
+    premigrated_dists = Pulp2Distributor.objects.filter(pulp2_repository__type__in=psql_repo_types)
+    premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
+                                                                    flat=True))
+    removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
+
+    removed_dists = []
+    for pulp2dist in Pulp2Distributor.objects.filter(pulp2_object_id__in=removed_dist_object_ids):
+        pulp2dist.not_in_pulp2 = True
+        removed_dists.append(pulp2dist)
+
+    Pulp2Distributor.objects.bulk_update(objs=removed_dists,
+                                         fields=['not_in_pulp2'],
+                                         batch_size=1000)
