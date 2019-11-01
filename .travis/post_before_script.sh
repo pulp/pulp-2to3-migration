@@ -8,3 +8,15 @@ $CMD_PREFIX bash -c "mv pulp-2to3-migration-test-fixtures/20191031/var/lib/pulp/
 
 wget https://github.com/pulp/pulp-2to3-migration-test-fixtures/raw/master/20191031/pulp2filecontent.20191031.archive
 mongorestore --archive=pulp2filecontent.20191031.archive
+
+cd ..
+git clone https://github.com/pulp/pulp-openapi-generator.git
+cd pulp-openapi-generator
+
+./generate.sh pulpcore python
+pip install ./pulpcore-client
+./generate.sh pulp_file python
+pip install ./pulp_file-client
+./generate.sh pulp_2to3_migration python
+pip install ./pulp_2to3_migration-client
+
