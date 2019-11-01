@@ -91,6 +91,33 @@ HTTP/1.1 202 Accepted
 
 ```
 
+3. For listing the mapping for Pulp 2 to Pulp 3
+```
+$ http :24817/pulp/api/v3/pulp2repositories/
+
+HTTP/1.1 200 OK
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "is_migrated": true,
+            "pulp2_object_id": "5dbc478c472f68283ad8e6bd",
+            "pulp2_repo_id": "file-large",
+            "pulp3_distribution_hrefs": [],
+            "pulp3_publication_href": [],
+            "pulp3_publisher_href": [],
+            "pulp3_remote_href": "/pulp/api/v3/remotes/file/file/ca0e505e-51c2-46e1-be40-3762d372f9b2/",
+            "pulp3_repository_version": null,
+            "pulp_created": "2019-11-01T14:59:04.648920Z",
+            "pulp_href": "/pulp/api/v3/pulp2repositories/92c6d1c8-718b-4ea9-8a23-b2386849c2c5/"
+        }
+    ]
+}
+
+```
+
 ### Plugin Writer's Guide
 
 If you are extending this migration tool to be able to migrate the plugin of your interest

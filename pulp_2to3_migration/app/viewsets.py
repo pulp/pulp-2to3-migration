@@ -18,11 +18,12 @@ from pulpcore.plugin.viewsets import (
 )
 
 from .constants import PULP_2TO3_MIGRATION_RESOURCE
-from .models import MigrationPlan, Pulp2Content
+from .models import MigrationPlan, Pulp2Content, Pulp2Repository
 from .serializers import (
     MigrationPlanSerializer,
     MigrationPlanRunSerializer,
-    Pulp2ContentSerializer
+    Pulp2ContentSerializer,
+    Pulp2RepositoriesSerializer,
 )
 from .tasks.migrate import migrate_from_pulp2
 
@@ -94,3 +95,26 @@ class Pulp2ContentViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.L
     queryset = Pulp2Content.objects.all()
     serializer_class = Pulp2ContentSerializer
     filterset_class = Pulp2ContentFilter
+
+
+class Pulp2RepositoriesFilter(BaseFilterSet):
+    """
+    Filter for Pulp2Repositories ViewSet.
+    """
+    pulp2_repo_id = filters.CharFilter()
+
+    class Meta:
+        model = Pulp2Repository
+        fields = {
+            'pulp2_repo_id': ['exact', 'in'],
+        }
+
+
+class Pulp2RepositoriesViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    """
+    ViewSet for Pulp2Repositories model.
+    """
+    endpoint_name = 'pulp2repositories'
+    queryset = Pulp2Repository.objects.all()
+    serializer_class = Pulp2RepositoriesSerializer
+    filterset_class = Pulp2RepositoriesFilter
