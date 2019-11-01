@@ -8,7 +8,7 @@ from pulp_file.app.models import FileRepository
 
 from .pulp2_models import ISO
 from .pulp_2to3_models import Pulp2ISO
-from .repository import IsoImporter
+from .repository import IsoImporter, IsoDistributor
 
 
 class IsoMigrator(Pulp2to3PluginMigrator):
@@ -37,6 +37,9 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     }
     importer_migrators = {
         'iso_importer': IsoImporter,
+    }
+    distributor_migrators = {
+        'iso_distributor': IsoDistributor,
     }
 
     @classmethod

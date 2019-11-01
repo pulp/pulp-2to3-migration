@@ -43,6 +43,9 @@ class Pulp2Repository(BaseModel):
     pulp3_repository_version = models.OneToOneField(RepositoryVersion,
                                                     on_delete=models.SET_NULL,
                                                     null=True)
+    pulp3_repository_remote = models.ForeignKey(Remote,
+                                                    on_delete=models.SET_NULL,
+                                                    null=True)
 
 
 class Pulp2RepoContent(BaseModel):
@@ -124,7 +127,7 @@ class Pulp2Distributor(BaseModel):
     is_migrated = models.BooleanField(default=False)
 
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
-    pulp3_publication = models.OneToOneField(Publication, on_delete=models.SET_NULL, null=True)
+    pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
     pulp3_distribution = models.OneToOneField(BaseDistribution,
                                               on_delete=models.SET_NULL,
                                               null=True)
