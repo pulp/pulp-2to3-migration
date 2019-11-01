@@ -10,6 +10,7 @@ from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 from pulp_2to3_migration.pulp2 import connection
 
 from pulpcore.app.models import RepositoryVersion
+from pulpcore.plugin.serializers import NestedRelatedField
 from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
 from pulpcore.app.util import get_view_name_for_model
 from pulpcore.plugin.serializers import (
@@ -159,11 +160,12 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp2_repo_id = serializers.CharField()
     is_migrated = serializers.BooleanField(default=False)
 
-    pulp3_repository_version = serializers.HyperlinkedRelatedField(
-        required=False,
-        help_text=_('A pulp 3 repository version'),
-        queryset=RepositoryVersion.objects.all(),
+    pulp3_repository_version = NestedRelatedField(
         view_name='versions-detail',
+        lookup_field='number',
+        parent_lookup_kwargs={'repository_pk': 'repository__pk'},
+        queryset=RepositoryVersion.objects.all(),
+        required=False,
     )
 
     pulp3_remote_href = serializers.SerializerMethodField(read_only=True)
