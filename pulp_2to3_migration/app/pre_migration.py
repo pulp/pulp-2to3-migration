@@ -353,9 +353,6 @@ async def pre_migrate_distributor(repo, distributors, distributor_types):
     mongo_distributor_q = mongo_Q(repo_id=repo.pulp2_repo_id,
                                   distributor_type_id__in=distributor_types)
 
-    # distributors with empty config are not needed - nothing to migrate
-    mongo_distributor_q &= mongo_Q(config__ne={})
-
     # in case only certain distributors are specified in the migration plan
     if distributors:
         mongo_distributor_q &= mongo_Q(repo_id__in=distributors)
