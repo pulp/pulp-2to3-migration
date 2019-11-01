@@ -1,6 +1,7 @@
 import json
 
 from gettext import gettext as _
+from django.urls import reverse
 from jsonschema import Draft7Validator
 from pymongo.errors import OperationFailure
 from rest_framework import serializers
@@ -8,15 +9,31 @@ from rest_framework import serializers
 from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 from pulp_2to3_migration.pulp2 import connection
 
+from pulpcore.app.models import RepositoryVersion
 from pulpcore.app.settings import INSTALLED_PULP_PLUGINS
+from pulpcore.app.util import get_view_name_for_model
 from pulpcore.plugin.serializers import (
     ModelSerializer,
     DetailRelatedField,
-    IdentityField
+    IdentityField,
 )
 
 from pulp_2to3_migration.app.json_schema import SCHEMA
-from .models import MigrationPlan, Pulp2Content
+from .models import (
+    MigrationPlan,
+    Pulp2Content,
+    Pulp2Distributor,
+    Pulp2Importer,
+    Pulp2Repository,
+)
+
+
+def get_pulp_href(obj):
+    """
+    Get pulp_href for a given model object.
+    """
+    if obj:
+        return reverse(get_view_name_for_model(obj.cast(), "detail"), args=[obj.pk])
 
 
 class MigrationPlanSerializer(ModelSerializer):
@@ -129,3 +146,80 @@ class Pulp2ContentSerializer(ModelSerializer):
                                                 'pulp2_last_updated', 'pulp2_storage_path',
                                                 'downloaded', 'pulp3_content')
         model = Pulp2Content
+
+
+class Pulp2RepositoriesSerializer(ModelSerializer):
+    """
+    A serializer for the Pulp2Repositories
+    """
+    pulp_href = IdentityField(
+        view_name='pulp2repositories-detail'
+    )
+    pulp2_object_id = serializers.CharField(max_length=255)
+    pulp2_repo_id = serializers.CharField()
+    is_migrated = serializers.BooleanField(default=False)
+
+    pulp3_repository_version = serializers.HyperlinkedRelatedField(
+        required=False,
+        help_text=_('A pulp 3 repository version'),
+        queryset=RepositoryVersion.objects.all(),
+        view_name='versions-detail',
+    )
+
+    pulp3_remote_href = serializers.SerializerMethodField(read_only=True)
+    pulp3_publisher_href = serializers.SerializerMethodField(read_only=True)
+    pulp3_publication_href = serializers.SerializerMethodField(read_only=True)
+    pulp3_distribution_hrefs = serializers.SerializerMethodField(read_only=True)
+
+    def get_pulp3_remote_href(self, obj):
+        """
+        Get pulp3_remote_href from Pulp2Importer
+        """
+        importer = Pulp2Importer.objects.filter(pulp2_repository=obj).first()
+        return get_pulp_href(importer.pulp3_remote)
+
+    def get_pulp3_publisher_href(self, obj):
+        """
+        Get pulp3_publisher_href from Pulp2Distributor
+        """
+        distributors = getattr(self, "_distributors", None)
+        if not distributors:
+            self._distributors = Pulp2Distributor.objects.filter(pulp2_repository=obj).all()
+            distributors = self._distributors
+
+        return [get_pulp_href(d.pulp3_publisher) for d in distributors if d.pulp3_publisher]
+
+    def get_pulp3_publication_href(self, obj):
+        """
+        Get pulp3_publication_href from Pulp2Distributor
+        """
+        distributors = getattr(self, "_distributors", None)
+        if not distributors:
+            self._distributors = Pulp2Distributor.objects.filter(pulp2_repository=obj).all()
+            distributors = self._distributors
+
+        return [get_pulp_href(d.pulp3_publication) for d in distributors if d.pulp3_publication]
+
+    def get_pulp3_distribution_hrefs(self, obj):
+        """
+        Get pulp3_distribution_hrefs from Pulp2Distributor
+        """
+        distributors = getattr(self, "_distributors", None)
+        if not distributors:
+            self._distributors = Pulp2Distributor.objects.filter(pulp2_repository=obj).all()
+            distributors = self._distributors
+
+        return [get_pulp_href(d.pulp3_distribution) for d in distributors if d.pulp3_distribution]
+
+    class Meta:
+        fields = ModelSerializer.Meta.fields + (
+            "pulp2_object_id",
+            "pulp2_repo_id",
+            "is_migrated",
+            "pulp3_repository_version",
+            "pulp3_remote_href",
+            "pulp3_publisher_href",
+            "pulp3_publication_href",
+            "pulp3_distribution_hrefs",
+        )
+        model = Pulp2Repository
