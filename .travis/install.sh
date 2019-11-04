@@ -112,6 +112,7 @@ spec:
     username: pulp
     password: pulp
     admin_password: pulp
+
 CRYAML
 
 # Install k3s, lightweight Kubernetes

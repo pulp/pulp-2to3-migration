@@ -1,3 +1,4 @@
+import socket
 from time import sleep
 import unittest
 from pulpcore.client.pulpcore import (ApiClient as CoreApiClient, Configuration,
@@ -43,6 +44,7 @@ class TestMigrationPlan(unittest.TestCase):
         configuration = Configuration()
         configuration.username = 'admin'
         configuration.password = 'password'
+        configuration.host = 'http://{}:24817'.format(socket.gethostname())
         configuration.safe_chars_for_path_param = '/'
 
         core_client = CoreApiClient(configuration)

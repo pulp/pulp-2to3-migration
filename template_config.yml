@@ -22,7 +22,7 @@ plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
-pulp_settings: null
+pulp_settings:
 pydocstyle: false
 pypi_username: pulp
 test_bindings: true
