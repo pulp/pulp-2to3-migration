@@ -2,8 +2,8 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-  - pulp_file
-  - pulp_docker
+- pulp_file
+- pulp_docker
 black: false
 check_commit_message: true
 coverage: false
@@ -22,6 +22,7 @@ plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
+pulp_settings: null
 pydocstyle: false
 pypi_username: pulp
 test_bindings: true
@@ -29,6 +30,7 @@ test_performance: false
 travis_notifications:
   irc:
     channels:
-      - chat.freenode.net#pulp-build
+    - chat.freenode.net#pulp-build
     on_failure: always
     on_success: change
+
