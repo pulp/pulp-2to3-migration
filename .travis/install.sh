@@ -59,10 +59,10 @@ else
   PULP_FILE=git+https://github.com/pulp/pulp_file.git
 fi
 
-if [ -e $TRAVIS_BUILD_DIR/../pulp_docker ]; then
-  PULP_DOCKER=./pulp_docker
+if [ -e $TRAVIS_BUILD_DIR/../pulp_container ]; then
+  PULP_CONTAINER=./pulp_container
 else
-  PULP_DOCKER=git+https://github.com/pulp/pulp_docker.git
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git
 fi
 if [ -n "$TRAVIS_TAG" ]; then
   # Install the plugin only and use published PyPI packages for the rest
@@ -75,7 +75,7 @@ images:
       plugins:
         - ./$PLUGIN
         - pulp_file
-        - pulp_docker
+        - pulp_container
 VARSYAML
 else
   cat > vars/vars.yaml << VARSYAML
@@ -88,7 +88,7 @@ images:
       plugins:
         - ./$PLUGIN
         - $PULP_FILE
-        - $PULP_DOCKER
+        - $PULP_CONTAINER
 VARSYAML
 fi
 ansible-playbook build.yaml

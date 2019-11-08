@@ -3,7 +3,7 @@
 
 additional_plugins:
 - pulp_file
-- pulp_docker
+- pulp_container
 black: false
 check_commit_message: true
 coverage: false

@@ -3,8 +3,8 @@ from django.contrib.postgres.fields import ArrayField
 
 from pulp_2to3_migration.app.models import Pulp2to3Content
 
-from pulp_docker.constants import MEDIA_TYPE
-from pulp_docker.app.models import Blob, Manifest, Tag
+from pulp_container.constants import MEDIA_TYPE
+from pulp_container.app.models import Blob, Manifest, Tag
 
 from . import pulp2_models
 
