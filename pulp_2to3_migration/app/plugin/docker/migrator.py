@@ -12,7 +12,7 @@ from .pulp_2to3_models import (
 )
 
 from .repository import DockerImporter
-from pulp_docker.app.models import (
+from pulp_container.app.models import (
     Blob,
     BlobManifest,
     Manifest,
@@ -52,7 +52,7 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     }
     pulp2_collection = 'units_docker_manifest'
     # will be renamed to pulp_container
-    pulp3_plugin = 'pulp_docker'
+    pulp3_plugin = 'pulp_container'
 
     content_models = OrderedDict([
         ('docker_blob', Pulp2Blob),
