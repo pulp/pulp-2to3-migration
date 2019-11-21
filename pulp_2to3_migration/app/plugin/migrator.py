@@ -10,6 +10,7 @@ class Pulp2to3PluginMigrator:
         pulp2_collection(str): a pulp2 collection which existence signifies that a plugin
                                is installed in pulp2
         pulp3_plugin(str): Pulp 3 plugin name
+        pulp3_repository(class): Pulp 3 Repository model
         content_models(dict): {'pulp2 content_type_id': 'detail content class to pre-migrate to'}
         importer_migrators(dict): {'importer_type_id': 'pulp_2to3 importer interface/migrator'}
 

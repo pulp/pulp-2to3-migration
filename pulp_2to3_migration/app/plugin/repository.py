@@ -40,11 +40,11 @@ class Pulp2to3Importer:
         base_config['proxy_url'] = proxy_url
         base_config['name'] = remote_name
         base_config['url'] = pulp2_config.get('feed', '')  # what to do if there is no feed?
-        base_config['ssl_ca_certificate'] = pulp2_config.get('ssl_ca_cert')
-        base_config['ssl_client_certificate'] = pulp2_config.get('ssl_client_cert')
-        base_config['ssl_client_key'] = pulp2_config.get('ssl_client_key')
+        base_config['ca_cert'] = pulp2_config.get('ssl_ca_cert')
+        base_config['client_cert'] = pulp2_config.get('ssl_client_cert')
+        base_config['client_key'] = pulp2_config.get('ssl_client_key')
         # True by default?
-        base_config['ssl_validation'] = pulp2_config.get('ssl_validation', True)
+        base_config['tls_validation'] = pulp2_config.get('ssl_validation', True)
         base_config['username'] = pulp2_config.get('basic_auth_username')
         base_config['password'] = pulp2_config.get('basic_auth_password')
         base_config['download_concurrency'] = pulp2_config.get('max_downloads') or 20

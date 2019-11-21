@@ -15,6 +15,7 @@ from .repository import DockerImporter
 from pulp_container.app.models import (
     Blob,
     BlobManifest,
+    ContainerRepository,
     Manifest,
     ManifestListManifest,
     Tag,
@@ -53,6 +54,7 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     pulp2_collection = 'units_docker_manifest'
     # will be renamed to pulp_container
     pulp3_plugin = 'pulp_container'
+    pulp3_repository = ContainerRepository
 
     content_models = OrderedDict([
         ('docker_blob', Pulp2Blob),
