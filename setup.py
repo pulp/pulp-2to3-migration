@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 requirements = [
-    'pulpcore~=3.0rc1',
+    'pulpcore~=3.0rc8',
     'mongoengine',
     'semantic_version',
     'jsonschema'
