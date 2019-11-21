@@ -4,8 +4,6 @@ import logging
 from pulpcore.plugin.models import (
     Content,
     ProgressReport,
-    Repository,
-    RepositoryVersion,
 )
 
 from pulp_2to3_migration.app.models import (
@@ -67,7 +65,8 @@ async def migrate_repositories(plan):
 
             for pulp2repo in pulp2repos_qs:
                 pulp3_repo_name = pulp2repo.pulp2_repo_id
-                repo, created = Repository.objects.get_or_create(
+                repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
+                repo, created = repository_class.objects.get_or_create(
                     name=pulp3_repo_name,
                     description=pulp2repo.pulp2_description)
                 if created:
@@ -89,7 +88,8 @@ async def migrate_repositories(plan):
                 else:
                     description = pulp2repo.pulp2_description
 
-                repo, created = Repository.objects.get_or_create(
+                repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
+                repo, created = repository_class.objects.get_or_create(
                     name=pulp3_repo_name,
                     description=description)
                 if created:
@@ -158,13 +158,14 @@ async def create_repo_versions(plan):
             pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
         """
 
-        pulp3_repo = Repository.objects.get(name=pulp3_repo_name)
+        repository_class = PLUGIN_MIGRATORS.get(pulp2_repo.type).pulp3_repository
+        pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
         unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
             'pulp2_unit_id', flat=True)
         incoming_content = set(Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
             'pulp3_content').values_list('pulp3_content__pk', flat=True))
 
-        with RepositoryVersion.create(pulp3_repo) as new_version:
+        with pulp3_repo.new_version() as new_version:
             repo_content = set(new_version.content.values_list('pk', flat=True))
             to_add = incoming_content - repo_content
             to_delete = repo_content - incoming_content

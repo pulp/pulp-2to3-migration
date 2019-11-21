@@ -4,6 +4,8 @@ from pulp_2to3_migration.app.plugin.api import (
     Pulp2to3PluginMigrator,
 )
 
+from pulp_file.app.models import FileRepository
+
 from .pulp2_models import ISO
 from .pulp_2to3_models import Pulp2ISO
 from .repository import IsoImporter
@@ -29,6 +31,7 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     }
     pulp2_collection = 'units_iso'
     pulp3_plugin = 'pulp_file'
+    pulp3_repository = FileRepository
     content_models = {
         'iso': Pulp2ISO,
     }
