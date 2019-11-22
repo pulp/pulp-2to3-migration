@@ -40,5 +40,6 @@ cd pulp-openapi-generator
 ./generate.sh pulp_2to3_migration python $VERSION
 cd pulp_2to3_migration-client
 python setup.py sdist bdist_wheel --python-tag py3
+twine check dist/* || exit 1
 twine upload dist/* -u pulp -p $PYPI_PASSWORD
 exit $?

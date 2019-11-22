@@ -31,12 +31,14 @@ then
   export PULP_ROLES_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/ansible-pulp\/pull\/(\d+)' | awk -F'/' '{print $7}')
   export PULP_BINDINGS_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp-openapi-generator\/pull\/(\d+)' | awk -F'/' '{print $7}')
   export PULP_OPERATOR_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp-operator\/pull\/(\d+)' | awk -F'/' '{print $7}')
+  export PULP_BINDINGS_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp-openapi-generator\/pull\/(\d+)' | awk -F'/' '{print $7}')
 else
   export PULP_PR_NUMBER=
   export PULP_SMASH_PR_NUMBER=
   export PULP_ROLES_PR_NUMBER=
   export PULP_BINDINGS_PR_NUMBER=
   export PULP_OPERATOR_PR_NUMBER=
+  export PULP_BINDINGS_PR_NUMBER=
 fi
 
 # dev_requirements contains tools needed for flake8, etc.
@@ -70,6 +72,14 @@ if [ -n "$PULP_OPERATOR_PR_NUMBER" ]; then
   curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
   chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
   sudo operator-sdk build --image-builder=docker quay.io/pulp/pulp-operator:latest
+  cd ..
+fi
+
+git clone https://github.com/pulp/pulp-openapi-generator.git
+if [ -n "$PULP_BINDINGS_PR_NUMBER" ]; then
+  cd pulp-openapi-generator
+  git fetch origin +refs/pull/$PULP_BINDINGS_PR_NUMBER/merge
+  git checkout FETCH_HEAD
   cd ..
 fi
 
