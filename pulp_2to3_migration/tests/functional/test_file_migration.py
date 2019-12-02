@@ -3,8 +3,17 @@ from time import sleep
 import unittest
 from pulpcore.client.pulpcore import (ApiClient as CoreApiClient, Configuration,
                                       TasksApi)
+from pulpcore.client.pulp_file import (ApiClient as FileApiClient,
+                                       ContentFilesApi,
+                                       RepositoriesFileApi,
+                                       RepositoriesFileVersionsApi)
 from pulpcore.client.pulp_2to3_migration import (ApiClient as MigrationApiClient,
                                                  MigrationPlansApi)
+from pulp_2to3_migration.pulp2.base import Repository as Pulp2Repository, RepositoryContentUnit
+from pulp_2to3_migration.pulp2.connection import initialize
+
+# Can't import ISO model due to PLUGIN_MIGRATORS needing Django app
+# from pulp_2to3_migration.app.plugin.iso.pulp2_models import ISO
 
 
 def monitor_task(tasks_api, task_href):
@@ -41,6 +50,9 @@ class TestMigrationPlan(unittest.TestCase):
         Create all the client instances needed to communicate with Pulp.
         """
 
+        # Initialize MongoDB connection
+        initialize()
+
         configuration = Configuration()
         configuration.username = 'admin'
         configuration.password = 'password'
@@ -48,14 +60,14 @@ class TestMigrationPlan(unittest.TestCase):
         configuration.safe_chars_for_path_param = '/'
 
         core_client = CoreApiClient(configuration)
-        # file_client = FileApiClient(configuration)
+        file_client = FileApiClient(configuration)
         migration_client = MigrationApiClient(configuration)
 
         # Create api clients for all resource types
         # artifacts = ArtifactsApi(core_client)
-        # repositories = RepositoriesApi(core_client)
-        # repoversions = RepositoriesVersionsApi(core_client)
-        # filecontent = ContentFilesApi(file_client)
+        cls.file_repositories = RepositoriesFileApi(file_client)
+        cls.file_repo_versions = RepositoriesFileVersionsApi(file_client)
+        cls.file_content = ContentFilesApi(file_client)
         # filedistributions = DistributionsFileApi(core_client)
         # filepublications = PublicationsFileApi(file_client)
         # fileremotes = RemotesFileApi(file_client)
@@ -63,10 +75,25 @@ class TestMigrationPlan(unittest.TestCase):
         # uploads = UploadsApi(core_client)
         cls.migration_plans = MigrationPlansApi(migration_client)
 
-    def test_create_migration_plan(self):
+    def test_migrate_iso_repositories(self):
         """Test that a valid Migration Plan can be created."""
         migration_plan = '{"plugins": [{"type": "iso"}]}'
         mp = self.migration_plans.create({'plan': migration_plan})
         mp_run_response = self.migration_plans.run(mp.pulp_href, data={})
         task = monitor_task(self.tasks, mp_run_response.task)
         self.assertEqual(task.state, "completed")
+        pulp2repositories = Pulp2Repository.objects.all()
+        for pulp2repo in pulp2repositories:
+            pulp3repos = self.file_repositories.list(name=pulp2repo.repo_id)
+            repo_href = pulp3repos.results[0].pulp_href
+            self.failIf(not pulp3repos.results,
+                        "Missing a Pulp 3 repository for Pulp 2 "
+                        "repository id '{}'".format(pulp2repo.repo_id))
+            # Assert that the name in pulp 3 matches the repo_id in pulp 2
+            self.assertEqual(pulp2repo.repo_id, pulp3repos.results[0].name)
+            # Assert that there is a Repository Version with the same number of content units as
+            # associated with the repository in Pulp 2.
+            repo_version_href = self.file_repo_versions.list(repo_href).results[0].pulp_href
+            pulp2_repo_content = RepositoryContentUnit.objects.filter(repo_id=pulp2repo.repo_id)
+            repo_version_content = self.file_content.list(repository_version=repo_version_href)
+            self.assertEqual(pulp2_repo_content.count(), repo_version_content.count)
