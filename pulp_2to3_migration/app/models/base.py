@@ -1,6 +1,6 @@
 from django.contrib.postgres.fields import JSONField
 
-from pulpcore.plugin.models import Model
+from pulpcore.plugin.models import BaseModel
 
 from pulp_2to3_migration.pulp2 import connection
 from pulp_2to3_migration.pulp2.base import (
@@ -10,7 +10,7 @@ from pulp_2to3_migration.pulp2.base import (
 )
 
 
-class MigrationPlan(Model):
+class MigrationPlan(BaseModel):
     """
     Migration Plans that have been created and maybe even run.
 
