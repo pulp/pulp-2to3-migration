@@ -3,7 +3,6 @@ from django.db import models
 
 from pulpcore.app.models import (  # it has to be imported directly from pulpcore see #5353
     Remote,
-    Publisher,
 )
 from pulpcore.plugin.models import (
     Model,
@@ -111,7 +110,6 @@ class Pulp2Distributor(Model):
 
     Relations:
         pulp2_repository (models.ForeignKey): Pulp 2 repository this distributor belongs to
-        pulp3_publisher(models.OneToOneField): Pulp 3 publisher this distributor was migrated to
         pulp3_publication (models.OneToOneField): Pulp 3 publication this distributor was
             migrated to
         pulp3_distribution (models.OneToOneField): Pulp 3 distribution this distributor was
@@ -126,7 +124,6 @@ class Pulp2Distributor(Model):
     is_migrated = models.BooleanField(default=False)
 
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
-    pulp3_publisher = models.OneToOneField(Publisher, on_delete=models.SET_NULL, null=True)
     pulp3_publication = models.OneToOneField(Publication, on_delete=models.SET_NULL, null=True)
     pulp3_distribution = models.OneToOneField(BaseDistribution,
                                               on_delete=models.SET_NULL,

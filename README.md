@@ -107,7 +107,6 @@ HTTP/1.1 200 OK
             "pulp2_repo_id": "file-large",
             "pulp3_distribution_hrefs": [],
             "pulp3_publication_href": [],
-            "pulp3_publisher_href": [],
             "pulp3_remote_href": "/pulp/api/v3/remotes/file/file/ca0e505e-51c2-46e1-be40-3762d372f9b2/",
             "pulp3_repository_version": null,
             "pulp_created": "2019-11-01T14:59:04.648920Z",

@@ -169,7 +169,6 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     )
 
     pulp3_remote_href = serializers.SerializerMethodField(read_only=True)
-    pulp3_publisher_href = serializers.SerializerMethodField(read_only=True)
     pulp3_publication_href = serializers.SerializerMethodField(read_only=True)
     pulp3_distribution_hrefs = serializers.SerializerMethodField(read_only=True)
 
@@ -179,17 +178,6 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         """
         importer = Pulp2Importer.objects.filter(pulp2_repository=obj).first()
         return get_pulp_href(importer.pulp3_remote)
-
-    def get_pulp3_publisher_href(self, obj):
-        """
-        Get pulp3_publisher_href from Pulp2Distributor
-        """
-        distributors = getattr(self, "_distributors", None)
-        if not distributors:
-            self._distributors = Pulp2Distributor.objects.filter(pulp2_repository=obj).all()
-            distributors = self._distributors
-
-        return [get_pulp_href(d.pulp3_publisher) for d in distributors if d.pulp3_publisher]
 
     def get_pulp3_publication_href(self, obj):
         """
@@ -220,7 +208,6 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
             "is_migrated",
             "pulp3_repository_version",
             "pulp3_remote_href",
-            "pulp3_publisher_href",
             "pulp3_publication_href",
             "pulp3_distribution_hrefs",
         )
