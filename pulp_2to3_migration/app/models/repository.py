@@ -5,14 +5,14 @@ from pulpcore.app.models import (  # it has to be imported directly from pulpcor
     Remote,
 )
 from pulpcore.plugin.models import (
-    Model,
+    BaseModel,
     BaseDistribution,
     RepositoryVersion,
     Publication,
 )
 
 
-class Pulp2Repository(Model):
+class Pulp2Repository(BaseModel):
     """
     Information about Pulp 2 repository.
 
@@ -45,7 +45,7 @@ class Pulp2Repository(Model):
                                                     null=True)
 
 
-class Pulp2RepoContent(Model):
+class Pulp2RepoContent(BaseModel):
     """
     Information about content in Pulp 2 repository.
 
@@ -69,7 +69,7 @@ class Pulp2RepoContent(Model):
         unique_together = ('pulp2_repository', 'pulp2_unit_id')
 
 
-class Pulp2Importer(Model):
+class Pulp2Importer(BaseModel):
     """
     Information about Pulp 2 importer.
 
@@ -95,7 +95,7 @@ class Pulp2Importer(Model):
     pulp3_remote = models.OneToOneField(Remote, on_delete=models.SET_NULL, null=True)
 
 
-class Pulp2Distributor(Model):
+class Pulp2Distributor(BaseModel):
     """
     Information about Pulp 2 distributor.
 

@@ -1,10 +1,10 @@
 from django.db import models
 
 from pulpcore.app.models import Content  # it has to be imported directly from pulpcore see #5353
-from pulpcore.plugin.models import Model
+from pulpcore.plugin.models import BaseModel
 
 
-class Pulp2Content(Model):
+class Pulp2Content(BaseModel):
     """
     General info about Pulp 2 content.
 
@@ -36,7 +36,7 @@ class Pulp2Content(Model):
         return getattr(self, f'{self.pulp2_content_type_id}_detail_model').get()
 
 
-class Pulp2to3Content(Model):
+class Pulp2to3Content(BaseModel):
     """
     Pulp 2to3 detail content model to store pulp 2 content details for Pulp 3 content creation.
     """
@@ -77,7 +77,7 @@ class Pulp2to3Content(Model):
         raise NotImplementedError()
 
 
-class Pulp2LazyCatalog(Model):
+class Pulp2LazyCatalog(BaseModel):
     """
     Information for downloading Pulp 2 on_demand content.
 
