@@ -171,7 +171,12 @@ async def create_repo_versions(plan):
             to_delete = repo_content - incoming_content
             new_version.add_content(Content.objects.filter(pk__in=to_add))
             new_version.remove_content(Content.objects.filter(pk__in=to_delete))
-        return new_version
+        if new_version.complete:
+            pulp2_repo.pulp3_repository_version = new_version
+        if not pulp2_repo.pulp3_repository_version:
+            pulp2_repo.pulp3_repository_version = pulp3_repo.latest_version()
+        pulp2_repo.is_migrated = True
+        pulp2_repo.save()
 
     pulp3_repo_setup = plan.get_pulp3_repository_setup()
     if not pulp3_repo_setup:
@@ -179,10 +184,7 @@ async def create_repo_versions(plan):
         # TODO: filter by plugin type (only migrate repos for plugins in the MP)
         repos_to_migrate = Pulp2Repository.objects.filter(is_migrated=False)
         for pulp2_repo in repos_to_migrate:
-            repo_version = create_repo_version(pulp2_repo.pulp2_repo_id, pulp2_repo)
-            pulp2_repo.pulp3_repository_version = repo_version
-            pulp2_repo.is_migrated = True
-            pulp2_repo.save()
+            create_repo_version(pulp2_repo.pulp2_repo_id, pulp2_repo)
     else:
         for repo_name in pulp3_repo_setup:
             repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
@@ -192,7 +194,4 @@ async def create_repo_versions(plan):
                     # it's possible to have a random order of the repo versions (after migration
                     # re-run, a repo can be changed in pulp 2 and it might not be for the last
                     # repo version)
-                    repo_version = create_repo_version(repo_name, repo_to_migrate)
-                    repo_to_migrate.is_migrated = True
-                    repo_to_migrate.pulp3_repository_version = repo_version
-                    repo_to_migrate.save()
+                    create_repo_version(repo_name, repo_to_migrate)
