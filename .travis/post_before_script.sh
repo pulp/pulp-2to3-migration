@@ -14,6 +14,8 @@ mongorestore --archive=pulp2filecontent.20191031.archive
 
 mongo pulp_database --eval 'db.createUser({user:"travis",pwd:"travis",roles:["readWrite"]});'
 
+pip install .
+
 cd ../pulp-openapi-generator
 
 ./generate.sh pulpcore python
@@ -23,3 +25,4 @@ pip install ./pulp_file-client
 ./generate.sh pulp_2to3_migration python
 pip install ./pulp_2to3_migration-client
 
+export PULP_CONTENT_ORIGIN=http://localhost
