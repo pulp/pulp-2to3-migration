@@ -24,5 +24,3 @@ pip install ./pulpcore-client
 pip install ./pulp_file-client
 ./generate.sh pulp_2to3_migration python
 pip install ./pulp_2to3_migration-client
-
-export PULP_CONTENT_ORIGIN=http://localhost
