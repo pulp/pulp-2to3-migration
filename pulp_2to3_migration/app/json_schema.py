@@ -33,7 +33,17 @@ SCHEMA = '''{
                                                 "type": "string"
                                              },
                                              "distributor_ids": {
-                                                 "type": "array"
+                                                 "type": "array",
+                                                 "items": {
+                                                     "type": "array",
+                                                     "items" : [
+                                                       {"type": "string"},
+                                                       {"type": "string"}
+                                                     ],
+                                                     "additionalItems": false,
+                                                     "minItems": 2,
+                                                     "$comment": "provide dist_id and repo_id"
+                                                 }
                                              }
                                         },
                                         "required": ["pulp2_repository_id"],
