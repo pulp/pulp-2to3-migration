@@ -102,11 +102,15 @@ class Pulp2RepositoriesFilter(BaseFilterSet):
     Filter for Pulp2Repositories ViewSet.
     """
     pulp2_repo_id = filters.CharFilter()
+    is_migrated = filters.BooleanFilter()
+    not_in_pulp2 = filters.BooleanFilter()
 
     class Meta:
         model = Pulp2Repository
         fields = {
             'pulp2_repo_id': ['exact', 'in'],
+            'is_migrated': ['exact'],
+            'not_in_pulp2': ['exact']
         }
 
 

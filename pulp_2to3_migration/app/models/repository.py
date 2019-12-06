@@ -26,6 +26,8 @@ class Pulp2Repository(BaseModel):
             a repository in Pulp 2
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
+        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
+            the time of the last migration run; False if it's present in Pulp2.
         type (models.CharField): repo type in Pulp 2
 
     Relations:
@@ -38,6 +40,7 @@ class Pulp2Repository(BaseModel):
     pulp2_last_unit_added = models.DateTimeField(null=True)
     pulp2_last_unit_removed = models.DateTimeField(null=True)
     is_migrated = models.BooleanField(default=False)
+    not_in_pulp2 = models.BooleanField(default=False)
     type = models.CharField(max_length=25)
 
     pulp3_repository_version = models.OneToOneField(RepositoryVersion,
@@ -80,6 +83,8 @@ class Pulp2Importer(BaseModel):
         pulp2_last_updated (models.DateTimeField): Last time the importer was updated
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
+        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
+            the time of the last migration run; False if it's present in Pulp2.
 
     Relations:
         pulp2_repository (models.OneToOneField): Pulp 2 repository this importer belongs to
@@ -90,6 +95,7 @@ class Pulp2Importer(BaseModel):
     pulp2_config = JSONField()
     pulp2_last_updated = models.DateTimeField()
     is_migrated = models.BooleanField(default=False)
+    not_in_pulp2 = models.BooleanField(default=False)
 
     pulp2_repository = models.OneToOneField(Pulp2Repository, on_delete=models.CASCADE)
     pulp3_remote = models.OneToOneField(Remote, on_delete=models.SET_NULL, null=True)
@@ -107,6 +113,8 @@ class Pulp2Distributor(BaseModel):
         pulp2_last_updated (models.DateTimeField): Last time the distributor was updated
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
+        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
+            the time of the last migration run; False if it's present in Pulp2.
 
     Relations:
         pulp2_repository (models.ForeignKey): Pulp 2 repository this distributor belongs to
@@ -122,6 +130,7 @@ class Pulp2Distributor(BaseModel):
     pulp2_auto_publish = models.BooleanField()
     pulp2_last_updated = models.DateTimeField()
     is_migrated = models.BooleanField(default=False)
+    not_in_pulp2 = models.BooleanField(default=False)
 
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
     pulp3_publication = models.OneToOneField(Publication, on_delete=models.SET_NULL, null=True)
