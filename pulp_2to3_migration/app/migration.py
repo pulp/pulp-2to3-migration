@@ -149,13 +149,14 @@ async def create_repo_versions(plan):
     Args:
         plan (MigrationPlan): Migration Plan to use.
     """
-    def create_repo_version(pulp3_repo_name, pulp2_repo):
+    def create_repo_version(pulp3_repo_name, pulp2_repo, pulp3_remote=None):
         """
         Create a repo version based on a pulp2 repository
 
         Args:
             pulp3_repo_name(str): repository name in Pulp 3
             pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
+            pulp3_remote(remote): a pulp3 remote
         """
 
         repository_class = PLUGIN_MIGRATORS.get(pulp2_repo.type).pulp3_repository
@@ -175,6 +176,11 @@ async def create_repo_versions(plan):
             pulp2_repo.pulp3_repository_version = new_version
         if not pulp2_repo.pulp3_repository_version:
             pulp2_repo.pulp3_repository_version = pulp3_repo.latest_version()
+        if pulp3_remote:
+            pulp2_repo.pulp3_repository_remote = pulp3_remote
+        # pulp2importer might not be migrated, e.g. config was empty
+        elif hasattr(pulp2_repo, 'pulp2importer'):
+            pulp2_repo.pulp3_repository_remote = pulp2_repo.pulp2importer.pulp3_remote
         pulp2_repo.is_migrated = True
         pulp2_repo.save()
 
@@ -190,6 +196,8 @@ async def create_repo_versions(plan):
     else:
         for repo_name in pulp3_repo_setup:
             repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
+            pulp2_importer_repo_id = pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
+            pulp2_importer_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_importer_repo_id)
             for pulp2_repo_id in repo_versions_setup:
                 try:
                     repo_to_migrate = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
@@ -202,4 +210,5 @@ async def create_repo_versions(plan):
                     # it's possible to have a random order of the repo versions (after migration
                     # re-run, a repo can be changed in pulp 2 and it might not be for the last
                     # repo version)
-                    create_repo_version(repo_name, repo_to_migrate)
+                    create_repo_version(repo_name, repo_to_migrate,
+                                        pulp2_importer_repo.pulp2importer.pulp3_remote)

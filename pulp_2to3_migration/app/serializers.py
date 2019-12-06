@@ -24,7 +24,6 @@ from .models import (
     MigrationPlan,
     Pulp2Content,
     Pulp2Distributor,
-    Pulp2Importer,
     Pulp2Repository,
 )
 
@@ -175,10 +174,12 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
 
     def get_pulp3_remote_href(self, obj):
         """
-        Get pulp3_remote_href from Pulp2Importer
+        Get pulp3_remote_href from pulp2repo
         """
-        importer = Pulp2Importer.objects.filter(pulp2_repository=obj).first()
-        return importer and get_pulp_href(importer.pulp3_remote)
+        remote = obj.pulp3_repository_remote
+        if not remote:
+            return None
+        return get_pulp_href(remote)
 
     def get_pulp3_publication_href(self, obj):
         """
