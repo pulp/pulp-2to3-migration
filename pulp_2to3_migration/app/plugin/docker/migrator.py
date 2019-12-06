@@ -67,6 +67,8 @@ class DockerMigrator(Pulp2to3PluginMigrator):
         'docker_importer': DockerImporter,
     }
 
+    distributor_migrators = {}
+
     @classmethod
     async def migrate_content_to_pulp3(cls):
         """

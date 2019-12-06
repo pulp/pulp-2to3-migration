@@ -121,7 +121,6 @@ async def migrate_importers(plan):
     )
     with ProgressReport(**progress_data) as pb:
         pulp2importers_qs = Pulp2Importer.objects.filter(
-            pulp2_type_id__in=importer_migrators.keys(),
             pulp3_remote=None,
             not_in_pulp2=False)
         pb.total += pulp2importers_qs.count()
