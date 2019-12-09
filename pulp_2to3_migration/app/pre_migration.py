@@ -239,6 +239,16 @@ async def pre_migrate_all_without_content(plan):
         pb.total = mongo_repo_qs.count()
         pb.save()
 
+        distributor_types = []
+        importer_types = []
+        plugins_to_migrate = plan.get_plugins()
+
+        for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
+            if plugin not in plugins_to_migrate:
+                continue
+            distributor_types.extend(plugin_migrator.distributor_migrators.keys())
+            importer_types.extend(plugin_migrator.importer_migrators.keys())
+
         for repo_data in mongo_repo_qs.only('id',
                                             'repo_id',
                                             'last_unit_added',
@@ -248,8 +258,8 @@ async def pre_migrate_all_without_content(plan):
 
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
-                await pre_migrate_importer(repo, importers)
-                await pre_migrate_distributor(repo, distributors)
+                await pre_migrate_importer(repo, importers, importer_types)
+                await pre_migrate_distributor(repo, distributors, distributor_types)
                 await pre_migrate_repocontent(repo)
             pb.increment()
 
@@ -283,7 +293,7 @@ async def pre_migrate_repo(record):
     return repo
 
 
-async def pre_migrate_importer(repo, importers):
+async def pre_migrate_importer(repo, importers, importer_types):
     """
     Pre-migrate a pulp 2 importer.
 
@@ -292,7 +302,7 @@ async def pre_migrate_importer(repo, importers):
         importers(list): A list of importers which are expected to be migrated. If empty,
                          all are migrated.
     """
-    mongo_importer_q = mongo_Q(repo_id=repo.pulp2_repo_id)
+    mongo_importer_q = mongo_Q(repo_id=repo.pulp2_repo_id, importer_type_id__in=importer_types)
 
     # importers with empty config are not needed - nothing to migrate
     mongo_importer_q &= mongo_Q(config__exists=True) & mongo_Q(config__ne={})
@@ -331,7 +341,7 @@ async def pre_migrate_importer(repo, importers):
                   'is_migrated': False})
 
 
-async def pre_migrate_distributor(repo, distributors):
+async def pre_migrate_distributor(repo, distributors, distributor_types):
     """
     Pre-migrate a pulp 2 distributor.
 
@@ -340,7 +350,8 @@ async def pre_migrate_distributor(repo, distributors):
         distributors(list): A list of distributors which are expected to be migrated. If empty,
                             all are migrated.
     """
-    mongo_distributor_q = mongo_Q(repo_id=repo.pulp2_repo_id)
+    mongo_distributor_q = mongo_Q(repo_id=repo.pulp2_repo_id,
+                                  distributor_type_id__in=distributor_types)
 
     # distributors with empty config are not needed - nothing to migrate
     mongo_distributor_q &= mongo_Q(config__ne={})
