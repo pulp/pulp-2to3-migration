@@ -33,6 +33,7 @@ class Pulp2Repository(BaseModel):
     Relations:
         pulp3_repository_version (models.OneToOneField): Pulp 3 repository version which Pulp 2
             repository was migrated to
+        pulp3_repository_remote (models.ForeignKey): Pulp 3 remote to use with the migrated Pulp2
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_repo_id = models.TextField()
@@ -46,6 +47,10 @@ class Pulp2Repository(BaseModel):
     pulp3_repository_version = models.OneToOneField(RepositoryVersion,
                                                     on_delete=models.SET_NULL,
                                                     null=True)
+
+    pulp3_repository_remote = models.ForeignKey(Remote,
+                                                on_delete=models.SET_NULL,
+                                                null=True)
 
 
 class Pulp2RepoContent(BaseModel):
