@@ -3,12 +3,14 @@ import logging
 
 from pulpcore.plugin.models import (
     Content,
+    CreatedResource,
     ProgressReport,
 )
 
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Importer,
+    Pulp2Distributor,
     Pulp2RepoContent,
     Pulp2Repository,
 )
@@ -66,6 +68,10 @@ async def migrate_repositories(plan):
 
             for pulp2repo in pulp2repos_qs:
                 pulp3_repo_name = pulp2repo.pulp2_repo_id
+                # TODO use plugin type instead of the repo
+                # https://pulp.plan.io/issues/5845
+                # adjust structure of plan.get_pulp3_repository_setup()
+                # {iso: {repoA : repo_data, repoB: repo_data}, docker: {repoC: repo_data}}
                 repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
                 repo, created = repository_class.objects.get_or_create(
                     name=pulp3_repo_name,
@@ -88,7 +94,12 @@ async def migrate_repositories(plan):
                     description = pulp3_repo_name
                 else:
                     description = pulp2repo.pulp2_description
-
+                # TODO use plugin type instead of the repo
+                # this will not work in case we specify a repo_id we want to create in pulp3
+                # but does not exist in pulp2
+                # https://pulp.plan.io/issues/5845
+                # adjust structure of plan.get_pulp3_repository_setup()
+                # {iso: {repoA : repo_data, repoB: repo_data}, docker: {repoC: repo_data}}
                 repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
                 repo, created = repository_class.objects.get_or_create(
                     name=pulp3_repo_name,
@@ -139,6 +150,80 @@ async def migrate_importers(plan):
                 pb.save()
 
 
+async def migrate_distributors(plan):
+    """
+    A coroutine to migrate pre-migrated distributors.
+
+    Args:
+        plan (MigrationPlan): Migration Plan to use.
+    """
+    async def migrate_repo_distributor(pb, dist_migrator, pulp2dist, repo_version=None):
+        """
+        Migrate repo distributor.
+
+        Args:
+            dist_migrator(Pulp2to3Distributor): distributor migrator class
+            pulp2dist(Pulp2Distributor): a pre-migrated distributor to migrate
+            repo_version(RepositoryVersion): a pulp3 repo version
+        """
+        publication, distribution, created = await dist_migrator.migrate_to_pulp3(
+            pulp2dist, repo_version)
+        if publication:
+            pulp2dist.pulp3_publication = publication
+        if distribution:
+            pulp2dist.pulp3_distribution = distribution
+        pulp2dist.is_migrated = True
+        pulp2dist.save()
+        # CreatedResource were added  here because publications and repo versions
+        # were listed among created resources and distributions were not. it could
+        # create some confusion remotes are not listed still
+        # TODO figure out what to do to make the output consistent
+        if created:
+            resource = CreatedResource(content_object=distribution)
+            resource.save()
+            pb.increment()
+        else:
+            pb.total -= 1
+            pb.save()
+
+    # gather all needed plugin distributor migrators
+    distributor_migrators = {}
+    plugins_to_migrate = plan.get_plugins()
+
+    for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
+        if plugin not in plugins_to_migrate:
+            continue
+        distributor_migrators.update(**plugin_migrator.distributor_migrators)
+
+    progress_data = dict(
+        message='Migrating distributors to Pulp 3', code='migrating.distributors', total=0
+    )
+    with ProgressReport(**progress_data) as pb:
+        pulp2distributors_qs = Pulp2Distributor.objects.filter(
+            pulp3_distribution=None,
+            pulp3_publication=None,
+            not_in_pulp2=False)
+        pb.total = pulp2distributors_qs.count()
+        pb.save()
+
+        pulp3_repo_setup = plan.get_pulp3_repository_setup()
+        if not pulp3_repo_setup:
+            for pulp2dist in pulp2distributors_qs:
+                dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
+                await migrate_repo_distributor(pb, dist_migrator, pulp2dist)
+        else:
+            for repo_name in pulp3_repo_setup:
+                repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
+                for repo_dist in repo_versions_setup:
+                    # find pulp2repo by id
+                    migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_dist.repo_id)
+                    for dist_id in repo_dist.dist_ids:
+                        pulp2dist = Pulp2Distributor.objects.get(pulp2_object_id=dist_id)
+                        dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
+                        await migrate_repo_distributor(
+                            pb, dist_migrator, pulp2dist, migrated_repo.pulp3_repository_version)
+
+
 async def create_repo_versions(plan):
     """
     A coroutine to create repository versions.
@@ -159,6 +244,8 @@ async def create_repo_versions(plan):
             pulp3_remote(remote): a pulp3 remote
         """
 
+        # TODO update code here after https://pulp.plan.io/issues/5845 is done
+        # use plugin type to identify repository class
         repository_class = PLUGIN_MIGRATORS.get(pulp2_repo.type).pulp3_repository
         pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
         unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(

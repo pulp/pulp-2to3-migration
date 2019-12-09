@@ -66,3 +66,41 @@ class Pulp2to3Importer:
 
         """
         raise NotImplementedError()
+
+
+class Pulp2to3Distributor:
+    """
+    Pulp 2to3 distributor migration interface.
+
+    Plugins should subclass it and define `migrate_to_pulp3` method.
+    """
+
+    class Meta:
+        abstract = True
+
+    @staticmethod
+    def parse_base_config(pulp2distributor, pulp2_config):
+        """
+        Parse and return basic config.
+        """
+        base_config = {}
+        name = '{}-{}'.format(pulp2distributor.pulp2_object_id,
+                              pulp2distributor.pulp2_repository.pulp2_repo_id)
+        base_config['name'] = name
+        return base_config
+
+    @classmethod
+    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+        """
+        Migrate pre-migrated Pulp 2 distributor.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to migrate
+
+        Return:
+            publication/distribution: Corresponding plugin's object in Pulp3
+            created(bool): True if distribution has just been created;
+                           False if distribution is an existing one
+
+        """
+        raise NotImplementedError()

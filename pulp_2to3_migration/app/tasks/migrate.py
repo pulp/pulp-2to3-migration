@@ -12,6 +12,7 @@ from pulp_2to3_migration.app.migration import (
     migrate_content,
     migrate_importers,
     migrate_repositories,
+    migrate_distributors,
 )
 from pulp_2to3_migration.app.models import MigrationPlan
 from pulp_2to3_migration.exceptions import PlanValidationError
@@ -56,5 +57,5 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     loop.run_until_complete(pre_migrate_all_content(plan))
     loop.run_until_complete(migrate_content(plan))
     loop.run_until_complete(create_repo_versions(plan))
-#    loop.run_until_complete(migrate_distributors(plugins_to_migrate))
+    loop.run_until_complete(migrate_distributors(plan))
     loop.close()

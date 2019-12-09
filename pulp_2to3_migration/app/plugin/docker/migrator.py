@@ -11,7 +11,7 @@ from .pulp_2to3_models import (
     Pulp2Tag,
 )
 
-from .repository import DockerImporter
+from .repository import DockerImporter, DockerDistributor
 from pulp_container.app.models import (
     Blob,
     BlobManifest,
@@ -66,8 +66,9 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     importer_migrators = {
         'docker_importer': DockerImporter,
     }
-
-    distributor_migrators = {}
+    distributor_migrators = {
+        'docker_distributor_web': DockerDistributor,
+    }
 
     @classmethod
     async def migrate_content_to_pulp3(cls):
