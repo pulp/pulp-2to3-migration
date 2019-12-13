@@ -50,21 +50,19 @@ class MigrationPlan(BaseModel):
 
     def get_importers(self):
         """
-        Return a list of pulp2 importers to migrate or empty list if all should be migrated.
+        Pulp2 repositories to migrate importers for or empty list if all should be migrated.
         """
-        return self.plan_view.importers_to_migrate
+        return self.plan_view.repositories_importers_to_migrate
 
     def get_distributors(self):
         """
-        Return a list of pulp2 distributors to migrate or empty list if all should be migrated.
+        Pulp2 repositories to migrate distributors for or empty list if all should be migrated.
         """
-        return self.plan_view.distributors_to_migrate
+        return self.plan_view.repositories_distributors_to_migrate
 
     def get_missing_resources(self):
         """
         Return a dict of any resources listed in the plan but missing from Pulp 2.
-
-        Repositories and Importers are enumerated by repo_id, Distributors by distributor_id.
         """
         ret = {}
         if self.plan_view.missing_repositories:
@@ -81,8 +79,8 @@ class _InternalMigrationPlan:
         self.migration_plan = migration_plan
 
         self.plugins_to_migrate = []
-        self.importers_to_migrate = []
-        self.distributors_to_migrate = []
+        self.repositories_importers_to_migrate = []
+        self.repositories_distributors_to_migrate = []
         # pre-migration *just* needs these repos and nothing else
         self.repositories_to_migrate = []
 
@@ -91,14 +89,13 @@ class _InternalMigrationPlan:
         # of other information like repo_versions, importer to use, etc.
         self.repositories_to_create = {}
 
-        self.missing_importers = []
+        self.missing_importers = []     # _repositories_ with missing importers
         self.missing_repositories = []
-        self.missing_distributors = []
+        self.missing_distributors = []  # _repositories_ with missing distributors
 
         # Make sure we've initialized the MongoDB connection first
         connection.initialize()
         self._populate()
-        self._check_missing()
 
     def _populate(self):
         for plugin_data in self.migration_plan['plugins']:
@@ -106,12 +103,33 @@ class _InternalMigrationPlan:
             if plugin_data.get('repositories'):
                 self._parse_repository_data(plugin_data.get('repositories'))
 
+        importers = Importer.objects(
+            repo_id__in=self.repositories_importers_to_migrate).only('repo_id')
+        present = set(importer.repo_id for importer in importers)
+        expected = set(self.repository_importers_to_migrate)
+
+        self.missing_importers = list(expected - present)
+
+        repositories = Repository.objects(
+            repo_id__in=self.repositories_to_migrate).only('repo_id')
+        present = set(repository.repo_id for repository in repositories)
+        expected = set(self.repositories_to_migrate)
+
+        self.missing_repositories = list(expected - present)
+
+        distributors = Distributor.objects(
+            repo_id__in=self.repositories_distributors_to_migrate).only('repo_id')
+        present = set(distributor.repo_id for distributor in distributors)
+        expected = set(self.repository_distributors_to_migrate)
+
+        self.missing_distributors = list(expected - present)
+
     def _parse_repository_data(self, repository_data):
         for repository in repository_data:
             name = repository['name']
 
             _find_importer_repo = repository['pulp2_importer_repository_id']
-            self.importers_to_migrate.append(_find_importer_repo)
+            self.repository_importers_to_migrate.append(_find_importer_repo)
 
             repository_versions = self._parse_repository_version_data(
                 repository.get('repository_versions', [])
@@ -132,29 +150,9 @@ class _InternalMigrationPlan:
             self.repositories_to_migrate.append(pulp2_repository_id)
             repository_versions.append(pulp2_repository_id)
 
-            distributor_ids = repository_version.get('distributor_ids', [])
-            self.distributors_to_migrate.extend(distributor_ids)
+            distributor_repository_ids = repository_version.get(
+                'pulp2_distributor_repository_ids', []
+            )
+            self.repository_distributors_to_migrate.extend(distributor_repository_ids)
 
         return repository_versions
-
-    def _check_missing(self):
-        importers = Importer.objects(
-            repo_id__in=self.importers_to_migrate).only('repo_id')
-        present = set(importer.repo_id for importer in importers)
-        expected = set(self.importers_to_migrate)
-
-        self.missing_importers = list(expected - present)
-
-        repositories = Repository.objects(
-            repo_id__in=self.repositories_to_migrate).only('repo_id')
-        present = set(repository.repo_id for repository in repositories)
-        expected = set(self.repositories_to_migrate)
-
-        self.missing_repositories = list(expected - present)
-
-        distributors = Distributor.objects(
-            distributor_id__in=self.distributors_to_migrate).only('distributor_id')
-        present = set(distributor.distributor_id for distributor in distributors)
-        expected = set(self.distributors_to_migrate)
-
-        self.missing_distributors = list(expected - present)
