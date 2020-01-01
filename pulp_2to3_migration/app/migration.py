@@ -14,7 +14,6 @@ from pulp_2to3_migration.app.models import (
     Pulp2RepoContent,
     Pulp2Repository,
 )
-from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 
 _logger = logging.getLogger(__name__)
 
@@ -27,17 +26,15 @@ async def migrate_content(plan):
          plan (MigrationPlan): Migration Plan to use
     """
     content_migration_coros = []
-    plugins_to_migrate = plan.get_plugins()
 
     progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
     with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
-        for plugin in plugins_to_migrate:
-            plugin_migrator = PLUGIN_MIGRATORS.get(plugin)
-            content_migration_coros.append(plugin_migrator.migrate_content_to_pulp3())
+        for plugin in plan.get_plugin_plans():
+            content_migration_coros.append(plugin.migrator.migrate_content_to_pulp3())
 
             # only used for progress bar counters
-            content_types = plugin_migrator.content_models.keys()
+            content_types = plugin.migrator.content_models.keys()
             pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
                                                           pulp3_content=None)
             pb.total += pulp2content_qs.count()
@@ -53,7 +50,6 @@ async def migrate_repositories(plan):
     A coroutine to migrate pre-migrated repositories.
     """
 
-    repos_to_create = plan.get_pulp3_repository_setup().keys()
     progress_data = dict(
         message='Creating repositories in Pulp 3', code='creating.repositories', total=0
     )
@@ -61,54 +57,47 @@ async def migrate_repositories(plan):
         pulp2repos_qs = Pulp2Repository.objects.filter(pulp3_repository_version=None,
                                                        not_in_pulp2=False)
 
-        # no specific migration plan for repositories
-        if not repos_to_create:
-            pb.total += pulp2repos_qs.count()
-            pb.save()
+        for plugin in plan.get_plugin_plans():
+            repos_to_create = plugin.get_repo_creation_setup()
 
-            for pulp2repo in pulp2repos_qs:
-                pulp3_repo_name = pulp2repo.pulp2_repo_id
-                # TODO use plugin type instead of the repo
-                # https://pulp.plan.io/issues/5845
-                # adjust structure of plan.get_pulp3_repository_setup()
-                # {iso: {repoA : repo_data, repoB: repo_data}, docker: {repoC: repo_data}}
-                repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
-                repo, created = repository_class.objects.get_or_create(
-                    name=pulp3_repo_name,
-                    defaults={'description': pulp2repo.pulp2_description})
-                if created:
-                    pb.increment()
-                else:
-                    pb.total -= 1
-                    pb.save()
+            # no specific migration plan for repositories
+            if not repos_to_create:
+                pb.total += pulp2repos_qs.count()
+                pb.save()
 
-        # specific migration plan for repositories
-        else:
-            pb.total += len(repos_to_create)
-            pb.save()
+                for pulp2repo in pulp2repos_qs:
+                    pulp3_repo_name = pulp2repo.pulp2_repo_id
+                    repository_class = plugin.migrator.pulp3_repository
+                    repo, created = repository_class.objects.get_or_create(
+                        name=pulp3_repo_name,
+                        defaults={'description': pulp2repo.pulp2_description})
+                    if created:
+                        pb.increment()
+                    else:
+                        pb.total -= 1
+                        pb.save()
 
-            for pulp3_repo_name in repos_to_create:
-                try:
-                    pulp2repo = pulp2repos_qs.get(pulp2_repo_id=pulp3_repo_name)
-                except Pulp2Repository.DoesNotExist:
-                    description = pulp3_repo_name
-                else:
-                    description = pulp2repo.pulp2_description
-                # TODO use plugin type instead of the repo
-                # this will not work in case we specify a repo_id we want to create in pulp3
-                # but does not exist in pulp2
-                # https://pulp.plan.io/issues/5845
-                # adjust structure of plan.get_pulp3_repository_setup()
-                # {iso: {repoA : repo_data, repoB: repo_data}, docker: {repoC: repo_data}}
-                repository_class = PLUGIN_MIGRATORS.get(pulp2repo.type).pulp3_repository
-                repo, created = repository_class.objects.get_or_create(
-                    name=pulp3_repo_name,
-                    defaults={'description': description})
-                if created:
-                    pb.increment()
-                else:
-                    pb.total -= 1
-                    pb.save()
+            # specific migration plan for repositories
+            else:
+                pb.total += len(repos_to_create)
+                pb.save()
+
+                for pulp3_repo_name in repos_to_create:
+                    try:
+                        pulp2repo = pulp2repos_qs.get(pulp2_repo_id=pulp3_repo_name)
+                    except Pulp2Repository.DoesNotExist:
+                        description = pulp3_repo_name
+                    else:
+                        description = pulp2repo.pulp2_description
+                    repository_class = plugin.migrator.pulp3_repository
+                    repo, created = repository_class.objects.get_or_create(
+                        name=pulp3_repo_name,
+                        defaults={'description': description})
+                    if created:
+                        pb.increment()
+                    else:
+                        pb.total -= 1
+                        pb.save()
 
 
 async def migrate_importers(plan):
@@ -120,12 +109,9 @@ async def migrate_importers(plan):
     """
     # gather all needed plugin importer migrators
     importer_migrators = {}
-    plugins_to_migrate = plan.get_plugins()
 
-    for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
-        if plugin not in plugins_to_migrate:
-            continue
-        importer_migrators.update(**plugin_migrator.importer_migrators)
+    for plugin in plan.get_plugin_plans():
+        importer_migrators.update(**plugin.migrator.importer_migrators)
 
     progress_data = dict(
         message='Migrating importers to Pulp 3', code='migrating.importers', total=0
@@ -186,15 +172,6 @@ async def migrate_distributors(plan):
             pb.total -= 1
             pb.save()
 
-    # gather all needed plugin distributor migrators
-    distributor_migrators = {}
-    plugins_to_migrate = plan.get_plugins()
-
-    for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
-        if plugin not in plugins_to_migrate:
-            continue
-        distributor_migrators.update(**plugin_migrator.distributor_migrators)
-
     progress_data = dict(
         message='Migrating distributors to Pulp 3', code='migrating.distributors', total=0
     )
@@ -206,22 +183,30 @@ async def migrate_distributors(plan):
         pb.total = pulp2distributors_qs.count()
         pb.save()
 
-        pulp3_repo_setup = plan.get_pulp3_repository_setup()
-        if not pulp3_repo_setup:
-            for pulp2dist in pulp2distributors_qs:
-                dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
-                await migrate_repo_distributor(pb, dist_migrator, pulp2dist)
-        else:
-            for repo_name in pulp3_repo_setup:
-                repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
-                for repo_dist in repo_versions_setup:
-                    # find pulp2repo by id
-                    migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_dist.repo_id)
-                    for dist_id in repo_dist.dist_ids:
-                        pulp2dist = Pulp2Distributor.objects.get(pulp2_object_id=dist_id)
-                        dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
-                        await migrate_repo_distributor(
-                            pb, dist_migrator, pulp2dist, migrated_repo.pulp3_repository_version)
+        # gather all needed plugin distributor migrators
+        distributor_migrators = {}
+
+        for plugin in plan.get_plugin_plans():
+            distributor_migrators.update(**plugin.migrator.distributor_migrators)
+
+            pulp3_repo_setup = plugin.get_repo_creation_setup()
+            if not pulp3_repo_setup:
+                for pulp2dist in pulp2distributors_qs:
+                    dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
+                    await migrate_repo_distributor(pb, dist_migrator, pulp2dist)
+            else:
+                for repo_name in pulp3_repo_setup:
+                    for repo_dist in pulp3_repo_setup[repo_name]['versions']:
+                        pass
+                        # find pulp2repo by id
+                        # migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_dist)
+                        # for dist_id in repo_dist.dist_ids:
+                        #     pulp2dist = Pulp2Distributor.objects.get(pulp2_object_id=dist_id)
+                        #     dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
+                        #     await migrate_repo_distributor(
+                        #         pb, dist_migrator, pulp2dist,
+                        #         migrated_repo.pulp3_repository_version
+                        #     )
 
 
 async def create_repo_versions(plan):
@@ -234,19 +219,17 @@ async def create_repo_versions(plan):
     Args:
         plan (MigrationPlan): Migration Plan to use.
     """
-    def create_repo_version(pulp3_repo_name, pulp2_repo, pulp3_remote=None):
+    def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None):
         """
         Create a repo version based on a pulp2 repository
 
         Args:
+            migrator: migrator to use, provides repo type information
             pulp3_repo_name(str): repository name in Pulp 3
             pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
             pulp3_remote(remote): a pulp3 remote
         """
-
-        # TODO update code here after https://pulp.plan.io/issues/5845 is done
-        # use plugin type to identify repository class
-        repository_class = PLUGIN_MIGRATORS.get(pulp2_repo.type).pulp3_repository
+        repository_class = migrator.pulp3_repository
         pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
         unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
             'pulp2_unit_id', flat=True)
@@ -271,31 +254,34 @@ async def create_repo_versions(plan):
         pulp2_repo.is_migrated = True
         pulp2_repo.save()
 
-    pulp3_repo_setup = plan.get_pulp3_repository_setup()
-    repo_types = plan.get_plugins()
-    if not pulp3_repo_setup:
-        # create one repo version for each pulp 2 repo
-        repos_to_migrate = Pulp2Repository.objects.filter(is_migrated=False,
-                                                          type__in=repo_types,
-                                                          not_in_pulp2=False)
-        for pulp2_repo in repos_to_migrate:
-            create_repo_version(pulp2_repo.pulp2_repo_id, pulp2_repo)
-    else:
-        for repo_name in pulp3_repo_setup:
-            repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
-            pulp2_importer_repo_id = pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
-            pulp2_importer_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_importer_repo_id)
-            for pulp2_repo_id in repo_versions_setup:
-                try:
-                    repo_to_migrate = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
-                                                                  is_migrated=False,
-                                                                  not_in_pulp2=False)
-                except Pulp2Repository.DoesNotExist:
-                    # already migrated
-                    continue
-                else:
-                    # it's possible to have a random order of the repo versions (after migration
-                    # re-run, a repo can be changed in pulp 2 and it might not be for the last
-                    # repo version)
-                    create_repo_version(repo_name, repo_to_migrate,
-                                        pulp2_importer_repo.pulp2importer.pulp3_remote)
+    for plugin in plan.get_plugin_plans():
+        pulp3_repo_setup = plugin.get_repo_creation_setup()
+        if not pulp3_repo_setup:
+            # create one repo version for each pulp 2 repo
+            repos_to_migrate = Pulp2Repository.objects.filter(is_migrated=False,
+                                                              type=plugin.type,
+                                                              not_in_pulp2=False)
+            for pulp2_repo in repos_to_migrate:
+                create_repo_version(plugin.migrator, pulp2_repo.pulp2_repo_id, pulp2_repo)
+        else:
+            for repo_name in pulp3_repo_setup:
+                repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
+                pulp2_importer_repo_id = \
+                    pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
+                pulp2_importer_repo = Pulp2Repository.objects.get(
+                    pulp2_repo_id=pulp2_importer_repo_id
+                )
+                for pulp2_repo_id in repo_versions_setup:
+                    try:
+                        repo_to_migrate = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
+                                                                      is_migrated=False,
+                                                                      not_in_pulp2=False)
+                    except Pulp2Repository.DoesNotExist:
+                        # already migrated
+                        continue
+                    else:
+                        # it's possible to have a random order of the repo versions (after migration
+                        # re-run, a repo can be changed in pulp 2 and it might not be for the last
+                        # repo version)
+                        create_repo_version(plugin.migrator, repo_name, repo_to_migrate,
+                                            pulp2_importer_repo.pulp2importer.pulp3_remote)

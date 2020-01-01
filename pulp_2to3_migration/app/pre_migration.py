@@ -21,7 +21,6 @@ from pulp_2to3_migration.app.models import (
     Pulp2RepoContent,
     Pulp2Repository,
 )
-from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 from pulp_2to3_migration.pulp2.base import (
     Distributor,
     Importer,
@@ -42,19 +41,16 @@ async def pre_migrate_all_content(plan):
     Args:
         plan (MigrationPlan): Migration Plan to use for migration.
     """
-    plugins_to_migrate = plan.get_plugins()
     pre_migrators = []
 
     # get all the content models for the migrating plugins
-    for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
-        if plugin not in plugins_to_migrate:
-            continue
-        for content_type in plugin_migrator.pulp2_content_models:
+    for plugin in plan.get_plugin_plans():
+        for content_type in plugin.migrator.pulp2_content_models:
             # mongodb model
-            pulp2_content_model = plugin_migrator.pulp2_content_models[content_type]
+            pulp2_content_model = plugin.migrator.pulp2_content_models[content_type]
 
             # postgresql model
-            pulp_2to3_detail_model = plugin_migrator.content_models[content_type]
+            pulp_2to3_detail_model = plugin.migrator.content_models[content_type]
 
             content_model = ContentModel(pulp2=pulp2_content_model,
                                          pulp_2to3_detail=pulp_2to3_detail_model)
@@ -203,9 +199,6 @@ async def pre_migrate_all_without_content(plan):
     Args:
         plan(MigrationPlan): A Migration Plan
     """
-    repos = plan.get_repositories()
-    importers = plan.get_importers()
-    distributors = plan.get_distributors()
 
     _logger.debug('Pre-migrating Pulp 2 repositories')
 
@@ -227,6 +220,10 @@ async def pre_migrate_all_without_content(plan):
                         | mongo_Q(last_unit_added__gte=last_updated_naive)
                         | mongo_Q(last_unit_removed__gte=last_updated_naive))
 
+        repos = plan.get_repositories()
+        importers_repos = plan.get_importers_repos()
+        distributors_repos = plan.get_distributors_repos()
+
         # in case only certain repositories are specified in the migration plan
         if repos:
             mongo_repo_q &= mongo_Q(repo_id__in=repos)
@@ -241,13 +238,10 @@ async def pre_migrate_all_without_content(plan):
 
         distributor_types = []
         importer_types = []
-        plugins_to_migrate = plan.get_plugins()
 
-        for plugin, plugin_migrator in PLUGIN_MIGRATORS.items():
-            if plugin not in plugins_to_migrate:
-                continue
-            distributor_types.extend(plugin_migrator.distributor_migrators.keys())
-            importer_types.extend(plugin_migrator.importer_migrators.keys())
+        for plugin in plan.get_plugin_plans():
+            distributor_types.extend(plugin.migrator.distributor_migrators.keys())
+            importer_types.extend(plugin.migrator.importer_migrators.keys())
 
         for repo_data in mongo_repo_qs.only('id',
                                             'repo_id',
@@ -258,8 +252,8 @@ async def pre_migrate_all_without_content(plan):
 
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
-                await pre_migrate_importer(repo, importers, importer_types)
-                await pre_migrate_distributor(repo, distributors, distributor_types)
+                await pre_migrate_importer(repo, importers_repos, importer_types)
+                await pre_migrate_distributor(repo, distributors_repos, distributor_types)
                 await pre_migrate_repocontent(repo)
             pb.increment()
 
