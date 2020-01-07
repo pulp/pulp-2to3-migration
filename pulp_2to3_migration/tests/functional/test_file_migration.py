@@ -42,7 +42,7 @@ def monitor_task(tasks_api, task_href):
         sleep(2)
         task = tasks_api.read(task_href)
     if task.state == 'completed':
-        print("The task was successfful.")
+        print("The task was successful.")
     else:
         print("The task did not finish successfully.")
     return task

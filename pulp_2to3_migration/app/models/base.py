@@ -1,3 +1,5 @@
+import itertools
+
 from django.contrib.postgres.fields import JSONField
 
 from pulpcore.plugin.models import BaseModel
@@ -23,42 +25,44 @@ class MigrationPlan(BaseModel):
     @property
     def plan_view(self):
         """
-        Window to view the validated migration plan data through.
+        Cached and validated migration plan.
         """
         if not self._real_plan:
             self._real_plan = _InternalMigrationPlan(self.plan)
 
         return self._real_plan
 
+    def get_plugin_plans(self):
+        """
+        Return a list of pulp2 plugin migration plan structures.
+
+        Doesn't return migration plans for plugins that don't have a migrator.
+        """
+        return [plugin for plugin in self.plan_view._plugin_plans if plugin.migrator]
+
     def get_plugins(self):
         """
-        Return a list of pulp2 plugins to migrate.
+        Return a list of pulp2 plugin names to migrate.
         """
-        return self.plan_view.plugins_to_migrate
+        return [plugin.type for plugin in self.get_plugin_plans()]
 
     def get_repositories(self):
         """
         Return a list of pulp2 repositories to migrate or empty list if all should be migrated.
         """
-        return self.plan_view.repositories_to_migrate
+        return self.plan_view.all_repositories_to_migrate
 
-    def get_pulp3_repository_setup(self):
+    def get_importers_repos(self):
         """
-        Return a dict of pulp3 repositories to create and information about e.g. versions.
+        Pulp2 repositories to migrate importers for or empty list if all should be migrated.
         """
-        return self.plan_view.repositories_to_create
+        return self.plan_view.all_repositories_importers_to_migrate
 
-    def get_importers(self):
+    def get_distributors_repos(self):
         """
-        Return a list of pulp2 importers to migrate or empty list if all should be migrated.
+        Pulp2 repositories to migrate distributors for or empty list if all should be migrated.
         """
-        return self.plan_view.importers_to_migrate
-
-    def get_distributors(self):
-        """
-        Return a list of pulp2 distributors to migrate or empty list if all should be migrated.
-        """
-        return self.plan_view.distributors_to_migrate
+        return self.plan_view.all_repositories_distributors_to_migrate
 
     def get_missing_resources(self):
         """
@@ -68,93 +72,143 @@ class MigrationPlan(BaseModel):
         """
         ret = {}
         if self.plan_view.missing_repositories:
-            ret['repositories'] = self.plan_view.missing_repositories
-        if self.plan_view.missing_importers:
-            ret['importers'] = self.plan_view.missing_importers
-        if self.plan_view.missing_distributors:
-            ret['distributors'] = self.plan_view.missing_distributors
+            ret['repositories'] = self.plan_view.repositories_missing_repositories
+        if self.plan_view.repositories_missing_importers:
+            ret['repositories_missing_importers'] = self.plan_view.missing_importers
+        if self.plan_view.repositories_missing_distributors:
+            ret['repositories_missing_distributors'] = \
+                self.plan_view.repositories_missing_distributors
         return ret
 
 
 class _InternalMigrationPlan:
     def __init__(self, migration_plan):
-        self.migration_plan = migration_plan
+        self._migration_plan = migration_plan
+        self._plugin_plans = []
 
-        self.plugins_to_migrate = []
-        self.importers_to_migrate = []
-        self.distributors_to_migrate = []
-        # pre-migration *just* needs these repos and nothing else
-        self.repositories_to_migrate = []
+        for plugin_data in self._migration_plan['plugins']:
+            self._plugin_plans.append(PluginMigrationPlan(plugin_data))
 
-        # a nested data structure with a format roughly matching the JSON schema.
-        # dictionary where the key is the name of the pulp3 repo and the value is a dict
-        # of other information like repo_versions, importer to use, etc.
-        self.repositories_to_create = {}
-
-        self.missing_importers = []
+        self.repositories_missing_importers = []
         self.missing_repositories = []
-        self.missing_distributors = []
+        self.repositories_missing_distributors = []
 
         # Make sure we've initialized the MongoDB connection first
         connection.initialize()
-        self._populate()
         self._check_missing()
 
-    def _populate(self):
-        for plugin_data in self.migration_plan['plugins']:
-            self.plugins_to_migrate.append(plugin_data['type'])
-            if plugin_data.get('repositories'):
-                self._parse_repository_data(plugin_data.get('repositories'))
+    @property
+    def all_repositories_importers_to_migrate(self):
+        # flat list of all importers to migrate
+        return list(itertools.chain.from_iterable(
+            [plugin.repositories_importers_to_migrate for plugin in self._plugin_plans]
+        ))
 
-    def _parse_repository_data(self, repository_data):
-        for repository in repository_data:
-            name = repository['name']
+    @property
+    def all_repositories_to_migrate(self):
+        # flat list of all repositories to migrate
+        return list(itertools.chain.from_iterable(
+            [plugin.repositories_to_migrate for plugin in self._plugin_plans]
+        ))
 
-            _find_importer_repo = repository['pulp2_importer_repository_id']
-            self.importers_to_migrate.append(_find_importer_repo)
-
-            repository_versions = self._parse_repository_version_data(
-                repository.get('repository_versions', [])
-            )
-
-            repository_data = {
-                "pulp2_importer_repository_id": _find_importer_repo,
-                "versions": repository_versions
-            }
-
-            self.repositories_to_create[name] = repository_data
-
-    def _parse_repository_version_data(self, repository_version_data):
-        repository_versions = []
-
-        for repository_version in repository_version_data:
-            pulp2_repository_id = repository_version['pulp2_repository_id']
-            self.repositories_to_migrate.append(pulp2_repository_id)
-            repository_versions.append(pulp2_repository_id)
-
-            distributor_ids = repository_version.get('distributor_ids', [])
-            self.distributors_to_migrate.extend(distributor_ids)
-
-        return repository_versions
+    @property
+    def all_repositories_distributors_to_migrate(self):
+        # flat list of all distributors to migrate
+        return list(itertools.chain.from_iterable(
+            [plugin.repositories_distributors_to_migrate for plugin in self._plugin_plans]
+        ))
 
     def _check_missing(self):
         importers = Importer.objects(
-            repo_id__in=self.importers_to_migrate).only('repo_id')
+            repo_id__in=self.all_repositories_importers_to_migrate).only('repo_id')
         present = set(importer.repo_id for importer in importers)
-        expected = set(self.importers_to_migrate)
+        expected = set(self.all_repositories_importers_to_migrate)
 
-        self.missing_importers = list(expected - present)
+        self.repositories_missing_importers = list(expected - present)
 
         repositories = Repository.objects(
-            repo_id__in=self.repositories_to_migrate).only('repo_id')
+            repo_id__in=self.all_repositories_to_migrate).only('repo_id')
         present = set(repository.repo_id for repository in repositories)
-        expected = set(self.repositories_to_migrate)
+        expected = set(self.all_repositories_to_migrate)
 
         self.missing_repositories = list(expected - present)
 
         distributors = Distributor.objects(
-            distributor_id__in=self.distributors_to_migrate).only('distributor_id')
+            distributor_id__in=self.all_repositories_distributors_to_migrate).only('distributor_id')
         present = set(distributor.distributor_id for distributor in distributors)
-        expected = set(self.distributors_to_migrate)
+        expected = set(self.all_repositories_distributors_to_migrate)
 
-        self.missing_distributors = list(expected - present)
+        self.repositories_missing_distributors = list(expected - present)
+
+
+class PluginMigrationPlan:
+    """
+    The migration plan for a specific plugin.
+    """
+
+    def __init__(self, plugin_migration_plan):
+        """
+        Init
+
+        Args:
+            plugin_migration_plan: Dictionary for the migration plan of a specific plugin.
+        """
+        self.repositories_importers_to_migrate = []
+        self.repositories_to_migrate = []
+        self.repositories_distributors_to_migrate = []
+
+        self.repositories_to_create = {}
+        self.type = None
+        self.migrator = None
+        self.empty = True
+
+        self._parse_plugin_plan(plugin_migration_plan)
+
+    def get_repo_creation_setup(self):
+        """
+        Returns a structure that defines the Pulp 3 repositories to be created.
+
+        e.g.
+
+        {
+            # name of the Pulp 3 repository to create
+            'foo': {
+                # id of the Pulp 2 repository whose importer should be the origin of the
+                # created Pulp 3 remote
+                'pulp2_importer_repository_id': "foo"
+                # list of Pulp 2 repository IDs to use as the sources for created repo versions
+                'versions': []
+            }
+        }
+        """
+        return self.repositories_to_create
+
+    def _parse_plugin_plan(self, repository_data):
+        # Circular import avoidance
+        from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
+
+        self.type = repository_data['type']
+        self.migrator = PLUGIN_MIGRATORS.get(self.type)
+
+        repositories = repository_data.get('repositories')
+        if repositories:
+            self.empty = False
+            for repository in repositories:
+                name = repository['name']
+
+                _find_importer_repo = repository['pulp2_importer_repository_id']
+                self.repositories_importers_to_migrate.append(_find_importer_repo)
+
+                repository_versions = []
+                for repository_version in repository.get('repository_versions', []):
+                    pulp2_repository_id = repository_version['pulp2_repository_id']
+                    self.repositories_to_migrate.append(pulp2_repository_id)
+                    repository_versions.append(pulp2_repository_id)
+
+                    distributor_ids = repository_version.get('distributor_ids', [])
+                    self.repositories_distributors_to_migrate.extend(distributor_ids)
+
+                self.repositories_to_create[name] = {
+                    "pulp2_importer_repository_id": _find_importer_repo,
+                    "versions": repository_versions
+                }
