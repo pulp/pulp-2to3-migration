@@ -98,7 +98,7 @@ class Pulp2to3Distributor:
         """
         base_config = {}
         name = '{}-{}'.format(pulp2distributor.pulp2_object_id,
-                              pulp2distributor.pulp2_repository.pulp2_repo_id)
+                              pulp2distributor.pulp2_repo_id)
         base_config['name'] = name
         return base_config
 

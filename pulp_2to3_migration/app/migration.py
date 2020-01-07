@@ -152,6 +152,7 @@ async def migrate_distributors(plan):
             pulp2dist(Pulp2Distributor): a pre-migrated distributor to migrate
             repo_version(RepositoryVersion): a pulp3 repo version
         """
+
         publication, distribution, created = await dist_migrator.migrate_to_pulp3(
             pulp2dist, repo_version)
         if publication:
@@ -196,17 +197,24 @@ async def migrate_distributors(plan):
                     await migrate_repo_distributor(pb, dist_migrator, pulp2dist)
             else:
                 for repo_name in pulp3_repo_setup:
-                    for repo_dist in pulp3_repo_setup[repo_name]['versions']:
-                        pass
+                    for repo_dist in pulp3_repo_setup[repo_name]['repository_versions']:
                         # find pulp2repo by id
-                        # migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_dist)
-                        # for dist_id in repo_dist.dist_ids:
-                        #     pulp2dist = Pulp2Distributor.objects.get(pulp2_object_id=dist_id)
-                        #     dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
-                        #     await migrate_repo_distributor(
-                        #         pb, dist_migrator, pulp2dist,
-                        #         migrated_repo.pulp3_repository_version
-                        #     )
+                        repo_id = repo_dist['repo_id']
+                        dist_repositories = repo_dist['dist_repo_ids']
+
+                        migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_id)
+                        distributor_types = plugin.migrator.distributor_migrators.keys()
+
+                        pulp2dist = Pulp2Distributor.objects.filter(
+                            pulp2_repo_id__in=dist_repositories,
+                            pulp2_type_id__in=list(distributor_types)
+                        )
+                        for dist in pulp2dist:
+                            dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
+                            await migrate_repo_distributor(
+                                pb, dist_migrator, dist,
+                                migrated_repo.pulp3_repository_version
+                            )
 
 
 async def create_repo_versions(plan):
@@ -273,16 +281,18 @@ async def create_repo_versions(plan):
                 create_repo_version(plugin.migrator, pulp2_repo.pulp2_repo_id, pulp2_repo)
         else:
             for repo_name in pulp3_repo_setup:
-                repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
+                repo_versions_setup = pulp3_repo_setup[repo_name]['repository_versions']
                 pulp2_importer_repo_id = \
                     pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
                 pulp2_importer = Pulp2Importer.objects.get(
                     pulp2_repo_id=pulp2_importer_repo_id
                 )
-                for pulp2_repo_id in repo_versions_setup:
+                for pulp2_repo_info in repo_versions_setup:
                     try:
-                        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
-                                                                 not_in_plan=False)
+                        pulp2_repo = Pulp2Repository.objects.get(
+                            pulp2_repo_id=pulp2_repo_info['repo_id'],
+                            not_in_plan=False
+                        )
                     except Pulp2Repository.DoesNotExist:
                         # not in Pulp 2 anymore
                         continue

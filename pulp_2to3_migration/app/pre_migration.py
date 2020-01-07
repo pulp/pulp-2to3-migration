@@ -206,8 +206,6 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
     with ProgressReport(message='Processing Pulp 2 repositories, importers, distributors',
                         code='processing.repositories') as pb:
         repos = plan.get_repositories()
-        importers_repos = plan.get_importers_repos()
-        distributors_repos = plan.get_distributors_repos()
 
         # filter by repo type
         repos_to_check = []
@@ -220,9 +218,11 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
         pb.total = mongo_repo_qs.count()
         pb.save()
 
-        distributor_types = []
-        importer_types = []
+        importers_repos = plan.get_importers_repos()
+        distributors_repos = plan.get_distributors_repos()
 
+        importer_types = []
+        distributor_types = []
         for plugin in plan.get_plugin_plans():
             distributor_types.extend(plugin.migrator.distributor_migrators.keys())
             importer_types.extend(plugin.migrator.importer_migrators.keys())

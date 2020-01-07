@@ -68,7 +68,7 @@ class IsoDistributor(Pulp2to3Distributor):
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
         base_config['base_path'] = pulp2_config.get(
-            'relative_url', pulp2distributor.pulp2_repository.pulp2_repo_id)
+            'relative_url', pulp2distributor.pulp2_repo_id)
         base_config['publication'] = publication
         distribution, created = FileDistribution.objects.update_or_create(**base_config)
 
