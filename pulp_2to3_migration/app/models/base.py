@@ -72,9 +72,10 @@ class MigrationPlan(BaseModel):
         """
         ret = {}
         if self.plan_view.missing_repositories:
-            ret['repositories'] = self.plan_view.repositories_missing_repositories
+            ret['repositories'] = self.plan_view.missing_repositories
         if self.plan_view.repositories_missing_importers:
-            ret['repositories_missing_importers'] = self.plan_view.missing_importers
+            ret['repositories_missing_importers'] = \
+                self.plan_view.repositories_missing_importers
         if self.plan_view.repositories_missing_distributors:
             ret['repositories_missing_distributors'] = \
                 self.plan_view.repositories_missing_distributors
