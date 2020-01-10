@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+from collections import defaultdict
+
 from pulp_2to3_migration.app.pre_migration import (
     mark_removed_resources,
     pre_migrate_all_content,
@@ -17,6 +19,7 @@ from pulp_2to3_migration.app.migration import (
 from pulp_2to3_migration.app.models import MigrationPlan
 from pulp_2to3_migration.exceptions import PlanValidationError
 from pulp_2to3_migration.pulp2 import connection
+from pulp_2to3_migration.pulp2.base import RepositoryContentUnit
 
 
 _logger = logging.getLogger(__name__)
@@ -33,6 +36,52 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
         validate (bool): If True, don't migrate unless validation is successful.
         dry_run (bool): If True, nothing is migrated, only validation happens.
     """
+
+    def get_repo_types(plan):
+        """
+        Create mappings for pulp 2 repository types.
+
+        Identify type by inspecting content of a repo.
+        One mapping is repo_id -> repo_type, the other is repo_type -> list of repo_ids.
+
+        It's used later during pre-migration and identification of removed repos from pulp 2
+
+        Args:
+            plan(MigrationPlan): A Migration Plan
+
+        Returns:
+            repo_id_to_type(dict): mapping from a pulp 2 repo_id to a plugin/repo type
+            type_to_repo_ids(dict): mapping from a plugin/repo type to the list of repo_ids
+
+        """
+        repo_id_to_type = {}
+        type_to_repo_ids = defaultdict(list)
+
+        # mapping content type -> plugin/repo type, e.g. 'docker_blob' -> 'docker'
+        content_type_to_plugin = {}
+
+        for plugin in plan.get_plugin_plans():
+            for content_type in plugin.migrator.pulp2_content_models:
+                content_type_to_plugin[content_type] = plugin.migrator.pulp2_plugin
+
+        # TODO: optimizations.
+        # It looks at each content at the moment. Potential optimizations:
+        #  - Filter by repos from the plan
+        #  - Query any but one record for a repo
+
+        for rec in RepositoryContentUnit.objects().only('repo_id', 'unit_type_id'):
+            repo_id = rec['repo_id']
+            unit_type_id = rec['unit_type_id']
+
+            # a type for a repo is already known or this content/repo type is not supported
+            if repo_id in repo_id_to_type or unit_type_id not in content_type_to_plugin:
+                continue
+            plugin_name = content_type_to_plugin[unit_type_id]
+            repo_id_to_type[repo_id] = plugin_name
+            type_to_repo_ids[plugin_name].append(repo_id)
+
+        return repo_id_to_type, type_to_repo_ids
+
     # MongoDB connection initialization
     connection.initialize()
 
@@ -47,11 +96,16 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     if dry_run:
         return
 
+    # call it here and not inside steps below to generate mapping only once
+    repo_id_to_type, type_to_repo_ids = get_repo_types(plan)
+
     # TODO: if plan is empty for a plugin, only migrate downloaded content
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(pre_migrate_all_without_content(plan))
-    loop.run_until_complete(mark_removed_resources(plan))
+    loop.run_until_complete(pre_migrate_all_without_content(plan,
+                                                            type_to_repo_ids,
+                                                            repo_id_to_type))
+    loop.run_until_complete(mark_removed_resources(plan, type_to_repo_ids))
     loop.run_until_complete(migrate_repositories(plan))
     loop.run_until_complete(migrate_importers(plan))
     loop.run_until_complete(pre_migrate_all_content(plan))
