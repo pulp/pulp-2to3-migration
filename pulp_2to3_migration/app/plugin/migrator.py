@@ -6,6 +6,7 @@ class Pulp2to3PluginMigrator:
 
     Attributes:
         pulp2_plugin(str): Pulp 2 plugin name
+        pulp2_repo_type(str): Pulp 2 repo type
         pulp2_content_models(dict): {'pulp2 content_type_id': 'content class to access MongoDB'}
         pulp2_collection(str): a pulp2 collection which existence signifies that a plugin
                                is installed in pulp2

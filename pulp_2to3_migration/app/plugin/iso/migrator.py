@@ -26,6 +26,7 @@ class IsoMigrator(Pulp2to3PluginMigrator):
 
     """
     pulp2_plugin = 'iso'
+    pulp2_repo_type = 'iso'
     pulp2_content_models = {
         'iso': ISO,
     }

@@ -45,6 +45,7 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     An entry point for migration the Pulp 2 Docker plugin to Pulp 3.
     """
     pulp2_plugin = 'docker'
+    pulp2_repo_type = 'docker'
     pulp2_content_models = {
         'docker_blob': pulp2_models.Blob,
         'docker_manifest': pulp2_models.Manifest,

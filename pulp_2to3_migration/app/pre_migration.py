@@ -229,19 +229,23 @@ async def pre_migrate_all_without_content(plan):
             mongo_repo_q &= mongo_Q(repo_id__in=repos)
 
         # filter repo type
-        repo_types = [f'{type}-repo' for type in plan.get_plugins()]
-        mongo_repo_q &= mongo_Q(__raw__={"notes._repo-type": {'$in': repo_types}})
+        # repo_types = [f'{type}-repo' for type in plan.get_plugins()]
+        # cannot rely on repo-types just query all repos
+        # mongo_repo_q &= mongo_Q(__raw__={"notes._repo-type": {'$in': repo_types}})
 
         mongo_repo_qs = Repository.objects(mongo_repo_q)
+        # TODO this count won't be accurate in case we have repo types we do not migrate
         pb.total = mongo_repo_qs.count()
         pb.save()
 
         distributor_types = []
         importer_types = []
+        content_types = {}
 
         for plugin in plan.get_plugin_plans():
             distributor_types.extend(plugin.migrator.distributor_migrators.keys())
             importer_types.extend(plugin.migrator.importer_migrators.keys())
+            content_types[plugin.migrator.pulp2_repo_type] = plugin.migrator.pulp2_content_models.keys()
 
         for repo_data in mongo_repo_qs.only('id',
                                             'repo_id',
@@ -252,9 +256,10 @@ async def pre_migrate_all_without_content(plan):
 
             with transaction.atomic():
                 repo = await pre_migrate_repo(repo_data)
-                await pre_migrate_importer(repo, importers_repos, importer_types)
-                await pre_migrate_distributor(repo, distributors_repos, distributor_types)
-                await pre_migrate_repocontent(repo)
+                repo_not_empty = await pre_migrate_repocontent(repo, content_types)
+                if repo_not_empty:
+                    await pre_migrate_importer(repo, importers_repos, importer_types)
+                    await pre_migrate_distributor(repo, distributors_repos, distributor_types)
             pb.increment()
 
 
@@ -281,8 +286,7 @@ async def pre_migrate_repo(record):
                   'pulp2_last_unit_added': last_unit_added,
                   'pulp2_last_unit_removed': last_unit_removed,
                   'pulp2_description': record.description,
-                  'is_migrated': False,
-                  'type': record.notes.get('_repo-type')[:-5]})
+                  'is_migrated': False})
 
     return repo
 
@@ -374,7 +378,7 @@ async def pre_migrate_distributor(repo, distributors, distributor_types):
                       'is_migrated': False})
 
 
-async def pre_migrate_repocontent(repo):
+async def pre_migrate_repocontent(repo, content_types):
     """
     Pre-migrate a relation between repositories and content in pulp 2.
 
@@ -390,7 +394,19 @@ async def pre_migrate_repocontent(repo):
     if not mongo_repocontent_qs:
         # Either the repo no longer exists in Pulp 2,
         # or the repo is empty.
-        return
+        repo.delete()
+        return False
+
+    unit = mongo_repocontent_qs[0]
+    for type in content_types:
+        if unit.unit_type_id in content_types[type]:
+            repo.type = type
+            repo.save()
+
+    if not repo.type:
+        # repo types that do not belong to the plan
+        repo.delete()
+        return False
 
     repocontent = []
     for repocontent_data in mongo_repocontent_qs.only('unit_id',
@@ -401,6 +417,7 @@ async def pre_migrate_repocontent(repo):
         repocontent.append(item)
 
     Pulp2RepoContent.objects.bulk_create(repocontent)
+    return True
 
 
 async def mark_removed_resources(plan):
@@ -411,6 +428,7 @@ async def mark_removed_resources(plan):
         plan(MigrationPlan): A Migration Plan
     """
     # Mark repositories
+    #TODO fix here
     mongo_repo_types = [f'{type}-repo' for type in plan.get_plugins()]
     mongo_repo_q = mongo_Q(__raw__={"notes._repo-type": {'$in': mongo_repo_types}})
     mongo_repo_object_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
