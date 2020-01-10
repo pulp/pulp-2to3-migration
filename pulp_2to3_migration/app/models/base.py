@@ -196,8 +196,9 @@ class PluginMigrationPlan:
             for repository in repositories:
                 name = repository['name']
 
-                _find_importer_repo = repository['pulp2_importer_repository_id']
-                self.repositories_importers_to_migrate.append(_find_importer_repo)
+                _find_importer_repo = repository.get('pulp2_importer_repository_id')
+                if _find_importer_repo:
+                    self.repositories_importers_to_migrate.append(_find_importer_repo)
 
                 repository_versions = []
                 for repository_version in repository.get('repository_versions', []):
