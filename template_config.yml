@@ -2,16 +2,18 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-- pulp_file
-- pulp_container
+- { name: pulp_file, branch: master }
+- { name: pulp_container, branch: master }
 black: false
 check_commit_message: true
+cherry_pick_automation: false
 coverage: false
 deploy_client_to_pypi: true
 deploy_client_to_rubygems: true
 deploy_daily_client_to_pypi: true
 deploy_daily_client_to_rubygems: true
 deploy_to_pypi: true
+docker_fixtures: false
 docs_test: false
 plugin_app_label: pulp_2to3_migration
 plugin_camel: Pulp-2To3-Migration
@@ -22,9 +24,11 @@ plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
-pulp_settings:
+pulp_settings: null
+pulpcore_branch: master
 pydocstyle: false
 pypi_username: pulp
+stable_branch: null
 test_bindings: false
 test_performance: false
 travis_notifications:
