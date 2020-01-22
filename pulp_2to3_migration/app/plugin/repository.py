@@ -8,7 +8,13 @@ class Pulp2to3Importer:
     Pulp 2to3 importer migration interface.
 
     Plugins should subclass it and define `migrate_to_pulp3` method.
+
+    Attributes:
+        pulp3_remote_models(list): a list of models for Remotes which plugin supports
+
     """
+    pulp3_remote_models = []
+
     class Meta:
         abstract = True
 
@@ -36,7 +42,7 @@ class Pulp2to3Importer:
             else:
                 proxy_url = '{}://{}'.format(scheme, host)
         remote_name = '{}-{}'.format(pulp2importer.pulp2_object_id,
-                                     pulp2importer.pulp2_repository.pulp2_repo_id)
+                                     pulp2importer.pulp2_repo_id)
         base_config['proxy_url'] = proxy_url
         base_config['name'] = remote_name
         base_config['url'] = pulp2_config.get('feed', '')  # what to do if there is no feed?
@@ -73,7 +79,14 @@ class Pulp2to3Distributor:
     Pulp 2to3 distributor migration interface.
 
     Plugins should subclass it and define `migrate_to_pulp3` method.
+
+    Attributes:
+        pulp3_publication_models(list): a list of models for Publications which plugin supports
+        pulp3_distribution_models(list): a list of models for Distributions which plugin supports
+
     """
+    pulp3_publication_models = []
+    pulp3_distribution_models = []
 
     class Meta:
         abstract = True

@@ -4,6 +4,7 @@ import logging
 from collections import defaultdict
 
 from pulp_2to3_migration.app.pre_migration import (
+    delete_old_resources,
     mark_removed_resources,
     pre_migrate_all_content,
     pre_migrate_all_without_content,
@@ -102,6 +103,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     # TODO: if plan is empty for a plugin, only migrate downloaded content
 
     loop = asyncio.get_event_loop()
+    loop.run_until_complete(delete_old_resources(plan))
     loop.run_until_complete(pre_migrate_all_without_content(plan,
                                                             type_to_repo_ids,
                                                             repo_id_to_type))

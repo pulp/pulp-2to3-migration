@@ -7,6 +7,7 @@ class DockerImporter(Pulp2to3Importer):
     """
     Interface to migrate Pulp 2 Docker importer
     """
+    pulp3_remote_models = [ContainerRemote]
 
     @classmethod
     async def migrate_to_pulp3(cls, pulp2importer):
@@ -32,6 +33,7 @@ class DockerDistributor(Pulp2to3Distributor):
     """
     Interface to migrate Pulp 2 Docker distributor
     """
+    pulp3_distribution_models = [ContainerDistribution]
 
     @classmethod
     async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
