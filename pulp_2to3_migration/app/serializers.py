@@ -156,7 +156,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp2_object_id = serializers.CharField(max_length=255)
     pulp2_repo_id = serializers.CharField()
     is_migrated = serializers.BooleanField(default=False)
-    not_in_pulp2 = serializers.BooleanField(default=False)
+    not_in_plan = serializers.BooleanField(default=False)
 
     pulp3_repository_version = RepositoryVersionRelatedField(
         required=False,
@@ -215,7 +215,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
             "pulp2_object_id",
             "pulp2_repo_id",
             "is_migrated",
-            "not_in_pulp2",
+            "not_in_plan",
             "pulp3_repository_version",
             "pulp3_remote_href",
             "pulp3_publication_href",

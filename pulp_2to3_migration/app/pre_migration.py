@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from collections import namedtuple
-from datetime import datetime
 
 from django.db import transaction
 from django.db.models import Max
@@ -204,39 +203,20 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
 
     _logger.debug('Pre-migrating Pulp 2 repositories')
 
-    # the latest time we have in the migration tool in Pulp2Repository table
-    zero_datetime = timezone.make_aware(datetime(1970, 1, 1), timezone.utc)
-    last_added = Pulp2Repository.objects.aggregate(Max('pulp2_last_unit_added'))[
-        'pulp2_last_unit_added__max'] or zero_datetime
-    last_removed = Pulp2Repository.objects.aggregate(Max('pulp2_last_unit_removed'))[
-        'pulp2_last_unit_removed__max'] or zero_datetime
-    last_updated = max(last_added, last_removed)
-    last_updated_naive = timezone.make_naive(last_updated, timezone=timezone.utc)
-
-    with ProgressReport(message='Pre-migrating Pulp 2 repositories, importers, distributors',
-                        code='premigrating.repositories') as pb:
-        # we pre-migrate:
-        #  - repos which were updated since last migration (last_unit_added/removed >= last_updated)
-        mongo_repo_q = (mongo_Q(last_unit_added__exists=False)
-                        | mongo_Q(last_unit_added__gte=last_updated_naive)
-                        | mongo_Q(last_unit_removed__gte=last_updated_naive))
-
+    with ProgressReport(message='Processing Pulp 2 repositories, importers, distributors',
+                        code='processing.repositories') as pb:
         repos = plan.get_repositories()
         importers_repos = plan.get_importers_repos()
         distributors_repos = plan.get_distributors_repos()
 
         # filter by repo type
-        repos_to_premigrate = []
+        repos_to_check = []
         for repo_type in plan.get_plugins():
-            repos_to_premigrate += type_to_repo_ids[repo_type]
+            repos_to_check += type_to_repo_ids[repo_type]
 
-        # in case only certain repositories are specified in the migration plan
-        if repos:
-            repos_to_premigrate = set(repos).intersection(repos_to_premigrate)
-
-        mongo_repo_q &= mongo_Q(repo_id__in=repos_to_premigrate)
-
+        mongo_repo_q = mongo_Q(repo_id__in=repos_to_check)
         mongo_repo_qs = Repository.objects(mongo_repo_q)
+
         pb.total = mongo_repo_qs.count()
         pb.save()
 
@@ -253,12 +233,15 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
                                             'last_unit_removed',
                                             'description',
                                             'notes'):
-
+            repo = None
+            repo_id = repo_data.repo_id
             with transaction.atomic():
-                repo = await pre_migrate_repo(repo_data, repo_id_to_type)
-                await pre_migrate_importer(repo, importers_repos, importer_types)
-                await pre_migrate_distributor(repo, distributors_repos, distributor_types)
-                await pre_migrate_repocontent(repo)
+                if not repos or repos and repo_id in repos:
+                    repo = await pre_migrate_repo(repo_data, repo_id_to_type)
+                await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
+                await pre_migrate_distributor(repo_id, distributors_repos, distributor_types, repo)
+                if repo:
+                    await pre_migrate_repocontent(repo)
             pb.increment()
 
 
@@ -268,7 +251,7 @@ async def pre_migrate_repo(record, repo_id_to_type):
 
     Args:
         record(Repository): Pulp 2 repository data
-        repo_id_to_type(dict): A mapping from a pulp 2 repo_id to pulp 2 repo type
+        repo_id_to_type(dict): A mapping from a pulp 2 repo_id to pulp 2 repo types
 
     Return:
         repo(Pulp2Repository): A pre-migrated repository
@@ -279,8 +262,7 @@ async def pre_migrate_repo(record, repo_id_to_type):
     last_unit_removed = (record.last_unit_removed
                          and timezone.make_aware(record.last_unit_removed, timezone.utc))
 
-    # repo is mutable, it needs to be created or updated
-    repo, created = Pulp2Repository.objects.update_or_create(
+    repo, created = Pulp2Repository.objects.get_or_create(
         pulp2_object_id=record.id,
         defaults={'pulp2_repo_id': record.repo_id,
                   'pulp2_last_unit_added': last_unit_added,
@@ -289,19 +271,33 @@ async def pre_migrate_repo(record, repo_id_to_type):
                   'type': repo_id_to_type[record.repo_id],
                   'is_migrated': False})
 
+    if not created:
+        # if it was marked as such because it was not present in the migration plan
+        repo.not_in_plan = False
+        # check if there were any changes since last time
+        if last_unit_added != repo.pulp2_last_unit_added or \
+           last_unit_removed != repo.pulp2_last_unit_removed:
+            repo.pulp2_last_unit_added = last_unit_added
+            repo.last_unit_removed = last_unit_removed
+            repo.pulp2_description = record.description
+            repo.is_migrated = False
+        repo.save()
+
     return repo
 
 
-async def pre_migrate_importer(repo, importers, importer_types):
+async def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
     """
     Pre-migrate a pulp 2 importer.
 
     Args:
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository which importer should be migrated
+        repo_id(str): An id of a pulp 2 repository which importer should be migrated
         importers(list): A list of importers which are expected to be migrated. If empty,
                          all are migrated.
+        importer_types(list): a list of supported importer types
+        repo(Pulp2Repository): A pre-migrated pulp 2 repository for this importer
     """
-    mongo_importer_q = mongo_Q(repo_id=repo.pulp2_repo_id, importer_type_id__in=importer_types)
+    mongo_importer_q = mongo_Q(repo_id=repo_id, importer_type_id__in=importer_types)
 
     # importers with empty config are not needed - nothing to migrate
     mongo_importer_q &= mongo_Q(config__exists=True) & mongo_Q(config__ne={})
@@ -330,26 +326,29 @@ async def pre_migrate_importer(repo, importers, importer_types):
     last_updated = (importer_data.last_updated
                     and timezone.make_aware(importer_data.last_updated, timezone.utc))
 
-    # importer is mutable, it needs to be created or updated
-    Pulp2Importer.objects.update_or_create(
+    Pulp2Importer.objects.create(
         pulp2_object_id=importer_data.id,
-        defaults={'pulp2_type_id': importer_data.importer_type_id,
-                  'pulp2_last_updated': last_updated,
-                  'pulp2_config': importer_data.config,
-                  'pulp2_repository': repo,
-                  'is_migrated': False})
+        pulp2_type_id=importer_data.importer_type_id,
+        pulp2_last_updated=last_updated,
+        pulp2_config=importer_data.config,
+        pulp2_repository=repo,
+        pulp2_repo_id=repo_id,
+        is_migrated=False
+    )
 
 
-async def pre_migrate_distributor(repo, distributors, distributor_types):
+async def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None):
     """
     Pre-migrate a pulp 2 distributor.
 
     Args:
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository which distributor should be migrated
+        repo_id(str): An id of a pulp 2 repository which distributor should be migrated
         distributors(list): A list of distributors which are expected to be migrated. If empty,
                             all are migrated.
+        distributor_types(list): a list of supported distributor types
+        repo(Pulp2Repository): A pre-migrated pulp 2 repository for this distributor
     """
-    mongo_distributor_q = mongo_Q(repo_id=repo.pulp2_repo_id,
+    mongo_distributor_q = mongo_Q(repo_id=repo_id,
                                   distributor_type_id__in=distributor_types)
 
     # in case only certain distributors are specified in the migration plan
@@ -367,16 +366,17 @@ async def pre_migrate_distributor(repo, distributors, distributor_types):
         last_updated = (dist_data.last_updated
                         and timezone.make_aware(dist_data.last_updated, timezone.utc))
 
-        # distributor is mutable, it needs to be created or updated
-        Pulp2Distributor.objects.update_or_create(
+        Pulp2Distributor.objects.create(
             pulp2_object_id=dist_data.id,
-            defaults={'pulp2_id': dist_data.distributor_id,
-                      'pulp2_type_id': dist_data.distributor_type_id,
-                      'pulp2_last_updated': last_updated,
-                      'pulp2_config': dist_data.config,
-                      'pulp2_auto_publish': dist_data.auto_publish,
-                      'pulp2_repository': repo,
-                      'is_migrated': False})
+            pulp2_id=dist_data.distributor_id,
+            pulp2_type_id=dist_data.distributor_type_id,
+            pulp2_last_updated=last_updated,
+            pulp2_config=dist_data.config,
+            pulp2_auto_publish=dist_data.auto_publish,
+            pulp2_repository=repo,
+            pulp2_repo_id=repo_id,
+            is_migrated=False
+        )
 
 
 async def pre_migrate_repocontent(repo):
@@ -386,6 +386,9 @@ async def pre_migrate_repocontent(repo):
     Args:
         repo(Pulp2Repository): A pre-migrated pulp 2 repository which importer should be migrated
     """
+    if repo.is_migrated:
+        return
+
     # At this stage the pre-migrated repo is either new or changed since the last run.
     # For the case when something changed, old repo-content relations should be removed.
     Pulp2RepoContent.objects.filter(pulp2_repository=repo).delete()
@@ -410,7 +413,7 @@ async def pre_migrate_repocontent(repo):
 
 async def mark_removed_resources(plan, type_to_repo_ids):
     """
-    Marks repositories, importers and distributors which are no longer present in Pulp2.
+    Marks repositories which are no longer present in Pulp2.
 
     Args:
         plan(MigrationPlan): A Migration Plan
@@ -440,41 +443,40 @@ async def mark_removed_resources(plan, type_to_repo_ids):
 
     removed_repos = []
     for pulp2repo in Pulp2Repository.objects.filter(pulp2_object_id__in=removed_repo_object_ids):
-        pulp2repo.not_in_pulp2 = True
+        pulp2repo.not_in_plan = True
         removed_repos.append(pulp2repo)
 
     Pulp2Repository.objects.bulk_update(objs=removed_repos,
-                                        fields=['not_in_pulp2'],
+                                        fields=['not_in_plan'],
                                         batch_size=1000)
 
-    # Mark importers
-    mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
-    premigrated_imps = Pulp2Importer.objects.filter(pulp2_repository__type__in=psql_repo_types)
-    premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
-                                                                  flat=True))
-    removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
 
-    removed_imps = []
-    for pulp2importer in Pulp2Importer.objects.filter(pulp2_object_id__in=removed_imp_object_ids):
-        pulp2importer.not_in_pulp2 = True
-        removed_imps.append(pulp2importer)
+async def delete_old_resources(plan):
+    """
+    Delete pre-migrated and migrated data for resources which are migrated fully on every run.
 
-    Pulp2Importer.objects.bulk_update(objs=removed_imps,
-                                      fields=['not_in_pulp2'],
-                                      batch_size=1000)
+    Delete pre-migrated importers and distributors, migrated Remotes, Publications,
+    and Distributions according to a specified Migration Plan.
 
-    # Mark distributors
-    mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
-    premigrated_dists = Pulp2Distributor.objects.filter(pulp2_repository__type__in=psql_repo_types)
-    premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
-                                                                    flat=True))
-    removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
+    Args:
+        plan(MigrationPlan): A Migration Plan
 
-    removed_dists = []
-    for pulp2dist in Pulp2Distributor.objects.filter(pulp2_object_id__in=removed_dist_object_ids):
-        pulp2dist.not_in_pulp2 = True
-        removed_dists.append(pulp2dist)
+    """
 
-    Pulp2Distributor.objects.bulk_update(objs=removed_dists,
-                                         fields=['not_in_pulp2'],
-                                         batch_size=1000)
+    for plugin in plan.get_plugin_plans():
+        with transaction.atomic():
+            for importer_type, importer_migrator in plugin.migrator.importer_migrators.items():
+                # delete all pre-migrated importers for this plugin
+                Pulp2Importer.objects.filter(pulp2_type_id=importer_type).delete()
+                # delete all migrated Remotes for this plugin
+                for remote_model in importer_migrator.pulp3_remote_models:
+                    remote_model.objects.all().delete()
+            for distributor_type, distributor_migrator in \
+                    plugin.migrator.distributor_migrators.items():
+                # delete all pre-migrated distributors for this plugin
+                Pulp2Distributor.objects.filter(pulp2_type_id=distributor_type).delete()
+                # delete all migrated Publications and Distributions for this plugin
+                for pub_model in distributor_migrator.pulp3_publication_models:
+                    pub_model.objects.all().delete()
+                for distribution_model in distributor_migrator.pulp3_distribution_models:
+                    distribution_model.objects.all().delete()

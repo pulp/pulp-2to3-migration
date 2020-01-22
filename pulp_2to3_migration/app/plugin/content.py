@@ -159,9 +159,8 @@ class ContentMigrationFirstStage(Stage):
 
         content_types = self.migrator.content_models.keys()
         for ctype in content_types:
-
-            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=ctype,
-                                                          pulp3_content=None)
+            # we need to go through all content in case any of Remotes changed
+            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=ctype)
             total_pulp2content = pulp2content_qs.count()
 
             # determine the batch size if we can have up to 36 coroutines and the number
@@ -195,6 +194,8 @@ class ContentMigrationFirstStage(Stage):
 
         Plugin writers might want to override this method if it doesn't satisfy their needs as is.
 
+        In this implementation there is an assumption that each content has one artifact.
+
         Args:
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
@@ -215,8 +216,6 @@ class ContentMigrationFirstStage(Stage):
 
         for pulp2content in batch:
             pulp_2to3_detail_content = pulp2content.detail_model
-            pulp3content = pulp_2to3_detail_content.create_pulp3_content()
-            future_relations = {'pulp2content': pulp2content}
 
             # get all Lazy Catalog Entries (LCEs) for this content
             pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
@@ -227,11 +226,13 @@ class ContentMigrationFirstStage(Stage):
                                'catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
                 break
 
+            pulp3content = pulp_2to3_detail_content.create_pulp3_content()
+            future_relations = {'pulp2content': pulp2content}
+
             artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
                                                   pulp_2to3_detail_content.expected_digests,
                                                   pulp_2to3_detail_content.expected_size,
                                                   downloaded=pulp2content.downloaded)
-
             # Downloaded content with no LCE
             if not pulp2lazycatalog and pulp2content.downloaded:
                 da = DeclarativeArtifact(

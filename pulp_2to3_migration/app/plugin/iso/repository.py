@@ -13,6 +13,8 @@ class IsoImporter(Pulp2to3Importer):
     """
     Interface to migrate Pulp 2 ISO importer
     """
+    pulp3_remote_models = [FileRemote]
+
     @classmethod
     async def migrate_to_pulp3(cls, pulp2importer):
         """
@@ -34,6 +36,9 @@ class IsoDistributor(Pulp2to3Distributor):
     """
     Interface to migrate Pulp 2 ISO distributor
     """
+    pulp3_publication_models = [FilePublication]
+    pulp3_distribution_models = [FileDistribution]
+
     @classmethod
     async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
@@ -47,6 +52,7 @@ class IsoDistributor(Pulp2to3Distributor):
             created(bool): True if Distribution has just been created; False if Distribution
                            is an existing one
         """
+
         if not repo_version:
             repo_version = pulp2distributor.pulp2_repository.pulp3_repository_version
         publication = repo_version.publication_set.first()

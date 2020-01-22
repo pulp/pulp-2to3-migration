@@ -55,7 +55,7 @@ async def migrate_repositories(plan):
     )
     with ProgressReport(**progress_data) as pb:
         pulp2repos_qs = Pulp2Repository.objects.filter(pulp3_repository_version=None,
-                                                       not_in_pulp2=False)
+                                                       not_in_plan=False)
 
         for plugin in plan.get_plugin_plans():
             repos_to_create = plugin.get_repo_creation_setup()
@@ -119,7 +119,7 @@ async def migrate_importers(plan):
     with ProgressReport(**progress_data) as pb:
         pulp2importers_qs = Pulp2Importer.objects.filter(
             pulp3_remote=None,
-            not_in_pulp2=False)
+            not_in_plan=False)
         pb.total += pulp2importers_qs.count()
         pb.save()
 
@@ -179,7 +179,7 @@ async def migrate_distributors(plan):
         pulp2distributors_qs = Pulp2Distributor.objects.filter(
             pulp3_distribution=None,
             pulp3_publication=None,
-            not_in_pulp2=False)
+            not_in_plan=False)
         pb.total = pulp2distributors_qs.count()
         pb.save()
 
@@ -221,7 +221,9 @@ async def create_repo_versions(plan):
     """
     def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None):
         """
-        Create a repo version based on a pulp2 repository
+        Create a repo version based on a pulp2 repository.
+
+        Add a remote to a corresponding pulp 2 repository.
 
         Args:
             migrator: migrator to use, provides repo type information
@@ -229,6 +231,18 @@ async def create_repo_versions(plan):
             pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
             pulp3_remote(remote): a pulp3 remote
         """
+
+        # Add a remote to every repo, even the migrated one, because remotes are migrated on
+        # every run
+        if pulp3_remote:
+            pulp2_repo.pulp3_repository_remote = pulp3_remote
+        # pulp2importer might not be migrated, e.g. config was empty
+        elif hasattr(pulp2_repo, 'pulp2importer'):
+            pulp2_repo.pulp3_repository_remote = pulp2_repo.pulp2importer.pulp3_remote
+        if pulp2_repo.is_migrated:
+            pulp2_repo.save()
+            return
+
         repository_class = migrator.pulp3_repository
         pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
         unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
@@ -246,42 +260,35 @@ async def create_repo_versions(plan):
             pulp2_repo.pulp3_repository_version = new_version
         if not pulp2_repo.pulp3_repository_version:
             pulp2_repo.pulp3_repository_version = pulp3_repo.latest_version()
-        if pulp3_remote:
-            pulp2_repo.pulp3_repository_remote = pulp3_remote
-        # pulp2importer might not be migrated, e.g. config was empty
-        elif hasattr(pulp2_repo, 'pulp2importer'):
-            pulp2_repo.pulp3_repository_remote = pulp2_repo.pulp2importer.pulp3_remote
         pulp2_repo.is_migrated = True
         pulp2_repo.save()
 
     for plugin in plan.get_plugin_plans():
         pulp3_repo_setup = plugin.get_repo_creation_setup()
         if not pulp3_repo_setup:
-            # create one repo version for each pulp 2 repo
-            repos_to_migrate = Pulp2Repository.objects.filter(is_migrated=False,
-                                                              type=plugin.type,
-                                                              not_in_pulp2=False)
+            repos_to_migrate = Pulp2Repository.objects.filter(type=plugin.type,
+                                                              not_in_plan=False)
             for pulp2_repo in repos_to_migrate:
+                # Create one repo version for each pulp 2 repo if needed.
                 create_repo_version(plugin.migrator, pulp2_repo.pulp2_repo_id, pulp2_repo)
         else:
             for repo_name in pulp3_repo_setup:
                 repo_versions_setup = pulp3_repo_setup[repo_name]['versions']
                 pulp2_importer_repo_id = \
                     pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
-                pulp2_importer_repo = Pulp2Repository.objects.get(
+                pulp2_importer = Pulp2Importer.objects.get(
                     pulp2_repo_id=pulp2_importer_repo_id
                 )
                 for pulp2_repo_id in repo_versions_setup:
                     try:
-                        repo_to_migrate = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
-                                                                      is_migrated=False,
-                                                                      not_in_pulp2=False)
+                        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
+                                                                 not_in_plan=False)
                     except Pulp2Repository.DoesNotExist:
-                        # already migrated
+                        # not in Pulp 2 anymore
                         continue
                     else:
                         # it's possible to have a random order of the repo versions (after migration
                         # re-run, a repo can be changed in pulp 2 and it might not be for the last
                         # repo version)
-                        create_repo_version(plugin.migrator, repo_name, repo_to_migrate,
-                                            pulp2_importer_repo.pulp2importer.pulp3_remote)
+                        create_repo_version(plugin.migrator, repo_name, pulp2_repo,
+                                            pulp2_importer.pulp3_remote)

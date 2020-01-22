@@ -17,7 +17,10 @@ from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi
 )
-from pulp_2to3_migration.pulp2.base import Repository as Pulp2Repository, RepositoryContentUnit
+from pulp_2to3_migration.pulp2.base import (
+    Repository as Pulp2Repository,
+    RepositoryContentUnit
+)
 from pulp_2to3_migration.pulp2.connection import initialize
 from pulp_2to3_migration.tests.functional.util import monitor_task
 
@@ -50,6 +53,27 @@ SPECIFIC_REPOS_MIGRATION_PLAN = json.dumps({
             {
                 "name": "file",
                 "pulp2_importer_repository_id": "file",
+                "repository_versions": [
+                    {"pulp2_repository_id": "file", "distributor_ids": ["file"]}
+                ]
+            },
+            {
+                "name": "file2",
+                "pulp2_importer_repository_id": "file2",
+                "repository_versions": [
+                    {"pulp2_repository_id": "file2", "distributor_ids": ["file2"]}
+                ]
+            },
+        ]
+    }]
+})
+DIFFERENT_IMPORTER_MIGRATION_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file",
+                "pulp2_importer_repository_id": "file2",
                 "repository_versions": [
                     {"pulp2_repository_id": "file", "distributor_ids": ["file"]}
                 ]
@@ -115,6 +139,7 @@ class TestMigrationPlan(unittest.TestCase):
             repo_version_href = self.file_repo_versions_api.list(repo_href).results[0].pulp_href
             repo_version_content = self.file_content_api.list(repository_version=repo_version_href)
             self.assertEqual(PULP_2_ISO_FIXTURE_DATA[repo_id], repo_version_content.count)
+        # TODO: count only not_in_plan=False repositories from ../pulp2repositories/ endpoint
         self.assertEqual(len(repos), self.file_repo_api.list().count)
 
     def test_1_migrate_specific_iso_repositories(self):
@@ -126,3 +151,8 @@ class TestMigrationPlan(unittest.TestCase):
         """Test that a Migration Plan to mirror Pulp 2 executes correctly."""
         repos = list(PULP_2_ISO_FIXTURE_DATA.keys())
         self._do_test(repos, EMPTY_ISO_MIGRATION_PLAN)
+
+    def test_3_migrate_iso_repositories_with_different_importer(self):
+        """Test that a Migration Plan with different importers executes correctly."""
+        repos = list(PULP_2_ISO_FIXTURE_DATA.keys())
+        self._do_test(repos, DIFFERENT_IMPORTER_MIGRATION_PLAN)

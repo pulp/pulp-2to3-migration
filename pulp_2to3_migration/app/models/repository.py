@@ -26,8 +26,7 @@ class Pulp2Repository(BaseModel):
             a repository in Pulp 2
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
-        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
-            the time of the last migration run; False if it's present in Pulp2.
+        not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
         type (models.CharField): repo type in Pulp 2
 
     Relations:
@@ -41,7 +40,7 @@ class Pulp2Repository(BaseModel):
     pulp2_last_unit_added = models.DateTimeField(null=True)
     pulp2_last_unit_removed = models.DateTimeField(null=True)
     is_migrated = models.BooleanField(default=False)
-    not_in_pulp2 = models.BooleanField(default=False)
+    not_in_plan = models.BooleanField(default=False)
     type = models.CharField(max_length=25)
 
     pulp3_repository_version = models.OneToOneField(RepositoryVersion,
@@ -86,10 +85,10 @@ class Pulp2Importer(BaseModel):
         pulp2_type_id (models.CharField): Id of importer type in Pulp 2
         pulp2_config (JSONField): Pulp 2 importer config in JSON format
         pulp2_last_updated (models.DateTimeField): Last time the importer was updated
+        pulp2_repo_id (models.TextField): Id of a repo in Pulp 2 an importer belongs to
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
-        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
-            the time of the last migration run; False if it's present in Pulp2.
+        not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
 
     Relations:
         pulp2_repository (models.OneToOneField): Pulp 2 repository this importer belongs to
@@ -99,10 +98,11 @@ class Pulp2Importer(BaseModel):
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = JSONField()
     pulp2_last_updated = models.DateTimeField()
+    pulp2_repo_id = models.TextField()
     is_migrated = models.BooleanField(default=False)
-    not_in_pulp2 = models.BooleanField(default=False)
+    not_in_plan = models.BooleanField(default=False)
 
-    pulp2_repository = models.OneToOneField(Pulp2Repository, on_delete=models.CASCADE)
+    pulp2_repository = models.OneToOneField(Pulp2Repository, on_delete=models.CASCADE, null=True)
     pulp3_remote = models.OneToOneField(Remote, on_delete=models.SET_NULL, null=True)
 
 
@@ -116,10 +116,10 @@ class Pulp2Distributor(BaseModel):
         pulp2_config (JSONField): Pulp 2 distributor config in JSON format
         pulp2_auto_publish (models.BooleanField): A flag to determine if auto-publish is enabled
         pulp2_last_updated (models.DateTimeField): Last time the distributor was updated
+        pulp2_repo_id (models.TextField): Id of a repo in Pulp 2 a distributor belongs to
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
-        not_in_pulp2 (models.BooleanField): True if a resource is no longer present in Pulp 2 at
-            the time of the last migration run; False if it's present in Pulp2.
+        not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
 
     Relations:
         pulp2_repository (models.ForeignKey): Pulp 2 repository this distributor belongs to
@@ -134,10 +134,11 @@ class Pulp2Distributor(BaseModel):
     pulp2_config = JSONField()
     pulp2_auto_publish = models.BooleanField()
     pulp2_last_updated = models.DateTimeField()
+    pulp2_repo_id = models.TextField()
     is_migrated = models.BooleanField(default=False)
-    not_in_pulp2 = models.BooleanField(default=False)
+    not_in_plan = models.BooleanField(default=False)
 
-    pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
+    pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE, null=True)
     pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
     pulp3_distribution = models.OneToOneField(BaseDistribution,
                                               on_delete=models.SET_NULL,
