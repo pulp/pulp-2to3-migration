@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('core', '0019_add_signing_service_model'),
+        ('core', '0018_auto_20191127_2350'),
     ]
 
     operations = [
