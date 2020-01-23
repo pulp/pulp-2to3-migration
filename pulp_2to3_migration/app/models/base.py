@@ -178,7 +178,21 @@ class PluginMigrationPlan:
                 # created Pulp 3 remote
                 'pulp2_importer_repository_id': "foo"
                 # list of Pulp 2 repository IDs to use as the sources for created repo versions
-                'versions': []
+                'repository_versions': [
+                    # Repository Version 1 use contents of repo "idA" and distributions from the
+                    # distributors in repos "pulp2_distributor_repository_id1" and
+                    # "pulp2_distributor_repository_id2"
+                    {
+                        "pulp2_repository_id": "idA",
+                        "pulp2_distributor_repository_ids":  [
+                            "pulp2_distributor_repository_id1", "pulp2_distributor_repository_id2"
+                        ]
+                    },
+                    {
+                        "pulp2_repository_id": "idB",
+                        "pulp2_distributor_repository_ids":  ["pulp2_distributor_repository_id3"]
+                    },
+                ]
             }
         }
         """
@@ -204,12 +218,17 @@ class PluginMigrationPlan:
                 for repository_version in repository.get('repository_versions', []):
                     pulp2_repository_id = repository_version['pulp2_repository_id']
                     self.repositories_to_migrate.append(pulp2_repository_id)
-                    repository_versions.append(pulp2_repository_id)
 
-                    distributor_ids = repository_version.get('distributor_ids', [])
-                    self.repositories_distributors_to_migrate.extend(distributor_ids)
+                    distributor_repo_ids = repository_version.get(
+                        'pulp2_distributor_repository_ids', []
+                    )
+                    self.repositories_distributors_to_migrate.extend(distributor_repo_ids)
+
+                    repository_versions.append(
+                        {'repo_id': pulp2_repository_id, 'dist_repo_ids': distributor_repo_ids}
+                    )
 
                 self.repositories_to_create[name] = {
                     "pulp2_importer_repository_id": _find_importer_repo,
-                    "versions": repository_versions
+                    "repository_versions": repository_versions
                 }

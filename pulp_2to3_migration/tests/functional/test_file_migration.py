@@ -54,14 +54,20 @@ SPECIFIC_REPOS_MIGRATION_PLAN = json.dumps({
                 "name": "file",
                 "pulp2_importer_repository_id": "file",
                 "repository_versions": [
-                    {"pulp2_repository_id": "file", "distributor_ids": ["file"]}
+                    {
+                        "pulp2_repository_id": "file",
+                        "pulp2_distributor_repository_ids": ["file"]
+                    }
                 ]
             },
             {
                 "name": "file2",
                 "pulp2_importer_repository_id": "file2",
                 "repository_versions": [
-                    {"pulp2_repository_id": "file2", "distributor_ids": ["file2"]}
+                    {
+                        "pulp2_repository_id": "file2",
+                        "pulp2_distributor_repository_ids": ["file2"]
+                    }
                 ]
             },
         ]
@@ -75,14 +81,20 @@ DIFFERENT_IMPORTER_MIGRATION_PLAN = json.dumps({
                 "name": "file",
                 "pulp2_importer_repository_id": "file2",
                 "repository_versions": [
-                    {"pulp2_repository_id": "file", "distributor_ids": ["file"]}
+                    {
+                        "pulp2_repository_id": "file",
+                        "pulp2_distributor_repository_ids": ["file"]
+                    }
                 ]
             },
             {
                 "name": "file2",
                 "pulp2_importer_repository_id": "file2",
                 "repository_versions": [
-                    {"pulp2_repository_id": "file2", "distributor_ids": ["file2"]}
+                    {
+                        "pulp2_repository_id": "file2",
+                        "pulp2_distributor_repository_ids": ["file2"]
+                    }
                 ]
             },
         ]

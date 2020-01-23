@@ -31,10 +31,10 @@ SCHEMA = '''{
                                         "properties": {
                                             "pulp2_repository_id": {
                                                 "type": "string"
-                                             },
-                                             "distributor_ids": {
-                                                 "type": "array"
-                                             }
+                                            },
+                                            "pulp2_distributor_repository_ids": {
+                                                "type": "array"
+                                            }
                                         },
                                         "required": ["pulp2_repository_id"],
                                         "additionalProperties": false
