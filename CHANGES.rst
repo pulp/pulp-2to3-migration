@@ -13,3 +13,77 @@ Changelog
 
 .. towncrier release notes start
 
+0.0.1b1 (2020-01-25)
+====================
+
+Features
+--------
+
+- As a user, I can provide a Migration Plan.
+- Migrate iso content.
+- Migration plan resources are validated against MongoDB (i.e. that they exist).
+  `#5319 <https://pulp.plan.io/issues/5319>`_
+- Migrate on_demand content.
+  `#5337 <https://pulp.plan.io/issues/5337>`_
+- Migrate Pulp 2 repositories into Pulp 3 repo versions.
+  `#5342 <https://pulp.plan.io/issues/5342>`_
+- As a user, I can migrate Pulp 2 distributor into publication/distribution in Pulp 3
+  `#5343 <https://pulp.plan.io/issues/5343>`_
+- Migrate docker content.
+  `#5363 <https://pulp.plan.io/issues/5363>`_
+- Migration plans are respected.
+  `#5450 <https://pulp.plan.io/issues/5450>`_
+- Mark and take into account changed or removed pulp2 resources.
+  `#5632 <https://pulp.plan.io/issues/5632>`_
+- Adding a new endpoint to query the Pulp2-Pulp3 mapping for resources.
+  `#5634 <https://pulp.plan.io/issues/5634>`_
+- Update get_pulp3_repository_setup so repos are grouped by plugin type.
+  `#5845 <https://pulp.plan.io/issues/5845>`_
+
+
+Bugfixes
+--------
+
+- Migrate only those repo types that belong to the plugin that is being migrated
+  `#5485 <https://pulp.plan.io/issues/5485>`_
+- Fix bug preventing the serializer from accepting non-JSON data
+  `#5546 <https://pulp.plan.io/issues/5546>`_
+- Prevent migration of importers/distributors with an empty config.
+  `#5551 <https://pulp.plan.io/issues/5551>`_
+- Specify pulp2_distributor_repository_ids instead of distributor_ids
+  `#5837 <https://pulp.plan.io/issues/5837>`_
+- Importer or distributor can be migrated even if their repository is not.
+  `#5852 <https://pulp.plan.io/issues/5852>`_
+- Fix "local variable 'pulp2repo' referenced before assignment".
+  `#5899 <https://pulp.plan.io/issues/5899>`_
+- Fix repository type identification.
+  `#5957 <https://pulp.plan.io/issues/5957>`_
+- All requested repositories are migrated regardless of the time of the last run or a migration plan change.
+  `#5980 <https://pulp.plan.io/issues/5980>`_
+
+
+Improved Documentation
+----------------------
+
+- Switch to using `towncrier <https://github.com/hawkowl/towncrier>`_ for better release notes.
+  `#5501 <https://pulp.plan.io/issues/5501>`_
+- Add examples of a Migraiton plan.
+  `#5849 <https://pulp.plan.io/issues/5849>`_
+
+
+Deprecations and Removals
+-------------------------
+
+- Change `_id`, `_created`, `_last_updated`, `_href` to `pulp_id`, `pulp_created`, `pulp_last_updated`, `pulp_href`
+  `#5457 <https://pulp.plan.io/issues/5457>`_
+
+
+Misc
+----
+
+- `#4592 <https://pulp.plan.io/issues/4592>`_, `#5491 <https://pulp.plan.io/issues/5491>`_, `#5492 <https://pulp.plan.io/issues/5492>`_, `#5580 <https://pulp.plan.io/issues/5580>`_, `#5633 <https://pulp.plan.io/issues/5633>`_, `#5693 <https://pulp.plan.io/issues/5693>`_, `#5867 <https://pulp.plan.io/issues/5867>`_, `#6035 <https://pulp.plan.io/issues/6035>`_
+
+
+----
+
+
