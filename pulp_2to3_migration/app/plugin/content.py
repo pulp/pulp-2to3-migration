@@ -224,7 +224,7 @@ class ContentMigrationFirstStage(Stage):
             if not pulp2lazycatalog and not pulp2content.downloaded:
                 _logger.warn(_('On_demand content cannot be migrated without an entry in the lazy '
                                'catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
-                break
+                continue
 
             pulp3content = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
