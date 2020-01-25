@@ -1,5 +1,5 @@
 [tool.towncrier]
-package = "pulp-2to3-migration"
+package = "pulp_2to3_migration"
 filename = "CHANGES.rst"
 directory = "CHANGES/"
 title_format = "{version} ({project_date})"
