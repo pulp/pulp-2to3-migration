@@ -1,6 +1,10 @@
 # pulp-2to3-migration
 
 A [Pulp 3](https://pulpproject.org/) plugin to migrate from Pulp 2 to Pulp 3.
+Supported plugins:
+ - Pulp 2 ISO can be migrated into Pulp 3 File.
+ - Pulp 2 Docker can be migrated into Pulp 3 Container.
+ - RPM plugin migration is planned and currently in development. 
 
 ### Requirements
 
@@ -13,27 +17,11 @@ On Pulp 2 machine:
 1. Make sure MongoDB listens on the IP address accesible outside, it should be configured as
 one of the `bindIP`s in /etc/mongod.conf.
 
-2. In case /var/lib/pulp is not on a shared filesystem, configure NFS server and share
-that directory. E.g. on Fedora/CentOS:
+2. Make sure /var/lib/pulp is on a shared filesystem.
 
-```
-$ sudo dnf install nfs-utils
-$ sudo systemctl start nfs-server
-$ sudo vi /etc/exports:
-
-        /var/lib/pulp          <Pulp 3 IP address>(rw,sync,no_root_squash,no_subtree_check)
-
-$ sudo exportfs -a
-```
 
 On Pulp 3 machine:
-1. Mount /var/lib/pulp to your Pulp 3 storage location. By default, it's /var/lib/pulp. E.g. on
-Fedora/Centos:
-
-```
-$ sudo dnf install nfs-utils
-$ sudo mount <IP address of machine which exports /var/lib/pulp>:/var/lib/pulp /var/lib/pulp
-```
+1. Mount /var/lib/pulp to your Pulp 3 storage location. By default, it's /var/lib/pulp.
 
 2. Configure your connection to MongoDB in /etc/pulp/settings.py. You can use the same configuration
  as you have in Pulp 2 (only seeds might need to be different, it depends on your setup).
@@ -62,7 +50,67 @@ $ git clone https://github.com/pulp/pulp-2to3-migration.git
 $ pip install -e pulp-2to3-migration
 ```
 
+Or add it to [the ansible installer](https://github.com/pulp/ansible-pulp) configuration like any
+ other pulp plugin.
+
+
 ### User Guide
+
+#### Migration Plan
+
+To configure what to migrate to Pulp 3, one needs to define a Migration Plan (MP).
+A MP defines which plugins to migrate and how.
+Migration plugin is declarative, fully migrated content and repositories in Pulp 3 will
+ correspond to the most recent MP which has been run.
+ 
+ Type of a plugin specified in a MP is a Pulp 2 plugin. E.g. one needs to specify `iso` to
+  migrate content and repositories into Pulp 3 File plugin.
+ 
+ Examples of the migration plan:
+ 
+  - Migrate all for a specific plugin
+
+```json
+{
+  "plugins": [
+    {
+      "type": "iso"
+    }
+  ]
+}
+```
+
+  - Migrate a pulp 2 repository `file` (into a Pulp 3 repository with one repository version
+  ), using an importer from a pulp 2
+   repository `file2`, and
+   distributors from a repository `file` and `file2`
+   
+```json
+{
+  "plugins": [
+    {
+      "type": "iso",
+      "repositories": [
+        {
+          "name": "file",
+          "repository_versions": [
+            {
+              "pulp2_repository_id": "file",
+              "pulp2_distributor_repository_ids": [
+                "file", "file2"
+              ]
+            }
+          ],
+          "pulp2_importer_repository_id": "file2"
+        }
+      ]
+    }
+  ]
+}
+
+```
+
+#### Workflow
 
 All the commands should be run on Pulp 3 machine.
 
@@ -103,6 +151,7 @@ HTTP/1.1 200 OK
     "results": [
         {
             "is_migrated": true,
+            "not_in_plan": false,
             "pulp2_object_id": "5dbc478c472f68283ad8e6bd",
             "pulp2_repo_id": "file-large",
             "pulp3_distribution_hrefs": [],
