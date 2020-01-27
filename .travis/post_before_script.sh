@@ -21,6 +21,7 @@ pip install $TRAVIS_BUILD_DIR/../pulpcore
 pip install .
 
 cd ../pulp-openapi-generator
+sed -i 's/podman/docker/g' generate.sh
 
 ./generate.sh pulpcore python
 pip install ./pulpcore-client

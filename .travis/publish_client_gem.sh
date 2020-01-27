@@ -38,6 +38,7 @@ fi
 cd
 git clone https://github.com/pulp/pulp-openapi-generator.git
 cd pulp-openapi-generator
+sed -i 's/podman/docker/g' generate.sh
 
 ./generate.sh pulp_2to3_migration ruby $VERSION
 cd pulp_2to3_migration-client
