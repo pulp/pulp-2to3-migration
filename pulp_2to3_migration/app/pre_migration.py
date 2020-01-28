@@ -455,7 +455,7 @@ async def delete_old_resources(plan):
     """
     Delete pre-migrated and migrated data for resources which are migrated fully on every run.
 
-    Delete pre-migrated importers and distributors, migrated Remotes, Publications,
+    Delete pre-migrated importers and distributors, migrated Remotes, Repositories, Publications,
     and Distributions according to a specified Migration Plan.
 
     Args:
@@ -480,3 +480,14 @@ async def delete_old_resources(plan):
                     pub_model.objects.all().delete()
                 for distribution_model in distributor_migrator.pulp3_distribution_models:
                     distribution_model.objects.all().delete()
+            for pulp2_repo in Pulp2Repository.objects.filter(type=plugin.type, is_migrated=True):
+                if pulp2_repo.pulp3_repository_version:
+                    repo_version = pulp2_repo.pulp3_repository_version
+                    pulp2_repo.pulp3_repository_version = None
+                    pulp2_repo.is_migrated = False
+                    pulp2_repo.save()
+                    repo_version.repository.delete()
+                else:
+                    _logger.warn(
+                        "Pulp2Repository says is_migrated=True but has no pulp3_repository_version"
+                    )

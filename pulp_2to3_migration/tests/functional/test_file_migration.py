@@ -140,9 +140,10 @@ class TestMigrationPlan(unittest.TestCase):
         for repo_id in repos:
             pulp3repos = self.file_repo_api.list(name=repo_id)
             # Assert that there is a result
-            self.failIf(not pulp3repos.results,
-                        "Missing a Pulp 3 repository for Pulp 2 "
-                        "repository id '{}'".format(repo_id))
+            self.assertFalse(
+                not pulp3repos.results,
+                "Missing a Pulp 3 repository for Pulp 2 repository id '{}'".format(repo_id)
+            )
             repo_href = pulp3repos.results[0].pulp_href
             # Assert that the name in pulp 3 matches the repo_id in pulp 2
             self.assertEqual(repo_id, pulp3repos.results[0].name)
@@ -166,5 +167,5 @@ class TestMigrationPlan(unittest.TestCase):
 
     def test_3_migrate_iso_repositories_with_different_importer(self):
         """Test that a Migration Plan with different importers executes correctly."""
-        repos = list(PULP_2_ISO_FIXTURE_DATA.keys())
+        repos = list(PULP_2_ISO_FIXTURE_DATA.keys())[:2]
         self._do_test(repos, DIFFERENT_IMPORTER_MIGRATION_PLAN)
