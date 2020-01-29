@@ -1,5 +1,6 @@
 import json
 
+from drf_yasg.utils import swagger_serializer_method
 from gettext import gettext as _
 from django.urls import reverse
 from jsonschema import Draft7Validator
@@ -169,6 +170,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp3_distribution_hrefs = serializers.SerializerMethodField(read_only=True)
     pulp3_repository_href = serializers.SerializerMethodField(read_only=True)
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_pulp3_repository_href(self, obj):
         """
         Get pulp3_repository_href from pulp2repo
@@ -176,6 +178,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         repository = obj.pulp3_repository_version.repository
         return get_pulp_href(repository)
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_pulp3_remote_href(self, obj):
         """
         Get pulp3_remote_href from pulp2repo
@@ -185,13 +188,15 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
             return None
         return get_pulp_href(remote)
 
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_pulp3_publication_href(self, obj):
         """
         Get pulp3_publication_href from pulp3_repository_version
         """
-        pub_list = obj.pulp3_repository_version.publication_set.all()
-        return [get_pulp_href(pub) for pub in pub_list]
+        return get_pulp_href(obj.pulp3_repository_version.publication_set.first())
 
+    @swagger_serializer_method(
+        serializer_or_field=serializers.ListField(child=serializers.CharField()))
     def get_pulp3_distribution_hrefs(self, obj):
         """
         Get pulp3_distribution_hrefs from pulp3_repository_version
