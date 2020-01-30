@@ -202,19 +202,25 @@ async def migrate_distributors(plan):
                         repo_id = repo_dist['repo_id']
                         dist_repositories = repo_dist['dist_repo_ids']
 
-                        migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_id)
-                        distributor_types = plugin.migrator.distributor_migrators.keys()
+                        try:
+                            migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_id,
+                                                                        not_in_plan=False)
+                        except Pulp2Repository.DoesNotExist:
+                            # not in Pulp 2 anymore
+                            continue
+                        else:
+                            distributor_types = plugin.migrator.distributor_migrators.keys()
 
-                        pulp2dist = Pulp2Distributor.objects.filter(
-                            pulp2_repo_id__in=dist_repositories,
-                            pulp2_type_id__in=list(distributor_types)
-                        )
-                        for dist in pulp2dist:
-                            dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
-                            await migrate_repo_distributor(
-                                pb, dist_migrator, dist,
-                                migrated_repo.pulp3_repository_version
+                            pulp2dist = Pulp2Distributor.objects.filter(
+                                pulp2_repo_id__in=dist_repositories,
+                                pulp2_type_id__in=list(distributor_types)
                             )
+                            for dist in pulp2dist:
+                                dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
+                                await migrate_repo_distributor(
+                                    pb, dist_migrator, dist,
+                                    migrated_repo.pulp3_repository_version
+                                )
 
 
 async def create_repo_versions(plan):

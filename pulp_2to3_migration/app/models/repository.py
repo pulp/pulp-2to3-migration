@@ -43,9 +43,9 @@ class Pulp2Repository(BaseModel):
     not_in_plan = models.BooleanField(default=False)
     type = models.CharField(max_length=25)
 
-    pulp3_repository_version = models.OneToOneField(RepositoryVersion,
-                                                    on_delete=models.SET_NULL,
-                                                    null=True)
+    pulp3_repository_version = models.ForeignKey(RepositoryVersion,
+                                                 on_delete=models.SET_NULL,
+                                                 null=True)
 
     pulp3_repository_remote = models.ForeignKey(Remote,
                                                 on_delete=models.SET_NULL,
