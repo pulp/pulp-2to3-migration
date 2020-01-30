@@ -167,6 +167,14 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp3_remote_href = serializers.SerializerMethodField(read_only=True)
     pulp3_publication_href = serializers.SerializerMethodField(read_only=True)
     pulp3_distribution_hrefs = serializers.SerializerMethodField(read_only=True)
+    pulp3_repository_href = serializers.SerializerMethodField(read_only=True)
+
+    def get_pulp3_repository_href(self, obj):
+        """
+        Get pulp3_repository_href from pulp2repo
+        """
+        repository = obj.pulp3_repository_version.repository
+        return get_pulp_href(repository)
 
     def get_pulp3_remote_href(self, obj):
         """
@@ -220,5 +228,6 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
             "pulp3_remote_href",
             "pulp3_publication_href",
             "pulp3_distribution_hrefs",
+            "pulp3_repository_href",
         )
         model = Pulp2Repository
