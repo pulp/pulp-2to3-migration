@@ -41,7 +41,7 @@ SCHEMA = '''{
                                     }
                                 }
                             },
-                            "required": ["name", "pulp2_importer_repository_id", "repository_versions"],
+                            "required": ["name", "repository_versions"],
                             "additionalProperties": false,
                             "$comment": "pulp2_importer_repository_id field should be specified so we know which importer to use when migrating multiple pulp2 repos into repo versions"
                         }

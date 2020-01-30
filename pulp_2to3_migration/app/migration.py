@@ -282,11 +282,19 @@ async def create_repo_versions(plan):
         else:
             for repo_name in pulp3_repo_setup:
                 repo_versions_setup = pulp3_repo_setup[repo_name]['repository_versions']
+
+                # importer might not be migrated, e.g. config is empty or it's not specified in a MP
+                pulp3_remote = None
                 pulp2_importer_repo_id = \
-                    pulp3_repo_setup[repo_name]['pulp2_importer_repository_id']
-                pulp2_importer = Pulp2Importer.objects.get(
-                    pulp2_repo_id=pulp2_importer_repo_id
-                )
+                    pulp3_repo_setup[repo_name].get('pulp2_importer_repository_id')
+                if pulp2_importer_repo_id:
+                    try:
+                        pulp2_importer = Pulp2Importer.objects.get(
+                            pulp2_repo_id=pulp2_importer_repo_id
+                        )
+                        pulp3_remote = pulp2_importer.pulp3_remote
+                    except Pulp2Importer.DoesNotExist:
+                        pass
                 for pulp2_repo_info in repo_versions_setup:
                     try:
                         pulp2_repo = Pulp2Repository.objects.get(
@@ -300,5 +308,4 @@ async def create_repo_versions(plan):
                         # it's possible to have a random order of the repo versions (after migration
                         # re-run, a repo can be changed in pulp 2 and it might not be for the last
                         # repo version)
-                        create_repo_version(plugin.migrator, repo_name, pulp2_repo,
-                                            pulp2_importer.pulp3_remote)
+                        create_repo_version(plugin.migrator, repo_name, pulp2_repo, pulp3_remote)

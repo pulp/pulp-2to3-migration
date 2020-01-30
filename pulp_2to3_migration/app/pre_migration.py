@@ -238,8 +238,13 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
             with transaction.atomic():
                 if not repos or repos and repo_id in repos:
                     repo = await pre_migrate_repo(repo_data, repo_id_to_type)
-                await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
-                await pre_migrate_distributor(repo_id, distributors_repos, distributor_types, repo)
+                # do not pre-migrate importers/distributors in case of special repo setup
+                # and no importers/distributors were specified in the MP
+                if not repos or repos and importers_repos:
+                    await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
+                if not repos or repos and distributors_repos:
+                    await pre_migrate_distributor(repo_id, distributors_repos, distributor_types,
+                                                  repo)
                 if repo:
                     await pre_migrate_repocontent(repo)
             pb.increment()
@@ -321,6 +326,9 @@ async def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
 
     if not importer_data.config.get('feed'):
         # Pulp 3 remotes require URL
+        msg = 'Importer from {repo} cannot be migrated because it does not have a feed'.format(
+            repo=repo_id)
+        _logger.warn(msg)
         return
 
     last_updated = (importer_data.last_updated
