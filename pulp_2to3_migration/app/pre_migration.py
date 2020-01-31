@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import pathlib
 
 from collections import namedtuple
 
@@ -19,6 +21,7 @@ from pulp_2to3_migration.app.models import (
     Pulp2LazyCatalog,
     Pulp2RepoContent,
     Pulp2Repository,
+    Pulp2GlobalImporterConfig,
 )
 from pulp_2to3_migration.pulp2.base import (
     Distributor,
@@ -31,6 +34,25 @@ from pulp_2to3_migration.pulp2.base import (
 _logger = logging.getLogger(__name__)
 
 ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
+
+
+async def pre_migrate_global_configs(plan):
+    for plugin in plan.get_plugins():
+        importer_filename = "/etc/pulp/server/plugins.conf.d/{}_importer.json".format(plugin)
+        importer_path = pathlib.Path(importer_filename)
+
+        if importer_path.exists():
+            with importer_path.open() as f:
+                config_json = json.loads(f.read())
+                importer_config = Pulp2GlobalImporterConfig()
+                importer_config.plugin = plugin
+                importer_config.proxy_url = config_json.get('proxy_url')
+                importer_config.proxy_port = config_json.get('proxy_port')
+                importer_config.proxy_username = config_json.get('proxy_username')
+                importer_config.proxy_password = config_json.get('proxy_password')
+                importer_config.connect_timeout = config_json.get('connect_timeout')
+                importer_config.read_timeout = config_json.get('read_timeout')
+                importer_config.save()
 
 
 async def pre_migrate_all_content(plan):
@@ -488,3 +510,4 @@ async def delete_old_resources(plan):
                     pub_model.objects.all().delete()
                 for distribution_model in distributor_migrator.pulp3_distribution_models:
                     distribution_model.objects.all().delete()
+            Pulp2GlobalImporterConfig.objects.all().delete()

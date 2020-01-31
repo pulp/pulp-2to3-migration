@@ -8,6 +8,7 @@ from pulp_2to3_migration.app.pre_migration import (
     mark_removed_resources,
     pre_migrate_all_content,
     pre_migrate_all_without_content,
+    pre_migrate_global_configs,
 )
 
 from pulp_2to3_migration.app.migration import (
@@ -104,6 +105,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(delete_old_resources(plan))
+    loop.run_until_complete(pre_migrate_global_configs(plan))
     loop.run_until_complete(pre_migrate_all_without_content(plan,
                                                             type_to_repo_ids,
                                                             repo_id_to_type))

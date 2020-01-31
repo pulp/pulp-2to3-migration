@@ -10,3 +10,6 @@ from .repository import (  # noqa
     Pulp2RepoContent,
     Pulp2Repository,
 )
+from .settings import (  # noqa
+    Pulp2GlobalImporterConfig
+)
