@@ -46,24 +46,6 @@ class MigrationPlan(BaseModel):
         """
         return [plugin.type for plugin in self.get_plugin_plans()]
 
-    def get_repositories(self):
-        """
-        Return a list of pulp2 repositories to migrate or empty list if all should be migrated.
-        """
-        return self.plan_view.all_repositories_to_migrate
-
-    def get_importers_repos(self):
-        """
-        Pulp2 repositories to migrate importers for or empty list if all should be migrated.
-        """
-        return self.plan_view.all_repositories_importers_to_migrate
-
-    def get_distributors_repos(self):
-        """
-        Pulp2 repositories to migrate distributors for or empty list if all should be migrated.
-        """
-        return self.plan_view.all_repositories_distributors_to_migrate
-
     def get_missing_resources(self):
         """
         Return a dict of any resources listed in the plan but missing from Pulp 2.
@@ -164,6 +146,24 @@ class PluginMigrationPlan:
         self.empty = True
 
         self._parse_plugin_plan(plugin_migration_plan)
+
+    def get_repositories(self):
+        """
+        Return a list of pulp2 repositories to migrate or empty list if all should be migrated.
+        """
+        return self.repositories_to_migrate
+
+    def get_importers_repos(self):
+        """
+        Pulp2 repositories to migrate importers for or empty list if all should be migrated.
+        """
+        return self.repositories_importers_to_migrate
+
+    def get_distributors_repos(self):
+        """
+        Pulp2 repositories to migrate distributors for or empty list if all should be migrated.
+        """
+        return self.repositories_distributors_to_migrate
 
     def get_repo_creation_setup(self):
         """

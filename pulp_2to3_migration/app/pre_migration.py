@@ -204,50 +204,46 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
     _logger.debug('Pre-migrating Pulp 2 repositories')
 
     with ProgressReport(message='Processing Pulp 2 repositories, importers, distributors',
-                        code='processing.repositories') as pb:
-        repos = plan.get_repositories()
+                        code='processing.repositories', total=0) as pb:
 
-        # filter by repo type
-        repos_to_check = []
-        for repo_type in plan.get_plugins():
-            repos_to_check += type_to_repo_ids[repo_type]
+        for plugin_plan in plan.get_plugin_plans():
+            repos = plugin_plan.get_repositories()
+            # filter by repo type
+            repos_to_check = type_to_repo_ids[plugin_plan.type]
 
-        mongo_repo_q = mongo_Q(repo_id__in=repos_to_check)
-        mongo_repo_qs = Repository.objects(mongo_repo_q)
+            mongo_repo_q = mongo_Q(repo_id__in=repos_to_check)
+            mongo_repo_qs = Repository.objects(mongo_repo_q)
 
-        pb.total = mongo_repo_qs.count()
-        pb.save()
+            pb.total += mongo_repo_qs.count()
+            pb.save()
 
-        importers_repos = plan.get_importers_repos()
-        distributors_repos = plan.get_distributors_repos()
+            importers_repos = plugin_plan.get_importers_repos()
+            distributors_repos = plugin_plan.get_distributors_repos()
 
-        importer_types = []
-        distributor_types = []
-        for plugin in plan.get_plugin_plans():
-            distributor_types.extend(plugin.migrator.distributor_migrators.keys())
-            importer_types.extend(plugin.migrator.importer_migrators.keys())
+            distributor_types = list(plugin_plan.migrator.distributor_migrators.keys())
+            importer_types = list(plugin_plan.migrator.importer_migrators.keys())
 
-        for repo_data in mongo_repo_qs.only('id',
-                                            'repo_id',
-                                            'last_unit_added',
-                                            'last_unit_removed',
-                                            'description',
-                                            'notes'):
-            repo = None
-            repo_id = repo_data.repo_id
-            with transaction.atomic():
-                if not repos or repos and repo_id in repos:
-                    repo = await pre_migrate_repo(repo_data, repo_id_to_type)
-                # do not pre-migrate importers/distributors in case of special repo setup
-                # and no importers/distributors were specified in the MP
-                if not repos or repos and importers_repos:
-                    await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
-                if not repos or repos and distributors_repos:
-                    await pre_migrate_distributor(repo_id, distributors_repos, distributor_types,
-                                                  repo)
-                if repo:
-                    await pre_migrate_repocontent(repo)
-            pb.increment()
+            for repo_data in mongo_repo_qs.only('id',
+                                                'repo_id',
+                                                'last_unit_added',
+                                                'last_unit_removed',
+                                                'description',
+                                                'notes'):
+                repo = None
+                repo_id = repo_data.repo_id
+                with transaction.atomic():
+                    if not repos or repos and repo_id in repos:
+                        repo = await pre_migrate_repo(repo_data, repo_id_to_type)
+                    # do not pre-migrate importers/distributors in case of special repo setup
+                    # and no importers/distributors were specified in the MP
+                    if not repos or repos and importers_repos:
+                        await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
+                    if not repos or repos and distributors_repos:
+                        await pre_migrate_distributor(
+                            repo_id, distributors_repos, distributor_types, repo)
+                    if repo:
+                        await pre_migrate_repocontent(repo)
+                pb.increment()
 
 
 async def pre_migrate_repo(record, repo_id_to_type):
@@ -273,7 +269,7 @@ async def pre_migrate_repo(record, repo_id_to_type):
                   'pulp2_last_unit_added': last_unit_added,
                   'pulp2_last_unit_removed': last_unit_removed,
                   'pulp2_description': record.description,
-                  'type': repo_id_to_type[record.repo_id],
+                  'pulp2_repo_type': repo_id_to_type[record.repo_id],
                   'is_migrated': False})
 
     if not created:
@@ -427,36 +423,35 @@ async def mark_removed_resources(plan, type_to_repo_ids):
         plan(MigrationPlan): A Migration Plan
         type_to_repo_ids(dict): A mapping from a pulp 2 repo type to a list of pulp 2 repo_ids
     """
-    repos = plan.get_repositories()
+    for plugin_plan in plan.get_plugin_plans():
+        repos = plugin_plan.get_repositories()
 
-    # filter by repo type
-    repos_to_consider = []
+        # filter by repo type
+        repos_to_consider = type_to_repo_ids[plugin_plan.type]
 
-    for repo_type in plan.get_plugins():
-        repos_to_consider += type_to_repo_ids[repo_type]
+        # in case only certain repositories are specified in the migration plan
+        if repos:
+            repos_to_consider = set(repos).intersection(repos_to_consider)
 
-    # in case only certain repositories are specified in the migration plan
-    if repos:
-        repos_to_consider = set(repos).intersection(repos_to_consider)
+        mongo_repo_q = mongo_Q(repo_id__in=repos_to_consider)
 
-    mongo_repo_q = mongo_Q(repo_id__in=repos_to_consider)
+        mongo_repo_object_ids = set(
+            str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
 
-    mongo_repo_object_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
+        premigrated_repos = Pulp2Repository.objects.filter(pulp2_repo_type=plugin_plan.type)
+        premigrated_repo_object_ids = set(premigrated_repos.values_list('pulp2_object_id',
+                                                                        flat=True))
+        removed_repo_object_ids = premigrated_repo_object_ids - mongo_repo_object_ids
 
-    psql_repo_types = plan.get_plugins()
-    premigrated_repos = Pulp2Repository.objects.filter(type__in=psql_repo_types)
-    premigrated_repo_object_ids = set(premigrated_repos.values_list('pulp2_object_id',
-                                                                    flat=True))
-    removed_repo_object_ids = premigrated_repo_object_ids - mongo_repo_object_ids
+        removed_repos = []
+        for pulp2repo in Pulp2Repository.objects.filter(
+                pulp2_object_id__in=removed_repo_object_ids):
+            pulp2repo.not_in_plan = True
+            removed_repos.append(pulp2repo)
 
-    removed_repos = []
-    for pulp2repo in Pulp2Repository.objects.filter(pulp2_object_id__in=removed_repo_object_ids):
-        pulp2repo.not_in_plan = True
-        removed_repos.append(pulp2repo)
-
-    Pulp2Repository.objects.bulk_update(objs=removed_repos,
-                                        fields=['not_in_plan'],
-                                        batch_size=1000)
+        Pulp2Repository.objects.bulk_update(objs=removed_repos,
+                                            fields=['not_in_plan'],
+                                            batch_size=1000)
 
 
 async def delete_old_resources(plan):
