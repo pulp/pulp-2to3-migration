@@ -2,6 +2,8 @@ import json
 
 from collections import OrderedDict
 
+from django.db import IntegrityError
+
 from . import pulp2_models
 
 from .pulp_2to3_models import (
@@ -28,7 +30,6 @@ from pulp_2to3_migration.app.plugin.api import (
     Pulp2to3PluginMigrator,
     RelatePulp2to3Content,
 )
-
 from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
@@ -211,7 +212,10 @@ class InterrelateContent(Stage):
         blob_list = Blob.objects.filter(digest__in=related_dc_id_list)
         for blob in blob_list:
             thru = BlobManifest(manifest=dc.content, manifest_blob=blob)
-            thru.save()
+            try:
+                thru.save()
+            except IntegrityError:
+                pass
 
     def relate_manifest_to_list(self, dc):
         """
@@ -245,7 +249,10 @@ class InterrelateContent(Stage):
                                         os_version=platform.get('os.version', ''),
                                         os_features=platform.get('os.features', '')
                                         )
-            thru.save()
+            try:
+                thru.save()
+            except IntegrityError:
+                pass
 
 
 class DockerContentSaver(ContentSaver):
