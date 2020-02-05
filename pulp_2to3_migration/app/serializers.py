@@ -175,8 +175,9 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         """
         Get pulp3_repository_href from pulp2repo
         """
-        repository = obj.pulp3_repository_version.repository
-        return get_pulp_href(repository)
+        rv = obj.pulp3_repository_version
+        if rv:
+            return get_pulp_href(rv.repository)
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_pulp3_remote_href(self, obj):
@@ -184,16 +185,17 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         Get pulp3_remote_href from pulp2repo
         """
         remote = obj.pulp3_repository_remote
-        if not remote:
-            return None
-        return get_pulp_href(remote)
+        if remote:
+            return get_pulp_href(remote)
 
     @swagger_serializer_method(serializer_or_field=serializers.CharField)
     def get_pulp3_publication_href(self, obj):
         """
         Get pulp3_publication_href from pulp3_repository_version
         """
-        return get_pulp_href(obj.pulp3_repository_version.publication_set.first())
+        rv = obj.pulp3_repository_version
+        if rv:
+            return get_pulp_href(rv.publication_set.first())
 
     @swagger_serializer_method(
         serializer_or_field=serializers.ListField(child=serializers.CharField()))
@@ -202,7 +204,10 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         Get pulp3_distribution_hrefs from pulp3_repository_version
         """
         dist_list = []
-        result_qs = obj.pulp3_repository_version.publication_set.all()
+        rv = obj.pulp3_repository_version
+        if not rv:
+            return dist_list
+        result_qs = rv.publication_set.all()
         if result_qs:
             # repo_version  has publication, therefore is a PublicationDistribution
             for publication in result_qs:
@@ -212,11 +217,11 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         else:
             # empty result_qs means that repo_version does not need publication,
             # or repo_version was not published/distributed
-            pulp_type = obj.pulp3_repository_version.repository.pulp_type
+            pulp_type = rv.repository.pulp_type
             distribution_type = f'{pulp_type.replace(".", "_")}distribution'
-            if hasattr(obj.pulp3_repository_version, distribution_type):
+            if hasattr(rv, distribution_type):
                 # repo_version is distributed directly trough RepositoryDistribution
-                plugin_distribution = getattr(obj.pulp3_repository_version, distribution_type)
+                plugin_distribution = getattr(rv, distribution_type)
                 dist_list = plugin_distribution.all()
             else:
                 # repo_version was not published/distributed
