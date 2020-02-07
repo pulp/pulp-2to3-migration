@@ -56,7 +56,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
         """
         repo_id_to_type = {}
-        type_to_repo_ids = defaultdict(list)
+        type_to_repo_ids = defaultdict(set)
 
         # mapping content type -> plugin/repo type, e.g. 'docker_blob' -> 'docker'
         content_type_to_plugin = {}
@@ -64,6 +64,12 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
         for plugin in plan.get_plugin_plans():
             for content_type in plugin.migrator.pulp2_content_models:
                 content_type_to_plugin[content_type] = plugin.migrator.pulp2_plugin
+
+            repos = plugin.get_repositories()
+
+            for repo in repos:
+                repo_id_to_type[repo] = plugin.type
+            type_to_repo_ids[plugin.type].update(repos)
 
         # TODO: optimizations.
         # It looks at each content at the moment. Potential optimizations:
@@ -79,7 +85,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
                 continue
             plugin_name = content_type_to_plugin[unit_type_id]
             repo_id_to_type[repo_id] = plugin_name
-            type_to_repo_ids[plugin_name].append(repo_id)
+            type_to_repo_ids[plugin_name].add(repo_id)
 
         return repo_id_to_type, type_to_repo_ids
 
