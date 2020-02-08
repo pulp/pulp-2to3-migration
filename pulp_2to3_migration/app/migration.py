@@ -54,10 +54,12 @@ async def migrate_repositories(plan):
         message='Creating repositories in Pulp 3', code='creating.repositories', total=0
     )
     with ProgressReport(**progress_data) as pb:
-        pulp2repos_qs = Pulp2Repository.objects.filter(pulp3_repository_version=None,
-                                                       not_in_plan=False)
-
         for plugin in plan.get_plugin_plans():
+            pulp2repos_qs = Pulp2Repository.objects.filter(
+                pulp3_repository_version=None,
+                not_in_plan=False,
+                pulp2_repo_type=plugin.type,
+            )
             repos_to_create = plugin.get_repo_creation_setup()
 
             # no specific migration plan for repositories
@@ -177,18 +179,18 @@ async def migrate_distributors(plan):
         message='Migrating distributors to Pulp 3', code='migrating.distributors', total=0
     )
     with ProgressReport(**progress_data) as pb:
-        pulp2distributors_qs = Pulp2Distributor.objects.filter(
-            pulp3_distribution=None,
-            pulp3_publication=None,
-            not_in_plan=False)
-        pb.total = pulp2distributors_qs.count()
-        pb.save()
-
-        # gather all needed plugin distributor migrators
-        distributor_migrators = {}
-
         for plugin in plan.get_plugin_plans():
-            distributor_migrators.update(**plugin.migrator.distributor_migrators)
+            distributor_types = list(plugin.migrator.distributor_migrators.keys())
+            pulp2distributors_qs = Pulp2Distributor.objects.filter(
+                pulp3_distribution=None,
+                pulp3_publication=None,
+                not_in_plan=False,
+                pulp2_type_id__in=distributor_types
+            )
+            pb.total += pulp2distributors_qs.count()
+            pb.save()
+
+            distributor_migrators = plugin.migrator.distributor_migrators
 
             pulp3_repo_setup = plugin.get_repo_creation_setup()
             if not pulp3_repo_setup:
@@ -209,11 +211,9 @@ async def migrate_distributors(plan):
                             # not in Pulp 2 anymore
                             continue
                         else:
-                            distributor_types = plugin.migrator.distributor_migrators.keys()
-
                             pulp2dist = Pulp2Distributor.objects.filter(
                                 pulp2_repo_id__in=dist_repositories,
-                                pulp2_type_id__in=list(distributor_types)
+                                pulp2_type_id__in=distributor_types
                             )
                             for dist in pulp2dist:
                                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
@@ -280,7 +280,7 @@ async def create_repo_versions(plan):
     for plugin in plan.get_plugin_plans():
         pulp3_repo_setup = plugin.get_repo_creation_setup()
         if not pulp3_repo_setup:
-            repos_to_migrate = Pulp2Repository.objects.filter(type=plugin.type,
+            repos_to_migrate = Pulp2Repository.objects.filter(pulp2_repo_type=plugin.type,
                                                               not_in_plan=False)
             for pulp2_repo in repos_to_migrate:
                 # Create one repo version for each pulp 2 repo if needed.

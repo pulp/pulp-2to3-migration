@@ -156,6 +156,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     )
     pulp2_object_id = serializers.CharField(max_length=255)
     pulp2_repo_id = serializers.CharField()
+    pulp2_repo_type = serializers.CharField()
     is_migrated = serializers.BooleanField(default=False)
     not_in_plan = serializers.BooleanField(default=False)
 
@@ -232,6 +233,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         fields = ModelSerializer.Meta.fields + (
             "pulp2_object_id",
             "pulp2_repo_id",
+            "pulp2_repo_type",
             "is_migrated",
             "not_in_plan",
             "pulp3_repository_version",

@@ -41,7 +41,7 @@ class Pulp2Repository(BaseModel):
     pulp2_last_unit_removed = models.DateTimeField(null=True)
     is_migrated = models.BooleanField(default=False)
     not_in_plan = models.BooleanField(default=False)
-    type = models.CharField(max_length=25)
+    pulp2_repo_type = models.CharField(max_length=25)
 
     pulp3_repository_version = models.ForeignKey(RepositoryVersion,
                                                  on_delete=models.SET_NULL,
