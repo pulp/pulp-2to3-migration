@@ -103,6 +103,7 @@ spec:
     size: "40Gi"
   image: pulp-2to3-migration
   tag: "${TAG}"
+  pulpcore: pulpcore~=3.0
   database_connection:
     username: pulp
     password: pulp
