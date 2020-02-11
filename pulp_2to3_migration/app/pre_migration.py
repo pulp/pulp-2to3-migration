@@ -376,7 +376,6 @@ async def pre_migrate_distributor(repo_id, distributors, distributor_types, repo
             pulp2_type_id=dist_data.distributor_type_id,
             pulp2_last_updated=last_updated,
             pulp2_config=dist_data.config,
-            pulp2_auto_publish=dist_data.auto_publish,
             pulp2_repository=repo,
             pulp2_repo_id=repo_id,
             is_migrated=False
