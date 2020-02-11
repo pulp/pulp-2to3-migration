@@ -13,6 +13,49 @@ Changelog
 
 .. towncrier release notes start
 
+0.0.1rc1 (2020-02-11)
+=====================
+
+Features
+--------
+
+- Add pulp3_repository_href to pulp2repositories api.
+  `#6053 <https://pulp.plan.io/issues/6053>`_
+- Make pulp2 importer optional.
+  `#6056 <https://pulp.plan.io/issues/6056>`_
+- Migrate empty repos if the migration plan specifies them.
+  `#6070 <https://pulp.plan.io/issues/6070>`_
+
+Bugfixes
+--------
+
+- Handling missing plugin modules
+  `#5820 <https://pulp.plan.io/issues/5820>`_
+- Fix migration of multiple plugins.
+  `#5978 <https://pulp.plan.io/issues/5978>`_
+- Add error message for the importers that cannot be migrated.
+  `#5984 <https://pulp.plan.io/issues/5984>`_
+- Fix the bindings for publication and distribution hrefs fields on pulp2repositories API.
+  `#6049 <https://pulp.plan.io/issues/6049>`_
+- Fix rendering of the pulp2repositories after a failed migration.
+  `#6058 <https://pulp.plan.io/issues/6058>`_
+- Handle case when repos are removed and re-created.
+  `#6062 <https://pulp.plan.io/issues/6062>`_
+- Fix docker repo migration with a custom distributor.
+  `#6097 <https://pulp.plan.io/issues/6097>`_
+- Fix blobs and manifests relations on migration re-run.
+  `#6099 <https://pulp.plan.io/issues/6099>`_
+
+
+Misc
+----
+
+- `#6131 <https://pulp.plan.io/issues/6131>`_
+
+
+----
+
+
 0.0.1b1 (2020-01-25)
 ====================
 

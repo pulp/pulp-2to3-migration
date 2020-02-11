@@ -82,7 +82,7 @@ if [ -n "$PULP_BINDINGS_PR_NUMBER" ]; then
 fi
 
 
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch master
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.0
 
 if [ -n "$PULP_PR_NUMBER" ]; then
   cd pulpcore

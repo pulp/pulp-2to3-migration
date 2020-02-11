@@ -49,13 +49,13 @@ fi
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@0.1
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@1.0
 fi
 
 if [ -n "$TRAVIS_TAG" ]; then

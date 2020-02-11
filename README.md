@@ -180,8 +180,8 @@ from Pulp 2 to Pulp 3, here are some guidelines.
  to the list of the "migrators" entry_points in setup.py.
 
 3. Add a Content model to communicate with Pulp 2.
- - It has to have a field `type` which will correspond to the `_content_type_id` of your Content
- in Pulp 2. Don't forget to add it to PULP_2TO3_CONTENT_MODEL_MAP in step 1.
+ - It has to have a field `pulp2_type` which will correspond to the `_content_type_id` of your Content
+ in Pulp 2. Don't forget to add it to `content_models` in step 1.
 
 4. Add a Content model to pre-migrate Pulp 2 content to (subclass the provided `Pulp2to3Content`
 class). It has to have:
@@ -198,8 +198,8 @@ class). It has to have:
  artifact creation.
 
 5. Subclass the provided `Pulp2to3Importer` class and define `migrate_to_pulp3` method which
-create a plugin Remote instance based on the provided pre-migrated `Pulp2Importer`.
+creates a plugin Remote instance based on the provided pre-migrated `Pulp2Importer`.
 
 6. Subclass the provided `Pulp2to3Distributor` class and define `migrate_to_pulp3` method which
-create a plugin Publication and/or Distribution instance (depends on the plugin) based on the
+creates a plugin Publication and/or Distribution instance (depends on the plugin) based on the
 provided pre-migrated `Pulp2Distributor`.
