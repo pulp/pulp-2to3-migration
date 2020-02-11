@@ -15,7 +15,7 @@ class Pulp2ISO(Pulp2to3Content):
     checksum = models.CharField(max_length=64)
     size = models.BigIntegerField()
 
-    type = 'iso'
+    pulp2_type = 'iso'
     checksum_type = 'sha256'
 
     class Meta:

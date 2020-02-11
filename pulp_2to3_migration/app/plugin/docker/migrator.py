@@ -128,20 +128,20 @@ class DockerContentMigrationFirstStage(ContentMigrationFirstStage):
             pulp3content = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
             # store digests for future pulp3 content relations
-            if pulp_2to3_detail_content.type == 'docker_manifest':
+            if pulp_2to3_detail_content.pulp2_type == 'docker_manifest':
 
                 future_relations['blob_rel'] = pulp_2to3_detail_content.blobs
                 future_relations['config_blob_rel'] = pulp_2to3_detail_content.config_blob
 
-            if pulp_2to3_detail_content.type == 'docker_manifest_list':
+            if pulp_2to3_detail_content.pulp2_type == 'docker_manifest_list':
 
                 future_relations['man_rel'] = pulp_2to3_detail_content.listed_manifests
 
-            if pulp_2to3_detail_content.type == 'docker_tag':
+            if pulp_2to3_detail_content.pulp2_type == 'docker_tag':
 
                 future_relations['tag_rel'] = pulp_2to3_detail_content.tagged_manifest
 
-            if pulp_2to3_detail_content.type == 'docker_tag':
+            if pulp_2to3_detail_content.pulp2_type == 'docker_tag':
                 # dc without artifact, will assign arifact in the _pre_save hook
                 dc = DeclarativeContent(content=pulp3content)
             else:

@@ -17,7 +17,7 @@ class Pulp2Blob(Pulp2to3Content):
     digest = models.CharField(max_length=255)
     media_type = models.CharField(max_length=80)
 
-    type = 'docker_blob'
+    pulp2_type = 'docker_blob'
     checksum_type = 'sha256'
 
     class Meta:
@@ -75,7 +75,7 @@ class Pulp2Manifest(Pulp2to3Content):
     blobs = ArrayField(models.CharField(max_length=255))
     config_blob = models.CharField(max_length=255, null=True)
 
-    type = 'docker_manifest'
+    pulp2_type = 'docker_manifest'
     checksum_type = 'sha256'
 
     class Meta:
@@ -157,7 +157,7 @@ class Pulp2ManifestList(Pulp2to3Content):
     media_type = models.CharField(max_length=80)
     listed_manifests = ArrayField(models.CharField(max_length=255))
 
-    type = 'docker_manifest_list'
+    pulp2_type = 'docker_manifest_list'
     checksum_type = 'sha256'
 
     class Meta:
@@ -218,7 +218,7 @@ class Pulp2Tag(Pulp2to3Content):
     tagged_manifest = models.CharField(max_length=255)
     repo_id = models.TextField()
 
-    type = 'docker_tag'
+    pulp2_type = 'docker_tag'
     checksum_type = 'sha256'
 
     class Meta:

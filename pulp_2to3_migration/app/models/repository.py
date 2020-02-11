@@ -27,10 +27,10 @@ class Pulp2Repository(BaseModel):
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
             if it's never been migrated or if it's been updated since the last migration run.
         not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
-        type (models.CharField): repo type in Pulp 2
+        pulp2_repo_type (models.CharField): repo type in Pulp 2
 
     Relations:
-        pulp3_repository_version (models.OneToOneField): Pulp 3 repository version which Pulp 2
+        pulp3_repository_version (models.ForeignKey): Pulp 3 repository version which Pulp 2
             repository was migrated to
         pulp3_repository_remote (models.ForeignKey): Pulp 3 remote to use with the migrated Pulp2
     """
@@ -43,10 +43,15 @@ class Pulp2Repository(BaseModel):
     not_in_plan = models.BooleanField(default=False)
     pulp2_repo_type = models.CharField(max_length=25)
 
+    # This needs to be a foreign key to cover a case when repository in pulp 2 was removed after
+    # a migration run and then recreated with exactly the same name and content in pulp 2,
+    # and then migration was run again. In Pulp 3 it's the same repo and repo version which
+    # should point to a new pulp2repository object.
     pulp3_repository_version = models.ForeignKey(RepositoryVersion,
                                                  on_delete=models.SET_NULL,
                                                  null=True)
 
+    # The same importer/remote can be used for multiple repositories, thus it's a foreign key.
     pulp3_repository_remote = models.ForeignKey(Remote,
                                                 on_delete=models.SET_NULL,
                                                 null=True)
@@ -114,7 +119,6 @@ class Pulp2Distributor(BaseModel):
         pulp2_id (models.TextField): Id of distributor in Pulp 2
         pulp2_type_id (models.CharField): Id of distributor type in Pulp 2
         pulp2_config (JSONField): Pulp 2 distributor config in JSON format
-        pulp2_auto_publish (models.BooleanField): A flag to determine if auto-publish is enabled
         pulp2_last_updated (models.DateTimeField): Last time the distributor was updated
         pulp2_repo_id (models.TextField): Id of a repo in Pulp 2 a distributor belongs to
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
@@ -123,7 +127,7 @@ class Pulp2Distributor(BaseModel):
 
     Relations:
         pulp2_repository (models.ForeignKey): Pulp 2 repository this distributor belongs to
-        pulp3_publication (models.OneToOneField): Pulp 3 publication this distributor was
+        pulp3_publication (models.ForeignKey): Pulp 3 publication this distributor was
             migrated to
         pulp3_distribution (models.OneToOneField): Pulp 3 distribution this distributor was
             migrated to
@@ -132,14 +136,19 @@ class Pulp2Distributor(BaseModel):
     pulp2_id = models.TextField()
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = JSONField()
-    pulp2_auto_publish = models.BooleanField()
     pulp2_last_updated = models.DateTimeField()
     pulp2_repo_id = models.TextField()
     is_migrated = models.BooleanField(default=False)
     not_in_plan = models.BooleanField(default=False)
 
+    # each pulp2 repository can have multiple distributors
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE, null=True)
+
+    # the same publication/repo version can be published by multiple distributors
     pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
+
+    # due to base_path overlap restriction, a distribution can't correspond to multiple pulp 2
+    # distributors, thus one-to-one relationship.
     pulp3_distribution = models.OneToOneField(BaseDistribution,
                                               on_delete=models.SET_NULL,
                                               null=True)

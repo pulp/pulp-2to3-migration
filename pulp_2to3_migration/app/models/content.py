@@ -42,7 +42,7 @@ class Pulp2to3Content(BaseModel):
     """
     pulp2content = models.ForeignKey(Pulp2Content, on_delete=models.CASCADE)
 
-    type = '<your pulp 2 content type>'
+    pulp2_type = '<your pulp 2 content type>'
 
     class Meta:
         abstract = True
