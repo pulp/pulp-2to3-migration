@@ -104,6 +104,9 @@ spec:
   image: pulp-2to3-migration
   tag: "${TAG}"
   pulpcore: pulpcore~=3.0.0
+  plugins:
+    - pulp_file~=0.1.0
+    - pulp_container~=1.0.0
   database_connection:
     username: pulp
     password: pulp
