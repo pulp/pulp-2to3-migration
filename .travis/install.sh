@@ -66,6 +66,7 @@ images:
   - pulp-2to3-migration-${TAG}:
       image_name: pulp-2to3-migration
       tag: $TAG
+      pulpcore: pulpcore~=3.0.0
       plugins:
         - ./pulp-2to3-migration
         - pulp_file~=0.1.0
