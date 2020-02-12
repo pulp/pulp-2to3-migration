@@ -21,7 +21,6 @@ services:
   - postgresql
   - redis-server
   - docker
-  # This line manually added until the plugin-template makes this configurable.
   - mongodb
 addons:
   apt:
