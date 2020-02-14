@@ -28,7 +28,7 @@ class Blob(FileContentUnit):
     unit_display_name = 'docker blob'
     unit_description = 'docker blob'
 
-    type = 'docker_blob'
+    TYPE_ID = 'docker_blob'
 
     meta = {
         'collection': 'units_docker_blob',
@@ -62,7 +62,7 @@ class Manifest(FileContentUnit):
     unit_display_name = 'docker manifest'
     unit_description = 'docker manifest'
 
-    type = 'docker_manifest'
+    TYPE_ID = 'docker_manifest'
 
     meta = {
         'collection': 'units_docker_manifest',
@@ -97,7 +97,7 @@ class ManifestList(FileContentUnit):
     unit_display_name = 'docker manifest list'
     unit_description = 'docker manifest list'
 
-    type = 'docker_manifest_list'
+    TYPE_ID = 'docker_manifest_list'
 
     meta = {
         'collection': 'units_docker_manifest_list',
@@ -121,7 +121,7 @@ class Tag(ContentUnit):
     unit_display_name = 'docker tag'
     unit_description = 'docker tag'
 
-    type = 'docker_tag'
+    TYPE_ID = 'docker_tag'
 
     meta = {
         'collection': 'units_docker_tag',

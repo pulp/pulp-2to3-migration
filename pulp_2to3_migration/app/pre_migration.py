@@ -67,7 +67,7 @@ async def pre_migrate_content(content_model):
         content_model: Models for content which is being migrated.
     """
     batch_size = 10000
-    content_type = content_model.pulp2.type
+    content_type = content_model.pulp2.TYPE_ID
     pulp2content = []
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type

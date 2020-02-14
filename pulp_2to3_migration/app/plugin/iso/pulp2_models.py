@@ -27,7 +27,7 @@ class ISO(FileContentUnit):
     unit_display_name = 'ISO'
     unit_description = 'ISO'
 
-    type = 'iso'
+    TYPE_ID = 'iso'
 
     meta = {
         'collection': 'units_iso',
