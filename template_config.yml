@@ -32,6 +32,8 @@ pypi_username: pulp
 stable_branch: null
 test_bindings: false
 test_performance: false
+travis_addtl_services:
+- mongodb
 travis_notifications:
   irc:
     channels:
