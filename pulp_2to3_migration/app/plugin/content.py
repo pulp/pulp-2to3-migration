@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -167,8 +168,10 @@ class ContentMigrationFirstStage(Stage):
                 code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
                 total=total_pulp2content
             ) as pb:
-
-                await self.migrate_to_pulp3(pulp2content_qs, pb=pb)
+                # We are waiting on the coroutine to finish, because the order of the processed
+                # content for plugins like Container and RPM is important because of the relations
+                # between the content types.
+                await asyncio.wait([self.migrate_to_pulp3(pulp2content_qs, pb=pb)])
 
     async def migrate_to_pulp3(self, batch, pb=None):
         """
