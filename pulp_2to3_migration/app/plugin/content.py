@@ -1,6 +1,4 @@
-import asyncio
 import logging
-import math
 import os
 import shutil
 
@@ -163,30 +161,14 @@ class ContentMigrationFirstStage(Stage):
             pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=ctype)
             total_pulp2content = pulp2content_qs.count()
 
-            # determine the batch size if we can have up to 36 coroutines and the number
-            # of batches (or coroutines)
-            max_coro = 36
-            batch_size = 1
-            if total_pulp2content > max_coro:
-                batch_size = math.ceil(total_pulp2content / max_coro)
-            batch_count = math.ceil(total_pulp2content / batch_size)
-
             with ProgressReport(
                 message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
                                                                    ctype),
                 code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
                 total=total_pulp2content
             ) as pb:
-                # schedule content migration
-                migrators = []
-                for batch_idx in range(batch_count):
-                    start = batch_idx * batch_size
-                    end = (batch_idx + 1) * batch_size
-                    batch = pulp2content_qs[start:end]
-                    migrators.append(self.migrate_to_pulp3(batch, pb=pb))
 
-                if migrators:
-                    await asyncio.wait(migrators)
+                await self.migrate_to_pulp3(pulp2content_qs, pb=pb)
 
     async def migrate_to_pulp3(self, batch, pb=None):
         """
