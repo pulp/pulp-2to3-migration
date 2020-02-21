@@ -13,10 +13,10 @@ from .pulp_2to3_models import (
     Pulp2Rpm,
 )
 
-# from .repository import (
-#     RpmImporter,
-#     RpmDistributor
-# )
+from .repository import (
+    RpmImporter,
+#    RpmDistributor
+)
 
 
 class RpmMigrator(Pulp2to3PluginMigrator):
@@ -46,7 +46,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'erratum': Pulp2Erratum,
     }
     importer_migrators = {
-#        'yum_importer': RpmImporter,
+        'yum_importer': RpmImporter,
     }
     distributor_migrators = {
 #        'yum_distributor': RpmDistributor,
