@@ -15,7 +15,7 @@ from .pulp_2to3_models import (
 
 from .repository import (
     RpmImporter,
-#    RpmDistributor
+    RpmDistributor
 )
 
 
@@ -49,5 +49,5 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'yum_importer': RpmImporter,
     }
     distributor_migrators = {
-#        'yum_distributor': RpmDistributor,
+        'yum_distributor': RpmDistributor,
     }
