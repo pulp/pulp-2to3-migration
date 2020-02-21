@@ -71,10 +71,7 @@ class RpmDistributor(Pulp2to3Distributor):
         # ensure that the base_path does not end with / in Pulp 3, it's often present in Pulp 2.
         base_path = pulp2_config.get(
             'relative_url', pulp2distributor.pulp2_repo_id)
-        if base_path.endswith('/'):
-            base_path = base_path[:-1]
-
-        distribution_data['base_path'] = base_path
+        distribution_data['base_path'] = base_path.rstrip('/')
         distribution_data['publication'] = publication
         distribution, created = RpmDistribution.objects.update_or_create(**distribution_data)
 

@@ -1,4 +1,6 @@
 from pulp_2to3_migration.app.plugin.api import (
+    ContentMigrationFirstStage,
+    DeclarativeContentMigration,
     Pulp2to3PluginMigrator,
 )
 
@@ -51,3 +53,12 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     distributor_migrators = {
         'yum_distributor': RpmDistributor,
     }
+
+    @classmethod
+    async def migrate_content_to_pulp3(cls):
+        """
+        Migrate pre-migrated Pulp 2 RPM plugin content.
+        """
+        first_stage = ContentMigrationFirstStage(cls)
+        dm = DeclarativeContentMigration(first_stage=first_stage)
+        await dm.create()

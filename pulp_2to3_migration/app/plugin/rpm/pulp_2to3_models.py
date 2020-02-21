@@ -3,10 +3,17 @@ from django.db import models
 
 from pulp_2to3_migration.app.models import Pulp2to3Content
 
+from pulp_rpm.app.models import (
+    Package,
+    UpdateRecord,
+)
+
 from .pulp2_models import (
     Errata,
     RPM,
 )
+
+from .xml_utils import get_cr_obj
 
 
 class Pulp2Rpm(Pulp2to3Content):
@@ -78,6 +85,14 @@ class Pulp2Rpm(Pulp2to3Content):
             for rpm in pulp2_rpm_content_batch]
         cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True)
 
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Package content for saving it later in a bulk operation.
+        """
+        cr_package = await get_cr_obj(self)
+        pkg_dict = Package.createrepo_to_dict(cr_package)
+        return Package(**pkg_dict)
+
 
 class Pulp2Erratum(Pulp2to3Content):
     """
@@ -148,3 +163,18 @@ class Pulp2Erratum(Pulp2to3Content):
                 pulp2content=pulp2_id_obj_map[erratum.id])
             for erratum in pulp2_erratum_content_batch]
         cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Advisory content for saving it later in a bulk operation.
+        """
+
+        # TODO: figure out
+        #    - how to split back merged errata into multiple ones
+
+        cr_update = {}  # Create creterepo_c update record based on pulp2 data
+        relations = {}  # TODO: UpdateCollection and UpdateReference
+        # digest = hash_update_record(cr_update)
+        advisory = UpdateRecord(**cr_update)
+        # advisory.digest = digest
+        return advisory, relations
