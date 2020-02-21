@@ -57,7 +57,7 @@ class Pulp2Blob(Pulp2to3Content):
                              for blob in pulp2_blob_content_batch]
         cls.objects.bulk_create(pulp2blob_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 Blob unit for saving it later in a bulk operation.
         """
@@ -137,7 +137,7 @@ class Pulp2Manifest(Pulp2to3Content):
             )
         cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
@@ -200,7 +200,7 @@ class Pulp2ManifestList(Pulp2to3Content):
                           for m in pulp2_m_content_batch]
         cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
@@ -249,7 +249,7 @@ class Pulp2Tag(Pulp2to3Content):
                             for tag in pulp2_tag_content_batch]
         cls.objects.bulk_create(pulp2tag_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 Tag unit for saving it later in a bulk operation.
         """

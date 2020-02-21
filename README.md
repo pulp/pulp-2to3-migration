@@ -183,12 +183,14 @@ from Pulp 2 to Pulp 3, here are some guidelines.
  - It has to have a field `TYPE_ID` which will correspond to the `_content_type_id` of your Content
  in Pulp 2. Don't forget to add it to `pulp2_content_models` in step 1.
 
-4. Add a Content model to pre-migrate Pulp 2 content to (subclass the provided `Pulp2to3Content`
+4. Add a Content model to pre-migrate Pulp2 content to (subclass the provided `Pulp2to3Content`
 class). It has to have:
  - a field `pulp2_type` which will correspond to the `_content_type_id` of your Content in Pulp 2.
  - on a Meta class a `default_related_name` set to `<your pulp 2 content type>_detail_model`
  - a classmethod `pre_migrate_content_detail` (see `Pulp2to3Content` for more details)
- - a method `create_pulp3_content` (see `Pulp2to3Content` for more details)
+ - a coroutine `create_pulp3_content` (see `Pulp2to3Content` for more details)
+
+ Don't forget to add this Content model to your migrator class.
 
  If your content has one artifact and if you are willing to use the default implementation of the
  first stage of DeclarativeContentMigration, on your Content model you also need:

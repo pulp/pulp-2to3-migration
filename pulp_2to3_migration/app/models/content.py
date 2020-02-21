@@ -68,7 +68,7 @@ class Pulp2to3Content(BaseModel):
         """
         raise NotImplementedError()
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 detail Content unit for saving it later in a bulk operation.
 
