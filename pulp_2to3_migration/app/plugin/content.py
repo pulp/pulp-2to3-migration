@@ -211,7 +211,7 @@ class ContentMigrationFirstStage(Stage):
                                'catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
                 continue
 
-            pulp3content = pulp_2to3_detail_content.create_pulp3_content()
+            pulp3content = await pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
 
             artifact = await self.create_artifact(pulp2content.pulp2_storage_path,

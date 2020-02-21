@@ -57,7 +57,7 @@ class Pulp2ISO(Pulp2to3Content):
                             for iso in pulp2_iso_content_batch]
         cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    async def create_pulp3_content(self):
         """
         Create a Pulp 3 FileContent unit for saving it later in a bulk operation.
         """
