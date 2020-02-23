@@ -35,6 +35,8 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     content_models = {
         'iso': Pulp2ISO,
     }
+
+    mutable_content_models = {}
     importer_migrators = {
         'iso_importer': IsoImporter,
     }
