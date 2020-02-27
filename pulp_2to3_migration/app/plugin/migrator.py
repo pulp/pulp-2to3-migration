@@ -12,7 +12,9 @@ class Pulp2to3PluginMigrator:
         pulp3_plugin(str): Pulp 3 plugin name
         pulp3_repository(class): Pulp 3 Repository model
         content_models(dict): {'pulp2 content_type_id': 'detail content class to pre-migrate to'}
+        mutable_content_models(dict): {'content_type_id': 'detail content class to pre-migrate to'}
         importer_migrators(dict): {'importer_type_id': 'pulp_2to3 importer interface/migrator'}
+        distributor_migrators(dict): {'distributor_type_id': 'pulp_2to3 dist interface/migrator'}
 
     """
     @classmethod

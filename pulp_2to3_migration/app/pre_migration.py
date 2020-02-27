@@ -53,22 +53,26 @@ async def pre_migrate_all_content(plan):
 
             content_model = ContentModel(pulp2=pulp2_content_model,
                                          pulp_2to3_detail=pulp_2to3_detail_model)
-            pre_migrators.append(pre_migrate_content(content_model))
+            # identify wether the content is mutable
+            mutable_type = content_model.pulp2.TYPE_ID in plugin.migrator.mutable_content_models
+            pre_migrators.append(pre_migrate_content(content_model, mutable_type))
 
     _logger.debug('Pre-migrating Pulp 2 content')
     await asyncio.wait(pre_migrators)
 
 
-async def pre_migrate_content(content_model):
+async def pre_migrate_content(content_model, mutable_type):
     """
     A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
     Args:
         content_model: Models for content which is being migrated.
+        mutable_type: Boolean that indicates whether the content type is mutable.
     """
     batch_size = 10000
     content_type = content_model.pulp2.TYPE_ID
     pulp2content = []
+    pulp2mutatedcontent = []
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
@@ -115,18 +119,31 @@ async def pre_migrate_content(content_model):
                 pulp2content_pb.save()
                 pulp2detail_pb.total -= 1
                 pulp2detail_pb.save()
-                continue
+        else:
+            if mutable_type:
+                # This is a mutable content type. Query for the existing pulp2content.
+                # If one was found, it means that the migrated content is older than the incoming.
+                # Detele outdated migrated pulp2content and create a new pulp2content
+                try:
+                    outdated = Pulp2Content.objects.get(pulp2_id=record.id)
+                except Pulp2Content.DoesNotExist:
+                    pass
+                else:
+                    pulp2mutatedcontent.append(outdated.pulp2_id)
+                    outdated.delete()
 
-        downloaded = record.downloaded if hasattr(record, 'downloaded') else False
-        item = Pulp2Content(pulp2_id=record.id,
-                            pulp2_content_type_id=record._content_type_id,
-                            pulp2_last_updated=record._last_updated,
-                            pulp2_storage_path=record._storage_path,
-                            downloaded=downloaded)
-        _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
-        pulp2content.append(item)
+            downloaded = record.downloaded if hasattr(record, 'downloaded') else False
+            item = Pulp2Content(pulp2_id=record.id,
+                                pulp2_content_type_id=record._content_type_id,
+                                pulp2_last_updated=record._last_updated,
+                                pulp2_storage_path=record._storage_path,
+                                downloaded=downloaded)
+            _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
+            pulp2content.append(item)
 
-        save_batch = (i and not (i + 1) % batch_size or i == total_content - 1)
+        # determine if the batch needs to be saved, also take into account whether there is
+        # anything in the pulp2contant to be saved
+        save_batch = pulp2content and (i and not (i + 1) % batch_size or i == total_content - 1)
         if save_batch:
             _logger.debug('Bulk save for generic content info, saved so far: {index}'.format(
                 index=i + 1))
@@ -143,6 +160,22 @@ async def pre_migrate_content(content_model):
 
             pulp2content = []
             existing_count = 0
+    if pulp2mutatedcontent:
+        # when we flip the is_migrated flag to False, we base this decision on the last_unit_added
+        # https://github.com/pulp/pulp-2to3-migration/blob/master/pulp_2to3_migration/app/pre_migration.py#L279  # noqa
+        # in this case, we still need to update the is_migrated flag manually because of errata.
+        # in pulp2 sync and copy cases of updated errata are not covered
+        # only when uploading errata last_unit_added is updated on all the repos that contain it
+        mutated_content = Pulp2RepoContent.objects.filter(pulp2_unit_id__in=pulp2mutatedcontent)
+        repo_to_update_ids = set(mutated_content.values_list('pulp2_repository_id', flat=True))
+        repos_to_update = []
+        for pulp2repo in Pulp2Repository.objects.filter(pk__in=repo_to_update_ids):
+            pulp2repo.is_migrated = False
+            repos_to_update.append(pulp2repo)
+
+        Pulp2Repository.objects.bulk_update(objs=repos_to_update,
+                                            fields=['is_migrated'],
+                                            batch_size=1000)
 
     await pre_migrate_lazycatalog(content_type)
 

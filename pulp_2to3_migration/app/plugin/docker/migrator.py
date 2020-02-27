@@ -64,6 +64,10 @@ class DockerMigrator(Pulp2to3PluginMigrator):
         ('docker_tag', Pulp2Tag),
     ])
 
+    mutable_content_models = {
+        'docker_tag': Pulp2Tag,
+    }
+
     importer_migrators = {
         'docker_importer': DockerImporter,
     }
