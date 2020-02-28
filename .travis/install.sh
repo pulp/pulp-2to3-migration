@@ -49,13 +49,19 @@ fi
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@0.1
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@1.0
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+fi
+
+if [ -e $TRAVIS_BUILD_DIR/../pulp_rpm ]; then
+  PULP_RPM=./pulp_rpm
+else
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
 fi
 
 if [ -n "$TRAVIS_TAG" ]; then
@@ -66,11 +72,12 @@ images:
   - pulp-2to3-migration-${TAG}:
       image_name: pulp-2to3-migration
       tag: $TAG
-      pulpcore: pulpcore~=3.0.0
+      pulpcore: pulpcore
       plugins:
         - ./pulp-2to3-migration
-        - pulp_file~=0.1.0
-        - pulp_container~=1.0.0
+        - pulp_file
+        - pulp_container
+        - pulp_rpm
 VARSYAML
 else
   cat > vars/vars.yaml << VARSYAML
@@ -84,6 +91,7 @@ images:
         - ./pulp-2to3-migration
         - $PULP_FILE
         - $PULP_CONTAINER
+        - $PULP_RPM
 VARSYAML
 fi
 ansible-playbook -v build.yaml
