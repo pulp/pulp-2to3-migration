@@ -13,6 +13,21 @@ Changelog
 
 .. towncrier release notes start
 
+0.1.0rc1 (2020-02-28)
+=====================
+
+Bugfixes
+--------
+
+- Migrating large repository leads to unmigrated units.
+  `#6103 <https://pulp.plan.io/issues/6103>`_
+- Migrate mutable content.
+  `#6186 <https://pulp.plan.io/issues/6186>`_
+
+
+----
+
+
 0.0.1rc1 (2020-02-11)
 =====================
 
