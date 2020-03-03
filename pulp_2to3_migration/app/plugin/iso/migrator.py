@@ -44,6 +44,8 @@ class IsoMigrator(Pulp2to3PluginMigrator):
         'iso_distributor': IsoDistributor,
     }
 
+    premigrate_hook = {}
+
     @classmethod
     async def migrate_content_to_pulp3(cls):
         """
