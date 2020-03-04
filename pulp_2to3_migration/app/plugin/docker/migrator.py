@@ -5,6 +5,7 @@ from collections import OrderedDict
 from django.db import IntegrityError
 
 from . import pulp2_models
+from . import utils
 
 from .pulp_2to3_models import (
     Pulp2Blob,
@@ -73,6 +74,10 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     }
     distributor_migrators = {
         'docker_distributor_web': DockerDistributor,
+    }
+
+    premigrate_hook = {
+        'docker_tag': utils.find_tags
     }
 
     @classmethod

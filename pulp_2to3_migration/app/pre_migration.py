@@ -55,13 +55,17 @@ async def pre_migrate_all_content(plan):
                                          pulp_2to3_detail=pulp_2to3_detail_model)
             # identify wether the content is mutable
             mutable_type = content_model.pulp2.TYPE_ID in plugin.migrator.mutable_content_models
-            pre_migrators.append(pre_migrate_content(content_model, mutable_type))
+            # check if the content type has a premigration hook
+            premigrate_hook = None
+            if content_model.pulp2.TYPE_ID in plugin.migrator.premigrate_hook:
+                premigrate_hook = plugin.migrator.premigrate_hook[content_model.pulp2.TYPE_ID]
+            pre_migrators.append(pre_migrate_content(content_model, mutable_type, premigrate_hook))
 
     _logger.debug('Pre-migrating Pulp 2 content')
     await asyncio.wait(pre_migrators)
 
 
-async def pre_migrate_content(content_model, mutable_type):
+async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
     """
     A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
@@ -81,8 +85,13 @@ async def pre_migrate_content(content_model, mutable_type):
         type=content_type,
         timestamp=last_updated))
 
-    # query only newly created/updated items
-    mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated)
+    if premigrate_hook:
+        pulp2_content_ids = premigrate_hook()
+        mongo_content_qs = content_model.pulp2.objects(
+            _last_updated__gte=last_updated, id__in=pulp2_content_ids)
+    else:
+        # query only newly created/updated items
+        mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated)
     total_content = mongo_content_qs.count()
     _logger.debug('Total count for {type} content to migrate: {total}'.format(
         type=content_type,
