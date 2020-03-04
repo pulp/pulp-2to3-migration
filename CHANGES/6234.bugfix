@@ -1,0 +1,1 @@
+Do not pre-migrate schema1 docker tags when there are 2 tags with same name witin a repo.
