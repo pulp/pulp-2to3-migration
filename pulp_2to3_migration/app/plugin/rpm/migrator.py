@@ -9,10 +9,12 @@ from pulp_rpm.app.models import RpmRepository
 from .pulp2_models import (
     Errata,
     RPM,
+    YumMetadataFile,
 )
 from .pulp_2to3_models import (
     Pulp2Erratum,
     Pulp2Rpm,
+    Pulp2YumRepoMetadataFile,
 )
 
 from .repository import (
@@ -39,6 +41,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     pulp2_content_models = {
         'rpm': RPM,
         'erratum': Errata,
+        'yum_repo_metadata_file': YumMetadataFile,
     }
     pulp2_collection = 'units_rpm'
     pulp3_plugin = 'pulp_rpm'
@@ -46,6 +49,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     content_models = {
         'rpm': Pulp2Rpm,
         'erratum': Pulp2Erratum,
+        'yum_repo_metadata_file': Pulp2YumRepoMetadataFile,
     }
     importer_migrators = {
         'yum_importer': RpmImporter,

@@ -5,12 +5,14 @@ from pulp_2to3_migration.app.models import Pulp2to3Content
 
 from pulp_rpm.app.models import (
     Package,
+    RepoMetadataFile,
     UpdateRecord,
 )
 
 from .pulp2_models import (
     Errata,
     RPM,
+    YumMetadataFile,
 )
 
 from .xml_utils import get_cr_obj
@@ -203,3 +205,63 @@ class Pulp2Erratum(Pulp2to3Content):
         advisory = UpdateRecord(**cr_update)
         # advisory.digest = digest
         return advisory, relations
+
+
+class Pulp2YumRepoMetadataFile(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store pulp 2 yum_repo_metadata_file
+    content details for Pulp 3 content creation.
+    """
+    data_type = models.CharField(max_length=20)
+    checksum = models.CharField(max_length=128)
+    checksum_type = models.CharField(max_length=6)
+    repo_id = models.TextField()
+
+    pulp2_type = 'yum_repo_metadata_file'
+
+    class Meta:
+        unique_together = ('data_type', 'repo_id', 'pulp2content')
+        default_related_name = 'yum_repo_metadata_file_detail_model'
+
+    @property
+    def expected_digests(self):
+        """Return expected digests."""
+        return {self.checksum_type: self.checksum}
+
+    @property
+    def expected_size(self):
+        """Return expected size."""
+        return
+
+    @property
+    def relative_path_for_content_artifact(self):
+        """Return relative path."""
+        return self.data_type
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 YumMetadataFile with all the fields needed to create a Pulp 3 content
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_metadata_content_batch = YumMetadataFile.objects.filter(id__in=pulp2_ids)
+        pulp2metadata_to_save = [cls(data_type=meta.data_type,
+                                     checksum=meta.checksum,
+                                     checksum_type=meta.checksum_type,
+                                     repo_id=meta.repo_id,
+                                     pulp2content=pulp2_id_obj_map[meta.id])
+                                 for meta in pulp2_metadata_content_batch]
+        cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 RepoMetadataFile unit for saving it later in a bulk operation.
+        """
+        return RepoMetadataFile(data_type=self.data_type,
+                                checksum=self.checksum,
+                                checksum_type=self.checksum_type)

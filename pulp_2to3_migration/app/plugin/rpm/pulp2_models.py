@@ -156,3 +156,32 @@ class Errata(ContentUnit):
         'collection': 'units_erratum',
         'allow_inheritance': False,
     }
+
+
+class YumMetadataFile(FileContentUnit):
+    """
+    A model for Pulp 2 YumMetadataFile content type.
+
+    It will become a RepoMetadataFile content type in Pulp 3 world.
+    """
+
+    data_type = StringField(required=True)
+    repo_id = StringField(required=True)
+
+    checksum = StringField()
+    checksum_type = StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_yum_repo_metadata_file')
+    _content_type_id = StringField(required=True, default='yum_repo_metadata_file')
+
+    unit_key_fields = ('data_type', 'repo_id')
+    unit_display_name = 'YUM Repository Metadata File'
+    unit_description = 'YUM Repository Metadata File'
+
+    TYPE_ID = 'yum_repo_metadata_file'
+
+    meta = {
+        'indexes': ['data_type'],
+        'collection': 'units_yum_repo_metadata_file',
+        'allow_inheritance': False}
