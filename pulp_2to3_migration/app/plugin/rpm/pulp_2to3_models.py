@@ -1,4 +1,6 @@
 from bson import BSON
+from collections import defaultdict
+
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 
@@ -124,11 +126,18 @@ class Pulp2Rpm(Pulp2to3Content):
 class Pulp2Erratum(Pulp2to3Content):
     """
     Pulp 2to3 detail content model to store Pulp2 Errata content details.
+
+    Relations:
+        pulp2content(models.ManyToManyField): relation to the generic model. It needs to be
+                                              many-to-many because multiple Pulp2Content can
+                                              refer to the same detail model of errata.
+
     """
 
     # Required fields
-    errata_id = models.TextField(unique=True)
+    errata_id = models.TextField()
     updated = models.TextField()
+    repo_id = models.TextField()
 
     issued = models.TextField()
     status = models.TextField()
@@ -150,8 +159,10 @@ class Pulp2Erratum(Pulp2to3Content):
     summary = models.TextField()
 
     pulp2_type = 'erratum'
+    set_pulp2_repo = True
 
     class Meta:
+        unique_together = ('errata_id', 'repo_id')
         default_related_name = 'erratum_detail_model'
 
     @classmethod
@@ -163,32 +174,76 @@ class Pulp2Erratum(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        def get_pkglist(errata_id):
+            """
+            Get a pkglist for a specified erratum.
+
+            In Pulp 2 many pkglists are present for each erratum, including duplicated ones.
+            The aggregation pipeline generates unique collections grouped by module info.
+
+            Ported from Pulp 2 Errata serializer
+            https://github.com/pulp/pulp_rpm/blob/91145f24afed19812e3b53805c2bfd69fd24764a/plugins/pulp_rpm/plugins/serializers.py#L53
+
+            Args:
+                errata_id(str): Id of an erratum to get a pkglist for
+            """
+            match_stage = {'$match': {'errata_id': errata_id}}
+            unwind_collections_stage = {'$unwind': '$collections'}
+            unwind_packages_stage = {'$unwind': '$collections.packages'}
+
+            # Group all packages by their relation to a module specified in each collection.
+            # All non-modular RPMs will be in a single collection.
+            group_stage = {'$group': {'_id': '$collections.module',
+                                      'packages': {'$addToSet': '$collections.packages'}}}
+            collections = pulp2_models.ErratumPkglist.objects.aggregate(
+                match_stage, unwind_collections_stage, unwind_packages_stage, group_stage,
+                allowDiskUse=True)
+
+            pkglist = []
+            for collection_idx, collection in enumerate(collections):
+                # To preserve the original format of a pkglist the 'short' and 'name'
+                # keys are added. 'short' can be an empty string, collection 'name'
+                # should be unique within an erratum.
+                item = {'packages': collection['packages'],
+                        'short': '',
+                        'name': 'collection-%s' % collection_idx}
+                if collection['_id']:
+                    item['module'] = collection['_id']
+                pkglist.append(item)
+            return pkglist
+
+        pulp2_id_obj_map = defaultdict(dict)
+        pulp2erratum_to_save = []
+        for pulp2content in content_batch:
+            repo_id = pulp2content.pulp2_repo.pk
+            pulp2_id_obj_map[pulp2content.pulp2_id][repo_id] = pulp2content
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_erratum_content_batch = pulp2_models.Errata.objects.filter(id__in=pulp2_ids)
-        pulp2erratum_to_save = [
-            cls(errata_id=erratum.errata_id,
-                updated=erratum.updated,
-                issued=erratum.issued,
-                status=erratum.status,
-                description=erratum.description,
-                pushcount=erratum.pushcount,
-                references=erratum.references,
-                reboot_suggested=erratum.reboot_suggested,
-                relogin_suggested=erratum.relogin_suggested,
-                restart_suggested=erratum.restart_suggested,
-                errata_from=erratum.errata_from,
-                severity=erratum.severity,
-                rights=erratum.rights,
-                version=erratum.version,
-                release=erratum.release,
-                errata_type=erratum.type,
-                pkglist=erratum.pkglist,
-                title=erratum.title,
-                solution=erratum.solution,
-                summary=erratum.summary,
-                pulp2content=pulp2_id_obj_map[erratum.id])
-            for erratum in pulp2_erratum_content_batch]
+        for erratum in pulp2_erratum_content_batch:
+            for repo_id, pulp2content in pulp2_id_obj_map[erratum.id].items():
+                pulp2erratum_to_save.append(
+                    cls(errata_id=erratum.errata_id,
+                        updated=erratum.updated,
+                        repo_id=repo_id,
+                        issued=erratum.issued,
+                        status=erratum.status,
+                        description=erratum.description,
+                        pushcount=erratum.pushcount,
+                        references=erratum.references,
+                        reboot_suggested=erratum.reboot_suggested,
+                        relogin_suggested=erratum.relogin_suggested,
+                        restart_suggested=erratum.restart_suggested,
+                        errata_from=erratum.errata_from,
+                        severity=erratum.severity,
+                        rights=erratum.rights,
+                        version=erratum.version,
+                        release=erratum.release,
+                        errata_type=erratum.type,
+                        pkglist=get_pkglist(erratum.errata_id),
+                        title=erratum.title,
+                        solution=erratum.solution,
+                        summary=erratum.summary,
+                        pulp2content=pulp2content))
         cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True)
 
     async def create_pulp3_content(self):

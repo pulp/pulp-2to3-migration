@@ -3,6 +3,8 @@ from django.db import models
 from pulpcore.app.models import Content  # it has to be imported directly from pulpcore see #5353
 from pulpcore.plugin.models import BaseModel
 
+from .repository import Pulp2Repository
+
 
 class Pulp2Content(BaseModel):
     """
@@ -19,6 +21,10 @@ class Pulp2Content(BaseModel):
 
     Relations:
         pulp3_content (models.ForeignKey): Pulp 3 content which Pulp 2 content was migrated to
+        pulp2_repo (models.ForeignKey): Shows which repo content belongs to. Used for
+                                        Errata/Advisories only because 1 pulp 2 unit
+                                        corresponds to N content units n Pulp 3.
+
     """
     pulp2_id = models.CharField(max_length=255)
     pulp2_content_type_id = models.CharField(max_length=255)
@@ -26,18 +32,29 @@ class Pulp2Content(BaseModel):
     pulp2_storage_path = models.TextField(null=True)
     downloaded = models.BooleanField(default=False)
     pulp3_content = models.ForeignKey(Content, on_delete=models.SET_NULL, null=True)
+    pulp2_repo = models.ForeignKey(Pulp2Repository, on_delete=models.SET_NULL, null=True)
 
     class Meta:
-        unique_together = ('pulp2_id', 'pulp2_content_type_id')
+        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo')
 
 
 class Pulp2to3Content(BaseModel):
     """
     Pulp 2to3 detail content model to store pulp 2 content details for Pulp 3 content creation.
+
+    Attrs:
+        pulp2_type(str): pulp 2 content type id
+        set_pulp2_repo(bool): specifies if pulp2_repo should be set in the content mapping.
+                              Default is False.
+
+    Relations:
+        pulp2content (models.ForeignKey): pulp 2 content this pre-migrated content corresponds to
+
     """
     pulp2content = models.ForeignKey(Pulp2Content, on_delete=models.CASCADE)
 
     pulp2_type = '<your pulp 2 content type>'
+    set_pulp2_repo = False
 
     class Meta:
         abstract = True

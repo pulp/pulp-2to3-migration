@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0005_pulp2modulemd_pulp2modulemddefaults'),
+        ('pulp_2to3_migration', '0002_remove_pulp2distributor_pulp2_auto_publish'),
     ]
 
     operations = [
