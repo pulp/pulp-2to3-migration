@@ -35,16 +35,12 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     content_models = {
         'iso': Pulp2ISO,
     }
-
-    mutable_content_models = {}
     importer_migrators = {
         'iso_importer': IsoImporter,
     }
     distributor_migrators = {
         'iso_distributor': IsoDistributor,
     }
-
-    premigrate_hook = {}
 
     @classmethod
     async def migrate_content_to_pulp3(cls):

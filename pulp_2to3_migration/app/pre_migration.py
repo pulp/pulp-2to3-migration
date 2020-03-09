@@ -73,7 +73,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
         content_model: Models for content which is being migrated.
         mutable_type: Boolean that indicates whether the content type is mutable.
     """
-    batch_size = 10000
+    batch_size = 1000
     content_type = content_model.pulp2.TYPE_ID
     pulp2content = []
     pulp2mutatedcontent = []
