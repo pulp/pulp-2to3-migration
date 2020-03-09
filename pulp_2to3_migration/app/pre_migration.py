@@ -113,7 +113,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
     fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
     if hasattr(content_model.pulp2, 'downloaded'):
         fields.add('downloaded')
-    for i, record in enumerate(mongo_content_qs.only(*fields).batch_size(batch_size)):
+    for i, record in enumerate(mongo_content_qs.only(*fields).no_cache().batch_size(batch_size)):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
@@ -167,7 +167,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
             pulp2detail_pb.done += content_saved
             pulp2detail_pb.save()
 
-            pulp2content = []
+            pulp2content.clear()
             existing_count = 0
     if pulp2mutatedcontent:
         # when we flip the is_migrated flag to False, we base this decision on the last_unit_added
