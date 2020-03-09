@@ -68,7 +68,7 @@ class Pulp2Rpm(Pulp2to3Content):
         """
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_rpm_content_batch = RPM.objects.filter(id__in=pulp2_ids)
+        pulp2_rpm_content_batch = RPM.objects.filter(id__in=pulp2_ids).no_cache()
         pulp2rpm_to_save = [
             cls(name=rpm.name,
                 epoch=rpm.epoch,
