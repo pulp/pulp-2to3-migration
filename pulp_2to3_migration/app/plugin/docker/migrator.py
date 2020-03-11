@@ -36,6 +36,7 @@ from pulpcore.plugin.stages import (
     ContentSaver,
     DeclarativeArtifact,
     DeclarativeContent,
+    ResolveContentFutures,
     Stage,
     QueryExistingArtifacts,
     QueryExistingContents,
@@ -111,6 +112,7 @@ class DockerDeclarativeContentMigration(DeclarativeContentMigration):
             ArtifactSaver(),
             QueryExistingContents(),
             DockerContentSaver(),
+            ResolveContentFutures(),
             InterrelateContent(),
             RelatePulp2to3Content(),
         ]
@@ -132,9 +134,10 @@ class DockerContentMigrationFirstStage(ContentMigrationFirstStage):
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
 
+        future_manifests = []
+
         for pulp_2to3_detail_content in batch:
             pulp2content = pulp_2to3_detail_content.pulp2content
-
             pulp3content = await pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
             # store digests for future pulp3 content relations
@@ -164,12 +167,18 @@ class DockerContentMigrationFirstStage(ContentMigrationFirstStage):
                     relative_path=pulp_2to3_detail_content.relative_path_for_content_artifact,
                     remote=NOT_USED,
                     deferred_download=False)
-                dc = DeclarativeContent(content=pulp3content, d_artifacts=[da], does_batch=False)
+                dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
+
+                if pulp_2to3_detail_content.pulp2_type in ('docker_manifest',
+                                                           'docker_manifest_list'):
+                    future_manifests.append(dc)
 
             dc.extra_data = future_relations
             await self.put(dc)
             if pb:
                 pb.increment()
+        for man in future_manifests:
+            await man.resolution()
 
 
 class InterrelateContent(Stage):
