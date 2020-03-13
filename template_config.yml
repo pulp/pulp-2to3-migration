@@ -7,7 +7,7 @@ additional_plugins:
 - { name: pulp_rpm, branch: master }
 black: false
 check_commit_message: true
-cherry_pick_automation: false
+cherry_pick_automation: true
 coverage: false
 deploy_client_to_pypi: true
 deploy_client_to_rubygems: true
@@ -30,7 +30,7 @@ pulpcore_branch: master
 pulpcore_pip_version_specifier: null
 pydocstyle: false
 pypi_username: pulp
-stable_branch: null
+stable_branch: '0.1'
 test_bindings: false
 test_performance: false
 travis_addtl_services:
