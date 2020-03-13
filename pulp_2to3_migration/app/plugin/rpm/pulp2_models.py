@@ -185,3 +185,64 @@ class YumMetadataFile(FileContentUnit):
         'indexes': ['data_type'],
         'collection': 'units_yum_repo_metadata_file',
         'allow_inheritance': False}
+
+
+class Modulemd(FileContentUnit):
+    """
+    A model for Pulp 2 Modulemd content type.
+    """
+    TYPE_ID = 'modulemd'
+
+    # Unit key fields NSVCA
+    name = StringField(required=True)
+    stream = StringField(required=True)
+    version = IntField(required=True)
+    context = StringField(required=True)
+    arch = StringField(required=True)
+
+    summary = StringField()
+    description = StringField()
+    profiles = DictField()
+    artifacts = ListField()
+    checksum = StringField()
+    dependencies = ListField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_modulemd')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('name', 'stream', 'version', 'context', 'arch', )
+    unit_display_name = 'Modulemd'
+    unit_description = 'Modulemd'
+
+    meta = {'collection': 'units_modulemd',
+            'indexes': ['artifacts'],
+            'allow_inheritance': False}
+
+
+class ModulemdDefaults(FileContentUnit):
+    """
+    A model for Pulp 2 Modulemd content type.
+    """
+    TYPE_ID = 'modulemd_defaults'
+
+    # Unit key fields
+    name = StringField(required=True)
+    repo_id = StringField(required=True)
+
+    stream = StringField()
+    profiles = StringField()
+
+    checksum = StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_modulemd_defaults')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('name', 'repo_id',)
+    unit_display_name = 'ModulemdDefaults'
+    unit_description = 'ModulemdDefaults'
+
+    meta = {'collection': 'units_modulemd_defaults',
+            'indexes': ['repo_id'],
+            'allow_inheritance': False}
