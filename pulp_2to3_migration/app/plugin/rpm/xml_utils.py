@@ -5,7 +5,6 @@ Mostly ported from Pulp 2.
 
 """
 
-import gzip
 import re
 from collections import namedtuple
 
@@ -175,7 +174,7 @@ def render_metadata(pkg, md_type):
     if md_type not in METADATA_TYPES:
         return
 
-    xml_template = gzip.zlib.decompress(bytearray(pkg.repodata[md_type])).decode()
+    xml_template = pkg.repodata[md_type]
     if md_type == 'primary':
         return render_primary(xml_template, pkg.checksum, pkg.checksumtype)
     elif md_type == 'other':
