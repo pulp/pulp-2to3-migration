@@ -4,19 +4,16 @@ To render xml snippets for RPM.
 Mostly ported from Pulp 2.
 
 """
-import gzip
-import re
-import tempfile
 
+import re
 from collections import namedtuple
 
+import createrepo_c as cr
 from django.template import (
     Context,
     Template,
 )
 from django.template.defaulttags import TemplateTagNode
-
-from pulp_rpm.app.tasks.synchronizing import RpmFirstStage
 
 
 ESCAPE_TEMPLATE_VARS_TAGS = {
@@ -25,17 +22,6 @@ ESCAPE_TEMPLATE_VARS_TAGS = {
 METADATA_TYPES = ('primary', 'other', 'filelists')
 
 XmlElement = namedtuple('xml_element', ['start', 'end'])
-FAKE_XML = {
-    'primary': XmlElement('<?xml version="1.0" encoding="UTF-8"?><metadata packages="1" '
-                          'xmlns="http://linux.duke.edu/metadata/common" '
-                          'xmlns:rpm="http://linux.duke.edu/metadata/rpm">',
-                          '</metadata>'),
-    'other': XmlElement('<otherdata xmlns="http://linux.duke.edu/metadata/other" packages="1">',
-                        '</otherdata>'),
-    'filelists': XmlElement('<filelists xmlns="http://linux.duke.edu/metadata/filelists" '
-                            'packages="1">',
-                            '</filelists>')
-}
 
 
 def _substitute_special_chars(template):
@@ -188,7 +174,7 @@ def render_metadata(pkg, md_type):
     if md_type not in METADATA_TYPES:
         return
 
-    xml_template = gzip.zlib.decompress(bytearray(pkg.repodata[md_type])).decode()
+    xml_template = pkg.repodata[md_type]
     if md_type == 'primary':
         return render_primary(xml_template, pkg.checksum, pkg.checksumtype)
     elif md_type == 'other':
@@ -208,19 +194,54 @@ async def get_cr_obj(pkg):
         createrepo_c.Package: createrepo_c Package object for the requested package
 
     """
-    filenames = {}
-    with tempfile.TemporaryDirectory() as dir:
-        for md_type in METADATA_TYPES:
-            with tempfile.NamedTemporaryFile(delete=False, dir=dir) as fd:
-                xml_snippet = render_metadata(pkg, md_type)
-                fake_element = FAKE_XML[md_type]
-                final_xml = fake_element.start + xml_snippet + fake_element.end
-                fd.write(final_xml.encode())
-                filenames[md_type] = fd.name
+    primary_xml = render_metadata(pkg, 'primary')
+    other_xml = render_metadata(pkg, 'other')
+    filelists_xml = render_metadata(pkg, 'filelists')
 
-        packages = await RpmFirstStage.parse_repodata(filenames['primary'], filenames['other'],
-                                                      filenames['filelists'])
-        # there is always only one package
-        cr_obj = list(packages.values())[0]
-
+    cr_obj = parse_repodata(primary_xml, other_xml, filelists_xml)
     return cr_obj
+
+
+def parse_repodata(primary_xml, filelists_xml, other_xml):
+    """
+    Parse repodata to extract package info.
+    Args:
+        primary_xml (str): a string containing contents of primary.xml
+        filelists_xml (str): a string containing contents of filelists.xml
+        other_xml (str): a string containing contents of other.xml
+    Returns:
+        dict: createrepo_c package objects with the pkgId as a key
+    """
+    packages = {}
+
+    def pkgcb(pkg):
+        """
+        A callback which is used when a whole package entry in xml is parsed.
+        Args:
+            pkg(preaterepo_c.Package): a parsed metadata for a package
+        """
+        packages[pkg.pkgId] = pkg
+
+    def newpkgcb(pkgId, name, arch):
+        """
+        A callback which is used when a new package entry is encountered.
+        Only opening <package> element is parsed at that moment.
+        This function has to return a package which parsed data will be added to
+        or None if a package should be skipped.
+        pkgId, name and arch of a package can be used to skip further parsing. Available
+        only for filelists.xml and other.xml.
+        Args:
+            pkgId(str): pkgId of a package
+            name(str): name of a package
+            arch(str): arch of a package
+        Returns:
+            createrepo_c.Package: a package which parsed data should be added to.
+            If None is returned, further parsing of a package will be skipped.
+        """
+        return packages.get(pkgId, None)
+
+    # TODO: handle parsing errors/warnings, warningcb callback can be used below
+    cr.xml_parse_primary_snippet(primary_xml, pkgcb=pkgcb, do_files=False)
+    cr.xml_parse_filelists_snippet(filelists_xml, newpkgcb=newpkgcb)
+    cr.xml_parse_other_snippet(other_xml, newpkgcb=newpkgcb)
+    return list(packages.values())[0]

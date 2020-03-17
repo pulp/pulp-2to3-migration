@@ -6,7 +6,9 @@ requirements = [
     'pulpcore>=3.1',
     'mongoengine',
     'semantic_version',
-    'jsonschema'
+    'jsonschema',
+    # 'createrepo-c>=0.15.9'
+    # Disabled due to "reasons", it makes the CI fail until version 0.15.9 is pushed out as an RPM
 ]
 
 setup(

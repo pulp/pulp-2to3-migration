@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import logging
 import os
 import shutil
@@ -184,6 +185,7 @@ class ContentMigrationFirstStage(Stage):
         Args:
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
+        @functools.lru_cache(maxsize=20)
         def get_remote_by_importer_id(importer_id):
             """
             Args:

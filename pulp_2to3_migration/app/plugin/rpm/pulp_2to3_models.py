@@ -68,21 +68,45 @@ class Pulp2Rpm(Pulp2to3Content):
         """
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_rpm_content_batch = RPM.objects.filter(id__in=pulp2_ids)
-        pulp2rpm_to_save = [
-            cls(name=rpm.name,
-                epoch=rpm.epoch,
-                version=rpm.version,
-                release=rpm.release,
-                arch=rpm.arch,
-                checksum=rpm.checksum,
-                checksumtype=rpm.checksumtype,
-                repodata=rpm.repodata,
-                is_modular=rpm.is_modular,
-                size=rpm.size,
-                filename=rpm.filename,
-                pulp2content=pulp2_id_obj_map[rpm.id])
-            for rpm in pulp2_rpm_content_batch]
+        pulp2_rpm_content_batch = RPM.objects.filter(id__in=pulp2_ids).as_pymongo().only(
+            'name',
+            'epoch',
+            'version',
+            'release',
+            'arch',
+            'checksum',
+            'checksumtype',
+            'repodata',
+            'is_modular',
+            'size',
+            'filename',
+            'pk',
+        )
+        import gzip
+
+        pulp2rpm_to_save = []
+        for rpm in pulp2_rpm_content_batch:
+            compressed_repodata = rpm['repodata']
+            decompressed_repodata = {}
+            for name, gzipped_data in compressed_repodata.items():
+                decompressed_repodata[name] = gzip.zlib.decompress(
+                    bytearray(gzipped_data)).decode()
+            rpm['repodata'] = decompressed_repodata
+
+            pulp2rpm_to_save.append(
+                cls(name=rpm['name'],
+                    epoch=rpm['epoch'],
+                    version=rpm['version'],
+                    release=rpm['release'],
+                    arch=rpm['arch'],
+                    checksum=rpm['checksum'],
+                    checksumtype=rpm['checksumtype'],
+                    repodata=rpm['repodata'],
+                    is_modular=rpm['is_modular'],
+                    size=rpm['size'],
+                    filename=rpm['filename'],
+                    pulp2content=pulp2_id_obj_map[rpm['_id']])
+            )
         cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True)
 
     async def create_pulp3_content(self):
