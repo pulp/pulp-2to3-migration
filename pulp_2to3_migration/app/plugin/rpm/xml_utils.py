@@ -39,9 +39,11 @@ def _substitute_special_chars(template):
     """
     templatetag_map = dict((sym, name) for name, sym in TemplateTagNode.mapping.items())
     symbols_pattern = '(%s)' % '|'.join(templatetag_map.keys())
-    return re.sub(symbols_pattern,
-                  lambda mobj: '{%% templatetag %s %%}' % templatetag_map[mobj.group(1)],
-                  template)
+    return re.sub(
+        symbols_pattern,
+        lambda mobj: '{%% templatetag %s %%}' % templatetag_map[mobj.group(1)],
+        template
+    )
 
 
 def _generate_tag_replacement_str(mobj):
@@ -87,23 +89,6 @@ def _escape_django_syntax_chars(template, tag_name):
     return template
 
 
-def _render(template, context):
-    """
-    Given a template as a string and a Context object, returns the rendered result as a string.
-
-    Args:
-        template(str): a django template
-        context(django.template.Context): the required context for the template
-
-    Returns:
-        str: the result of rendering the template with the context
-
-    """
-    t = Template(template)
-    rendered = t.render(context)
-    return rendered
-
-
 def render_primary(template, checksum, checksumtype):
     """
     Render the primary XML with the requested checksum type and checksum.
@@ -119,9 +104,8 @@ def render_primary(template, checksum, checksumtype):
     """
     for tag in ESCAPE_TEMPLATE_VARS_TAGS['primary']:
         template = _escape_django_syntax_chars(template, tag)
-    context = Context({'checksum': checksum,
-                       'checksumtype': checksumtype})
-    return _render(template, context)
+    context = Context({'checksum': checksum, 'checksumtype': checksumtype})
+    return Template(template).render(context)
 
 
 def render_other(template, checksum):
@@ -140,7 +124,7 @@ def render_other(template, checksum):
     for tag in ESCAPE_TEMPLATE_VARS_TAGS['other']:
         template = _escape_django_syntax_chars(template, tag)
     context = Context({'pkgid': checksum})
-    return _render(template, context)
+    return Template(template).render(context)
 
 
 def render_filelists(template, checksum):
@@ -156,7 +140,7 @@ def render_filelists(template, checksum):
 
     """
     context = Context({'pkgid': checksum})
-    return _render(template, context)
+    return Template(template).render(context)
 
 
 # Additional utils (not from pulp2) #
