@@ -30,11 +30,6 @@ class Pulp2Content(BaseModel):
     class Meta:
         unique_together = ('pulp2_id', 'pulp2_content_type_id')
 
-    @property
-    def detail_model(self):
-        """Return detail_model."""
-        return getattr(self, f'{self.pulp2_content_type_id}_detail_model').get()
-
 
 class Pulp2to3Content(BaseModel):
     """

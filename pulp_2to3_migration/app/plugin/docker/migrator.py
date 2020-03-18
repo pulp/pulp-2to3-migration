@@ -132,8 +132,9 @@ class DockerContentMigrationFirstStage(ContentMigrationFirstStage):
             batch: A batch of Pulp2Content objects to migrate to Pulp 3
         """
 
-        for pulp2content in batch:
-            pulp_2to3_detail_content = pulp2content.detail_model
+        for pulp_2to3_detail_content in batch:
+            pulp2content = pulp_2to3_detail_content.pulp2content
+
             pulp3content = await pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
             # store digests for future pulp3 content relations
