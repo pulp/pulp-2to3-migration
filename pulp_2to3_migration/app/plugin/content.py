@@ -30,7 +30,6 @@ from pulpcore.plugin.stages import (
 
 from pulp_2to3_migration.app.constants import NOT_USED
 from pulp_2to3_migration.app.models import (
-    Pulp2Content,
     Pulp2Importer,
     Pulp2LazyCatalog,
 )
@@ -156,11 +155,9 @@ class ContentMigrationFirstStage(Stage):
         If a plugin needs to have more control over the order of content migration, it should
         override this method.
         """
-
-        content_types = self.migrator.content_models.keys()
-        for ctype in content_types:
+        for ctype, cmodel in self.migrator.content_models.items():
             # we need to go through all content in case any of Remotes changed
-            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=ctype)
+            pulp2content_qs = cmodel.objects.all().prefetch_related('pulp2content')
             total_pulp2content = pulp2content_qs.count()
 
             with ProgressReport(
@@ -201,14 +198,14 @@ class ContentMigrationFirstStage(Stage):
                 return
             return pulp2importer.pulp3_remote
 
-        for pulp2content in batch:
-            pulp_2to3_detail_content = pulp2content.detail_model
+        for pulp_2to3_detail_content in batch:
+            pulp2content = pulp_2to3_detail_content.pulp2content
 
             # get all Lazy Catalog Entries (LCEs) for this content
             pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
                 pulp2_unit_id=pulp2content.pulp2_id)
 
-            if not pulp2lazycatalog and not pulp2content.downloaded:
+            if not pulp2content.downloaded and not pulp2lazycatalog:
                 _logger.warn(_('On_demand content cannot be migrated without an entry in the lazy '
                                'catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
                 continue
@@ -221,7 +218,7 @@ class ContentMigrationFirstStage(Stage):
                                                   pulp_2to3_detail_content.expected_size,
                                                   downloaded=pulp2content.downloaded)
             # Downloaded content with no LCE
-            if not pulp2lazycatalog and pulp2content.downloaded:
+            if pulp2content.downloaded and not pulp2lazycatalog:
                 da = DeclarativeArtifact(
                     artifact=artifact,
                     url=NOT_USED,
