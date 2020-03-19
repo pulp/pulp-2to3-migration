@@ -303,3 +303,125 @@ class Distribution(FileContentUnit):
     meta = {'collection': 'units_distribution',
             'indexes': ['distribution_id', 'family', 'variant', 'version', 'arch'],
             'allow_inheritance': False}
+
+
+class PackageGroup(ContentUnit):
+    """
+    A model for Pulp 2 PackageGroup content type.
+    """
+    TYPE_ID = 'package_group'
+
+    package_group_id = StringField(required=True)
+    repo_id = StringField(required=True)
+
+    description = StringField()
+    default_package_names = ListField()
+    optional_package_names = ListField()
+    mandatory_package_names = ListField()
+    name = StringField()
+    default = BooleanField(default=False)
+    display_order = IntField()
+    user_visible = BooleanField(default=False)
+    translated_name = DictField()
+    translated_description = DictField()
+    langonly = StringField()
+    conditional_package_names = ListField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_package_group')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('package_group_id', 'repo_id')
+    unit_display_name = 'Package Group'
+    unit_description = 'Yum Package group information'
+
+    meta = {
+        'indexes': [
+            'package_group_id', 'repo_id', 'name', 'mandatory_package_names',
+            'conditional_package_names', 'optional_package_names', 'default_package_names'
+        ],
+        'collection': 'units_package_group',
+        'allow_inheritance': False}
+
+
+class PackageCategory(ContentUnit):
+    """
+    A model for Pulp 2 PackageCategory content type.
+    """
+    TYPE_ID = 'package_category'
+
+    package_category_id = StringField(required=True)
+    repo_id = StringField(required=True)
+
+    description = StringField()
+    packagegroupids = ListField()
+    translated_description = DictField()
+    translated_name = DictField()
+    display_order = IntField()
+    name = StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_package_category')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('package_category_id', 'repo_id')
+    unit_display_name = 'Package Category'
+    unit_description = 'Yum Package category information'
+
+    meta = {
+        'indexes': [
+            'package_category_id', 'repo_id', 'name', 'packagegroupids'
+        ],
+        'collection': 'units_package_category',
+        'allow_inheritance': False}
+
+
+class PackageEnvironment(ContentUnit):
+    """
+    A model for Pulp 2 PackageEnvironment content type.
+    """
+    TYPE_ID = 'package_environment'
+
+    package_environment_id = StringField(required=True)
+    repo_id = StringField(required=True)
+
+    group_ids = ListField()
+    description = StringField()
+    translated_name = DictField()
+    translated_description = DictField()
+    options = ListField()
+    display_order = IntField()
+    name = StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_package_environment')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('package_environment_id', 'repo_id')
+    unit_display_name = 'Package Environment'
+    unit_description = 'Yum Package environment information'
+
+    meta = {
+        'indexes': ['package_environment_id', 'repo_id', 'name', 'group_ids'],
+        'collection': 'units_package_environment',
+        'allow_inheritance': False}
+
+
+class PackageLangpacks(ContentUnit):
+    """
+    A model for Pulp 2 PackageLangpacks content type.
+    """
+    TYPE_ID = 'package_langpacks'
+
+    repo_id = StringField(required=True)
+    matches = ListField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_package_langpacks')
+    _content_type_id = StringField(required=True, default=TYPE_ID)
+
+    unit_key_fields = ('repo_id',)
+
+    meta = {
+        'collection': 'units_package_langpacks',
+        'allow_inheritance': False}

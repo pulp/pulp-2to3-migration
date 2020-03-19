@@ -8,15 +8,27 @@ from django.db import models
 
 from pulp_2to3_migration.app.models import Pulp2to3Content
 
+from pulp_rpm.app.comps import dict_digest
 from pulp_rpm.app.models import (
     Modulemd,
     ModulemdDefaults,
     Package,
+    PackageCategory,
+    PackageEnvironment,
+    PackageGroup,
+    PackageLangpacks,
     RepoMetadataFile,
     UpdateRecord,
 )
 
 from . import pulp2_models
+
+from .comps_utils import (
+    langpacks_to_libcomps,
+    pkg_cat_to_libcomps,
+    pkg_env_to_libcomps,
+    pkg_grp_to_libcomps
+)
 
 from .xml_utils import get_cr_obj
 
@@ -524,3 +536,232 @@ class Pulp2Distribution(Pulp2to3Content):
         Create a Pulp 3 Distribution content for saving later in a bulk operation.
         """
         pass
+
+
+class Pulp2PackageLangpacks(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store pulp 2 package_langpacks
+    content details for Pulp 3 content creation.
+    """
+    matches = JSONField()
+    repo_id = models.TextField()
+
+    pulp2_type = 'package_langpacks'
+
+    class Meta:
+        unique_together = ('repo_id', 'pulp2content')
+        default_related_name = 'package_langpacks_detail_model'
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 langpacks content with all the fields needed to create a Pulp 3 content.
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_content_batch = pulp2_models.PackageLangpacks.objects.filter(id__in=pulp2_ids)
+        pulp2langpacks_to_save = [
+            cls(repo_id=p.repo_id,
+                matches=p.matches,
+                pulp2content=pulp2_id_obj_map[p.id])
+            for p in pulp2_content_batch]
+        cls.objects.bulk_create(pulp2langpacks_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Package Langpacks content for saving it later in a bulk operation.
+        """
+        langpacks = langpacks_to_libcomps(self)
+        langpacks_dict = PackageLangpacks.libcomps_to_dict(langpacks)
+        return (PackageLangpacks(matches=langpacks_dict['matches'],
+                                 digest=dict_digest(langpacks_dict)), None)
+
+
+class Pulp2PackageGroup(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store pulp 2 package_group
+    content details for Pulp 3 content creation.
+    """
+    package_group_id = models.TextField()
+    repo_id = models.TextField()
+
+    default = models.BooleanField()
+    user_visible = models.BooleanField()
+    display_order = models.IntegerField(null=True)
+    name = models.TextField()
+    description = models.TextField()
+    # This field contains mandatory, default, optional, conditional packages
+    packages = JSONField()
+    desc_by_lang = JSONField(dict)
+    name_by_lang = JSONField(dict)
+    biarch_only = models.BooleanField(default=False)
+
+    pulp2_type = 'package_group'
+
+    class Meta:
+        unique_together = ('repo_id', 'package_group_id', 'pulp2content')
+        default_related_name = 'package_group_detail_model'
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 package groups with all the fields needed to create a Pulp 3 content.
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        def _get_packages(group):
+            """Merge in a list all package types"""
+            # order of type of packages is important and should be preserved
+            return [(3, group.mandatory_package_names), (0, group.default_package_names),
+                    (1, group.optional_package_names), (2, group.conditional_package_names)]
+
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_content_batch = pulp2_models.PackageGroup.objects.filter(id__in=pulp2_ids)
+        pulp2groups_to_save = [
+            cls(repo_id=p.repo_id,
+                package_group_id=p.package_group_id,
+                default=p.default,
+                user_visible=p.user_visible,
+                display_order=p.display_order,
+                name=p.name,
+                description=p.description if p.description else '',
+                packages=_get_packages(p),
+                desc_by_lang=p.translated_description,
+                name_by_lang=p.translated_name,
+                pulp2content=pulp2_id_obj_map[p.id])
+            for p in pulp2_content_batch]
+        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Package Group content for saving it later in a bulk operation.
+        """
+        group = pkg_grp_to_libcomps(self)
+        group_dict = PackageGroup.libcomps_to_dict(group)
+        packages = group_dict['packages']
+        # ugly stuff
+        for pkg in packages:
+            pkg['requires'] = pkg['requires'] or None
+        group_dict['digest'] = dict_digest(group_dict)
+        return (PackageGroup(**group_dict), None)
+
+
+class Pulp2PackageCategory(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store pulp 2 package_category
+    content details for Pulp 3 content creation.
+    """
+    package_category_id = models.TextField()
+    repo_id = models.TextField()
+
+    display_order = models.IntegerField(null=True)
+    name = models.TextField()
+    description = models.TextField()
+    packagegroupids = JSONField()
+    desc_by_lang = JSONField(dict)
+    name_by_lang = JSONField(dict)
+
+    pulp2_type = 'package_category'
+
+    class Meta:
+        unique_together = ('repo_id', 'package_category_id', 'pulp2content')
+        default_related_name = 'package_category_detail_model'
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 package category with all the fields needed to create a Pulp 3 content.
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_content_batch = pulp2_models.PackageCategory.objects.filter(id__in=pulp2_ids)
+        pulp2groups_to_save = [
+            cls(repo_id=p.repo_id,
+                package_category_id=p.package_category_id,
+                display_order=p.display_order,
+                name=p.name,
+                description=p.description if p.description else '',
+                packagegroupids=p.packagegroupids,
+                desc_by_lang=p.translated_description,
+                name_by_lang=p.translated_name,
+                pulp2content=pulp2_id_obj_map[p.id])
+            for p in pulp2_content_batch]
+        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Package Category content for saving it later in a bulk operation.
+        """
+        cat = pkg_cat_to_libcomps(self)
+        category_dict = PackageCategory.libcomps_to_dict(cat)
+        category_dict['digest'] = dict_digest(category_dict)
+        return (PackageCategory(**category_dict), None)
+
+
+class Pulp2PackageEnvironment(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store pulp 2 package_environment
+    content details for Pulp 3 content creation.
+    """
+    package_environment_id = models.TextField()
+    repo_id = models.TextField()
+
+    display_order = models.IntegerField(null=True)
+    name = models.TextField()
+    description = models.TextField()
+    group_ids = JSONField()
+    option_ids = JSONField()
+    desc_by_lang = JSONField(default=dict)
+    name_by_lang = JSONField(default=dict)
+
+    pulp2_type = 'package_environment'
+
+    class Meta:
+        unique_together = ('repo_id', 'package_environment_id', 'pulp2content')
+        default_related_name = 'package_environment_detail_model'
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 package env. with all the fields needed to create a Pulp 3 content.
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_content_batch = pulp2_models.PackageEnvironment.objects.filter(id__in=pulp2_ids)
+        pulp2envs_to_save = [
+            cls(repo_id=p.repo_id,
+                package_environment_id=p.package_environment_id,
+                display_order=p.display_order,
+                name=p.name,
+                description=p.description if p.description else '',
+                group_ids=p.group_ids,
+                option_ids=p.options,
+                desc_by_lang=p.translated_description,
+                name_by_lang=p.translated_name,
+                pulp2content=pulp2_id_obj_map[p.id])
+            for p in pulp2_content_batch]
+        cls.objects.bulk_create(pulp2envs_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Package Environment content for saving it later in a bulk operation.
+        """
+        env = pkg_env_to_libcomps(self)
+        environment_dict = PackageEnvironment.libcomps_to_dict(env)
+        environment_dict['digest'] = dict_digest(environment_dict)
+        return (PackageEnvironment(**environment_dict), None

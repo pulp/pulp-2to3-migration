@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 from django.db.models import Q
 
@@ -16,6 +18,10 @@ from .pulp2_models import (
     Errata,
     Modulemd,
     ModulemdDefaults,
+    PackageCategory,
+    PackageGroup,
+    PackageEnvironment,
+    PackageLangpacks,
     RPM,
     YumMetadataFile,
 )
@@ -23,6 +29,10 @@ from .pulp_2to3_models import (
     Pulp2Erratum,
     Pulp2Modulemd,
     Pulp2ModulemdDefaults,
+    Pulp2PackageCategory,
+    Pulp2PackageEnvironment,
+    Pulp2PackageGroup,
+    Pulp2PackageLangpacks,
     Pulp2Rpm,
     Pulp2YumRepoMetadataFile,
 )
@@ -42,6 +52,9 @@ from pulpcore.plugin.stages import (
 )
 
 from . import package_utils
+
+
+_logger = logging.getLogger(__name__)
 
 
 class RpmMigrator(Pulp2to3PluginMigrator):
@@ -65,6 +78,10 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'modulemd': Modulemd,
         'modulemd_defaults': ModulemdDefaults,
         'yum_repo_metadata_file': YumMetadataFile,
+        'package_langpacks': PackageLangpacks,
+        'package_group': PackageGroup,
+        'package_category': PackageCategory,
+        'package_environment': PackageEnvironment,
     }
     pulp2_collection = 'units_rpm'
     pulp3_plugin = 'pulp_rpm'
@@ -75,6 +92,10 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         ('modulemd', Pulp2Modulemd),
         ('modulemd_defaults', Pulp2ModulemdDefaults),
         ('yum_repo_metadata_file', Pulp2YumRepoMetadataFile),
+        ('package_langpacks', Pulp2PackageLangpacks),
+        ('package_group', Pulp2PackageGroup),
+        ('package_category', Pulp2PackageCategory),
+        ('package_environment', Pulp2PackageEnvironment),
     ])
     mutable_content_models = {
         'erratum': Pulp2Erratum,
