@@ -4,6 +4,7 @@ from mongoengine import (
     BooleanField,
     DictField,
     Document,
+    FloatField,
     IntField,
     ListField,
     StringField,
@@ -269,4 +270,36 @@ class ModulemdDefaults(FileContentUnit):
 
     meta = {'collection': 'units_modulemd_defaults',
             'indexes': ['repo_id'],
+            'allow_inheritance': False}
+
+
+class Distribution(FileContentUnit):
+    """
+    Model for a Pulp 2 RPM distribution tree (also sometimes referenced as an installable tree).
+    A distribution tree is described by a file in root of an RPM repository named either
+    "treeinfo" or ".treeinfo".
+    """
+    distribution_id = StringField(required=True)
+    family = StringField(required=True)
+    variant = StringField(default='')
+    version = StringField(required=True)
+    arch = StringField(required=True)
+
+    files = ListField()
+    timestamp = FloatField()
+    packagedir = StringField()
+
+    # Pretty sure the version_sort_index is never used for Distribution units
+    version_sort_index = StringField()
+
+    # For backward compatibility
+    _ns = StringField(default='units_distribution')
+    _content_type_id = StringField(required=True, default='distribution')
+
+    unit_key_fields = ('distribution_id', 'family', 'variant', 'version', 'arch')
+    unit_display_name = 'Distribution'
+    unit_description = 'Kickstart trees and all accompanying files'
+
+    meta = {'collection': 'units_distribution',
+            'indexes': ['distribution_id', 'family', 'variant', 'version', 'arch'],
             'allow_inheritance': False}
