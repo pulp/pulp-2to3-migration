@@ -470,3 +470,53 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
         """
         return ModulemdDefaults(module=self.module, stream=self.stream,
                                 profiles=self.profiles, digest=self.digest)
+
+
+class Pulp2Distribution(Pulp2to3Content):
+    """
+    Pulp 2to3 detail content model to store Pulp2 Distribution content details.
+    """
+
+    # Unit key fields
+    distribution_id = models.TextField()
+    family = models.TextField()
+    variant = models.TextField()
+    version = models.TextField()
+    arch = models.TextField()
+
+    pulp2_type = "distribution"
+
+    class Meta:
+        unique_together = (
+            'distribution_id', 'family', 'variant', 'version', 'arch', 'pulp2content')
+        default_related_name = 'distribution_detail_model'
+
+    @classmethod
+    async def pre_migrate_content_detail(cls, content_batch):
+        """
+        Pre-migrate Pulp 2 Distribution content with all the fields needed to create a Pulp 3
+        DistributionTree.
+
+        Args:
+             content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
+
+        """
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_ids = pulp2_id_obj_map.keys()
+        pulp2_distribution_content_batch = pulp2_models.Distribution.objects.filter(
+            id__in=pulp2_ids)
+        pulp2distribution_to_save = [
+            cls(distribution_id=distribution.distribution_id,
+                family=distribution.family,
+                variant=distribution.variant,
+                version=distribution.version,
+                arch=distribution.arch,
+                pulp2content=pulp2_id_obj_map[distribution.id])
+            for distribution in pulp2_distribution_content_batch]
+        cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True)
+
+    async def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Distribution content for saving later in a bulk operation.
+        """
+        pass
