@@ -94,3 +94,7 @@ class Pulp2LazyCatalog(BaseModel):
 
     class Meta:
         unique_together = ('pulp2_storage_path', 'pulp2_importer_id', 'pulp2_revision')
+        indexes = [
+            models.Index(fields=['pulp2_unit_id']),
+            models.Index(fields=['pulp2_content_type_id'])
+        ]

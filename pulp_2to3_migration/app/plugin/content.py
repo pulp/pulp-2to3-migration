@@ -203,7 +203,7 @@ class ContentMigrationFirstStage(Stage):
 
             # get all Lazy Catalog Entries (LCEs) for this content
             pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
-                pulp2_unit_id=pulp2content.pulp2_id)
+                pulp2_unit_id=pulp2content.pulp2_id).only('pulp2_importer_id', 'pulp2_url')
 
             if not pulp2content.downloaded and not pulp2lazycatalog:
                 _logger.warn(_('On_demand content cannot be migrated without an entry in the lazy '
