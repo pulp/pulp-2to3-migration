@@ -1,16 +1,29 @@
-.. pulp-2to3-migration documentation master file, created by
-   sphinx-quickstart on Wed Sep 25 16:20:06 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
-Welcome to pulp-2to3-migration's documentation!
-===============================================
+Migration Plugin
+================
+
+The ``pulp_2to3_migration`` plugin extends `pulpcore <https://pypi.python.org/pypi/pulpcore/>`__
+to support migration from Pulp 2 to Pulp 3.
+
+Supported plugins:
+ - Pulp 2 ISO can be migrated into Pulp 3 File.
+ - Pulp 2 Docker can be migrated into Pulp 3 Container.
+ - RPM plugin migration is planned and currently in development.
+
+
+Table of Contents
+-----------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   installation
+   configuration
+   migration_plan
+   workflows
+   restapi
    changes
-
+   plugin_writers_guide
 
 
 Indices and tables
