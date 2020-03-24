@@ -32,14 +32,29 @@ Bugfixes
 
 - Add awaiting for docker DC resolution and do not use does_batch.
   `#6084 <https://pulp.plan.io/issues/6084>`_
-- Do not pre-migrate schema1 docker tags when there are 2 tags with same name witin a repo.
-  `#6234 <https://pulp.plan.io/issues/6234>`_
 
 
 Misc
 ----
 
 - `#6172 <https://pulp.plan.io/issues/6172>`_, `#6173 <https://pulp.plan.io/issues/6173>`_, `#6174 <https://pulp.plan.io/issues/6174>`_, `#6175 <https://pulp.plan.io/issues/6175>`_, `#6176 <https://pulp.plan.io/issues/6176>`_, `#6178 <https://pulp.plan.io/issues/6178>`_
+
+
+0.1.0 (2020-03-24)
+==================
+
+Bugfixes
+--------
+
+- Do not pre-migrate schema1 docker tags when there are 2 tags with same name witin a repo.
+  `#6234 <https://pulp.plan.io/issues/6234>`_
+
+
+Improved Documentation
+----------------------
+
+- Moved README to readthedocs website.
+  `#6145 <https://pulp.plan.io/issues/6145>`_
 
 
 ----
