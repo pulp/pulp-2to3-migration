@@ -18,6 +18,11 @@ sys.path.insert(0, os.path.abspath('.'))  # noqa
 
 import pulp_2to3_migration
 
+try:
+    import sphinx_rtd_theme
+except ImportError:
+    sphinx_rtd_theme = False
+
 
 # -- Project information -----------------------------------------------------
 
