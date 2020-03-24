@@ -13,6 +13,38 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0b1 (2020-03-24)
+====================
+
+Features
+--------
+
+- Migrate RPM packages to Pulp 3.
+  `#6177 <https://pulp.plan.io/issues/6177>`_
+- Add custom repo metadata migration.
+  `#6283 <https://pulp.plan.io/issues/6283>`_
+- As a user I can migrate modules and modules-defaults
+  `#6321 <https://pulp.plan.io/issues/6321>`_
+
+
+Bugfixes
+--------
+
+- Add awaiting for docker DC resolution and do not use does_batch.
+  `#6084 <https://pulp.plan.io/issues/6084>`_
+- Do not pre-migrate schema1 docker tags when there are 2 tags with same name witin a repo.
+  `#6234 <https://pulp.plan.io/issues/6234>`_
+
+
+Misc
+----
+
+- `#6172 <https://pulp.plan.io/issues/6172>`_, `#6173 <https://pulp.plan.io/issues/6173>`_, `#6174 <https://pulp.plan.io/issues/6174>`_, `#6175 <https://pulp.plan.io/issues/6175>`_, `#6176 <https://pulp.plan.io/issues/6176>`_, `#6178 <https://pulp.plan.io/issues/6178>`_
+
+
+----
+
+
 0.1.0rc1 (2020-02-28)
 =====================
 
