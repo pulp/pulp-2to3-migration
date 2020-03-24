@@ -13,6 +13,26 @@ Changelog
 
 .. towncrier release notes start
 
+0.1.0 (2020-03-24)
+==================
+
+Bugfixes
+--------
+
+- Do not pre-migrate schema1 docker tags when there are 2 tags with same name witin a repo.
+  `#6234 <https://pulp.plan.io/issues/6234>`_
+
+
+Improved Documentation
+----------------------
+
+- Moved README to readthedocs website.
+  `#6145 <https://pulp.plan.io/issues/6145>`_
+
+
+----
+
+
 0.1.0rc1 (2020-02-28)
 =====================
 
