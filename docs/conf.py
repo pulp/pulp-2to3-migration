@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))  # noqa
+sys.path.insert(0, os.path.abspath('..'))  # noqa
 
 import pulp_2to3_migration
 
