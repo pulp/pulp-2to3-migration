@@ -3,6 +3,7 @@ import logging
 from mongoengine import (
     BooleanField,
     DictField,
+    Document,
     IntField,
     ListField,
     StringField,
@@ -156,6 +157,29 @@ class Errata(ContentUnit):
         'collection': 'units_erratum',
         'allow_inheritance': False,
     }
+
+
+class ErratumPkglist(Document):
+    """
+    A model for erratum pkglists. It's needed to retrieve pkglists for errata migration.
+
+    For each erratum there can be multiple pkglists but they refer to different repo_id's.
+    It is not guaranteed that for every repo containing an erratum there is a pkglist with
+    corresponding repo_id. If erratum was copied from one repo to the other (and not imported
+    via sync or upload), no new pkglist is created i pulp 2.
+    During migration all the pkglists related to an erratum are used and filtered out accordingly.
+    """
+    errata_id = StringField(required=True)
+    repo_id = StringField(required=True)
+    collections = ListField()
+
+    _ns = StringField(default='erratum_pkglists')
+
+    model_key_fields = ('errata_id', 'repo_id')
+    meta = {'collection': 'erratum_pkglists',
+            'allow_inheritance': False,
+            'indexes': ['errata_id',
+                        {'fields': model_key_fields, 'unique': True}]}
 
 
 class YumMetadataFile(FileContentUnit):

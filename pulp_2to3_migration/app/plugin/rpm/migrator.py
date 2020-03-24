@@ -76,6 +76,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         ('yum_repo_metadata_file', Pulp2YumRepoMetadataFile),
     ])
     mutable_content_models = {
+        'erratum': Pulp2Erratum,
         'modulemd': Pulp2Modulemd,
         'modulemd_defaults': Pulp2ModulemdDefaults,
     }
