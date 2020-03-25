@@ -1,3 +1,5 @@
+import os
+
 from bson import BSON
 from collections import defaultdict
 
@@ -291,7 +293,9 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
     @property
     def relative_path_for_content_artifact(self):
         """Return relative path."""
-        return self.data_type
+        path = self.pulp2content.pulp2_storage_path
+        metadata_file_name = os.path.basename(path)
+        return os.path.join('repodata', metadata_file_name)
 
     @classmethod
     async def pre_migrate_content_detail(cls, content_batch):
