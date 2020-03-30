@@ -35,6 +35,7 @@ from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
     RemoteArtifactSaver,
+    ResolveContentFutures,
     Stage,
     QueryExistingArtifacts,
     QueryExistingContents,
@@ -86,6 +87,12 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     distributor_migrators = {
         'yum_distributor': RpmDistributor,
     }
+    lazy_types = {
+        'rpm': Pulp2Rpm,
+    }
+    future_types = {
+        'rpm': Pulp2Rpm,
+    }
 
     @classmethod
     async def migrate_content_to_pulp3(cls):
@@ -121,6 +128,7 @@ class RpmDeclarativeContentMigration(DeclarativeContentMigration):
             RemoteArtifactSaver(),
             InterrelateContent(),
             RelatePulp2to3Content(),
+            ResolveContentFutures(),
         ]
 
         return pipeline

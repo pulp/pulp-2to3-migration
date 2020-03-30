@@ -35,7 +35,6 @@ from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
     DeclarativeArtifact,
-    DeclarativeContent,
     ResolveContentFutures,
     Stage,
     QueryExistingArtifacts,
@@ -81,12 +80,21 @@ class DockerMigrator(Pulp2to3PluginMigrator):
         'docker_tag': utils.find_tags
     }
 
+    artifactless_types = {
+        'docker_tag': Pulp2Tag,
+    }
+
+    future_types = {
+        'docker_manifest': pulp2_models.Manifest,
+        'docker_manifest_list': pulp2_models.ManifestList
+    }
+
     @classmethod
     async def migrate_content_to_pulp3(cls):
         """
         Migrate pre-migrated Pulp 2 docker content.
         """
-        first_stage = DockerContentMigrationFirstStage(cls)
+        first_stage = ContentMigrationFirstStage(cls)
         dm = DockerDeclarativeContentMigration(first_stage=first_stage)
         await dm.create()
 
@@ -118,67 +126,6 @@ class DockerDeclarativeContentMigration(DeclarativeContentMigration):
         ]
 
         return pipeline
-
-
-class DockerContentMigrationFirstStage(ContentMigrationFirstStage):
-    """
-    The first stage of a Docker content migration pipeline.
-    """
-
-    async def migrate_to_pulp3(self, batch, pb=None):
-        """
-        Docker specific implementation of DeclarativeContent creation for migrating
-        docker content to Pulp 3.
-
-        Args:
-            batch: A batch of Pulp2Content objects to migrate to Pulp 3
-        """
-
-        future_manifests = []
-
-        for pulp_2to3_detail_content in batch:
-            pulp2content = pulp_2to3_detail_content.pulp2content
-            pulp3content = await pulp_2to3_detail_content.create_pulp3_content()
-            future_relations = {'pulp2content': pulp2content}
-            # store digests for future pulp3 content relations
-            if pulp_2to3_detail_content.pulp2_type == 'docker_manifest':
-
-                future_relations['blob_rel'] = pulp_2to3_detail_content.blobs
-                future_relations['config_blob_rel'] = pulp_2to3_detail_content.config_blob
-
-            if pulp_2to3_detail_content.pulp2_type == 'docker_manifest_list':
-
-                future_relations['man_rel'] = pulp_2to3_detail_content.listed_manifests
-
-            if pulp_2to3_detail_content.pulp2_type == 'docker_tag':
-
-                future_relations['tag_rel'] = pulp_2to3_detail_content.tagged_manifest
-
-            if pulp_2to3_detail_content.pulp2_type == 'docker_tag':
-                # dc without artifact, will assign arifact in the _pre_save hook
-                dc = DeclarativeContent(content=pulp3content)
-            else:
-                artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
-                                                      pulp_2to3_detail_content.expected_digests,
-                                                      pulp_2to3_detail_content.expected_size)
-                da = DeclarativeArtifact(
-                    artifact=artifact,
-                    url=NOT_USED,
-                    relative_path=pulp_2to3_detail_content.relative_path_for_content_artifact,
-                    remote=NOT_USED,
-                    deferred_download=False)
-                dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
-
-                if pulp_2to3_detail_content.pulp2_type in ('docker_manifest',
-                                                           'docker_manifest_list'):
-                    future_manifests.append(dc)
-
-            dc.extra_data = future_relations
-            await self.put(dc)
-            if pb:
-                pb.increment()
-        for man in future_manifests:
-            await man.resolution()
 
 
 class InterrelateContent(Stage):

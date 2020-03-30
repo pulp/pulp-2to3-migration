@@ -18,10 +18,20 @@ class Pulp2to3PluginMigrator:
         distributor_migrators(dict): {'distributor_type_id': 'pulp_2to3 dist interface/migrator'}
         premigrate_hook(dict): {'content_type_id': 'a callback to determine units to premigrate'}.
                                Optional.
+        artifactless_types(dict): {'content_type_id': 'detail content class to pre-migrate to'}.
+                                  Optional.
+        lazy_types(dict): {'content_type_id': 'detail content class to pre-migrate to'}.
+                          Optional.
+        future_types(dict): {'content_type_id': 'detail content class to pre-migrate to'}.
+                            Optional.
+
 
     """
     mutable_content_models = {}
     premigrate_hook = {}
+    artifactless_types = {}
+    lazy_types = {}
+    future_types = {}
 
     @classmethod
     async def migrate_to_pulp3(cls):
