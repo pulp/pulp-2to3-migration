@@ -75,6 +75,8 @@ async def migrate_repositories(plan):
                         defaults={'description': pulp2repo.pulp2_description})
                     if created:
                         pb.increment()
+                        pulp2repo.pulp3_repository = repo
+                        pulp2repo.save()
                     else:
                         pb.total -= 1
                         pb.save()
@@ -97,6 +99,8 @@ async def migrate_repositories(plan):
                         defaults={'description': description})
                     if created:
                         pb.increment()
+                        pulp2repo.pulp3_repository = repo
+                        pulp2repo.save()
                     else:
                         pb.total -= 1
                         pb.save()

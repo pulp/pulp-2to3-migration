@@ -3,6 +3,7 @@ import functools
 import logging
 import os
 import shutil
+from urllib.parse import urljoin
 
 from gettext import gettext as _
 
@@ -207,6 +208,7 @@ class ContentMigrationFirstStage(Stage):
         is_lazy_type = content_type in migrator.lazy_types
         is_artifactless_type = content_type in migrator.artifactless_types
         has_future = content_type in migrator.future_types
+        is_multi_artifact = content_type in migrator.multi_artifact_types
         for pulp_2to3_detail_content in batch:
             pulp2content = pulp_2to3_detail_content.pulp2content
 
@@ -229,15 +231,76 @@ class ContentMigrationFirstStage(Stage):
             if extra_info:
                 future_relations.update(extra_info)
 
+            if is_multi_artifact:
+                d_artifacts = []
+                base_path = pulp2content.pulp2_storage_path
+                remotes = set()
+                for image in extra_info['images']:
+                    image_path = os.path.join(base_path, image['path'])
+                    downloaded = os.path.exists(image_path)
+                    if downloaded:
+                        artifact = await self.create_artifact(image_path,
+                                                              None,
+                                                              None,
+                                                              downloaded=downloaded)
+                    else:
+                        artifact = Artifact()
+                    lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
+                    if lces:
+                        for lce in lces:
+                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            remotes.add(remote)
+                            da = DeclarativeArtifact(
+                                artifact=artifact,
+                                url=lce.pulp2_url,
+                                relative_path=image['path'],
+                                remote=remote,
+                                deferred_download=not downloaded)
+                            d_artifacts.append(da)
+                    else:
+                        da = DeclarativeArtifact(
+                            artifact=artifact,
+                            url=NOT_USED,
+                            relative_path=image['path'],
+                            remote=None,
+                            deferred_download=False)
+                        d_artifacts.append(da)
+
+                # We do this last because we need the remote url which is only found in the LCE
+                # of the image files. There is no LCE for the .treeninfo file itself.
+                relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
+                treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
+                artifact = await self.create_artifact(treeinfo_path, None, None, downloaded=True)
+                if remotes:
+                    for remote in remotes:
+                        da = DeclarativeArtifact(
+                            artifact=artifact,
+                            url=urljoin(remote.url, relative_path),
+                            relative_path=relative_path,
+                            remote=remote,
+                            deferred_download=False,
+                        )
+                        d_artifacts.append(da)
+                else:
+                    da = DeclarativeArtifact(
+                        artifact=artifact,
+                        url=NOT_USED,
+                        relative_path=relative_path,
+                        remote=None,
+                        deferred_download=False,
+                    )
+                    d_artifacts.append(da)
+                dc = DeclarativeContent(content=pulp3content, d_artifacts=d_artifacts)
+                dc.extra_data = future_relations
+                await self.put(dc)
             # not all content units have files, create DC without artifact
-            if is_artifactless_type:
+            elif is_artifactless_type:
                 # dc without artifact
                 dc = DeclarativeContent(content=pulp3content)
                 dc.extra_data = future_relations
                 await self.put(dc)
             else:
                 # create artifact for content that has file
-                # TODO potentially improve this part for content that can have multiple files
                 artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
                                                       pulp_2to3_detail_content.expected_digests,
                                                       pulp_2to3_detail_content.expected_size,

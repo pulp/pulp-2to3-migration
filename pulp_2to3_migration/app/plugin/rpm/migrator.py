@@ -11,8 +11,10 @@ from pulp_2to3_migration.app.plugin.api import (
 )
 
 from pulp_rpm.app import models as pulp3_models
+from pulp_rpm.app.tasks.synchronizing import RpmContentSaver
 
 from .pulp2_models import (
+    Distribution,
     Errata,
     Modulemd,
     ModulemdDefaults,
@@ -24,6 +26,7 @@ from .pulp2_models import (
     YumMetadataFile,
 )
 from .pulp_2to3_models import (
+    Pulp2Distribution,
     Pulp2Erratum,
     Pulp2Modulemd,
     Pulp2ModulemdDefaults,
@@ -42,7 +45,6 @@ from .repository import (
 
 from pulpcore.plugin.stages import (
     ArtifactSaver,
-    ContentSaver,
     RemoteArtifactSaver,
     ResolveContentFutures,
     Stage,
@@ -74,6 +76,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     """
     pulp2_plugin = 'rpm'
     pulp2_content_models = {
+        'distribution': Distribution,
         'rpm': RPM,
         'erratum': Errata,
         'modulemd': Modulemd,
@@ -89,6 +92,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     pulp3_repository = pulp3_models.RpmRepository
     content_models = OrderedDict([
         ('rpm', Pulp2Rpm),
+        ('distribution', Pulp2Distribution),
         ('erratum', Pulp2Erratum),
         ('modulemd', Pulp2Modulemd),
         ('modulemd_defaults', Pulp2ModulemdDefaults),
@@ -110,7 +114,8 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'yum_distributor': RpmDistributor,
     }
     lazy_types = {
-        'rpm': Pulp2Rpm,
+        'distribution': Pulp2Distribution,
+        'rpm': Pulp2Rpm
     }
     future_types = {
         'rpm': Pulp2Rpm,
@@ -122,6 +127,9 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'package_group': Pulp2PackageGroup,
         'package_category': Pulp2PackageCategory,
         'package_environment': Pulp2PackageEnvironment,
+    }
+    multi_artifact_types = {
+        'distribution': Pulp2Distribution
     }
 
     @classmethod
@@ -154,7 +162,7 @@ class RpmDeclarativeContentMigration(DeclarativeContentMigration):
             QueryExistingArtifacts(),
             ArtifactSaver(),
             QueryExistingContents(),
-            ContentSaver(),
+            RpmContentSaver(),
             RemoteArtifactSaver(),
             InterrelateContent(),
             RelatePulp2to3Content(),

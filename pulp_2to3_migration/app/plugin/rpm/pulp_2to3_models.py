@@ -6,10 +6,15 @@ from collections import defaultdict
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 
-from pulp_2to3_migration.app.models import Pulp2to3Content
+from pulp_2to3_migration.app.models import (
+    Pulp2to3Content,
+    Pulp2Repository,
+    Pulp2RepoContent
+)
 
 from pulp_rpm.app.comps import dict_digest
 from pulp_rpm.app.models import (
+    DistributionTree,
     Modulemd,
     ModulemdDefaults,
     Package,
@@ -19,6 +24,11 @@ from pulp_rpm.app.models import (
     PackageLangpacks,
     RepoMetadataFile,
     UpdateRecord,
+)
+
+from pulp_rpm.app.kickstart.treeinfo import (
+    PulpTreeInfo,
+    TreeinfoData
 )
 
 from . import pulp2_models
@@ -502,10 +512,17 @@ class Pulp2Distribution(Pulp2to3Content):
 
     pulp2_type = "distribution"
 
+    filename = None
+
     class Meta:
         unique_together = (
             'distribution_id', 'family', 'variant', 'version', 'arch', 'pulp2content')
         default_related_name = 'distribution_detail_model'
+
+    @property
+    def relative_path_for_content_artifact(self):
+        """Return relative path."""
+        return self.filename
 
     @classmethod
     async def pre_migrate_content_detail(cls, content_batch):
@@ -535,7 +552,34 @@ class Pulp2Distribution(Pulp2to3Content):
         """
         Create a Pulp 3 Distribution content for saving later in a bulk operation.
         """
-        pass
+        namespaces = [".treeinfo", "treeinfo"]
+        for namespace in namespaces:
+            treeinfo = PulpTreeInfo()
+            try:
+                treeinfo.load(f=os.path.join(self.pulp2content.pulp2_storage_path, '.treeinfo'))
+            except FileNotFoundError:
+                continue
+            self.filename = namespace
+            treeinfo_parsed = treeinfo.parsed_sections()
+            treeinfo_serialized = TreeinfoData(treeinfo_parsed).to_dict(filename=namespace)
+            # The repository must already be migrated in order to migrate the DistributionTree
+            pulp2_r_c_unit = Pulp2RepoContent.objects.get(pulp2_unit_id=self.pulp2content.pulp2_id)
+            pulp2_repo_id = pulp2_r_c_unit.pulp2_repository.pulp2_repo_id
+            pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id, not_in_plan=False)
+            # Pulp 2 only knows about the top level kickstart repository
+            treeinfo_serialized["repositories"] = {'.': pulp2_repo.pulp3_repository.pk}
+            # Pulp 2 did not support addon repositories, so we should not list them here either
+            treeinfo_serialized['addons'] = []
+            # Pulp 2 only supported variants that are in the root of the repository
+            variants = []
+            for variant in treeinfo_serialized['variants']:
+                if variant['repository'] == '.':
+                    variants.append(variant)
+            treeinfo_serialized['variants'] = variants
+            # Reset build_timestamp so Pulp will fetch all the addons during the next sync
+            treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
+            return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
+                    treeinfo_serialized)
 
 
 class Pulp2PackageLangpacks(Pulp2to3Content):
