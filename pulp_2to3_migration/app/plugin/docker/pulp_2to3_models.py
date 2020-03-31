@@ -61,7 +61,7 @@ class Pulp2Blob(Pulp2to3Content):
         """
         Create a Pulp 3 Blob unit for saving it later in a bulk operation.
         """
-        return Blob(digest=self.digest, media_type=self.media_type)
+        return (Blob(digest=self.digest, media_type=self.media_type), None)
 
 
 class Pulp2Manifest(Pulp2to3Content):
@@ -141,9 +141,10 @@ class Pulp2Manifest(Pulp2to3Content):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
-        return Manifest(digest=self.digest,
-                        media_type=self.media_type,
-                        schema_version=self.schema_version)
+        future_relations = {'blob_rel': self.blobs, 'config_blob_rel': self.config_blob}
+        return (Manifest(digest=self.digest,
+                         media_type=self.media_type,
+                         schema_version=self.schema_version), future_relations)
 
 
 class Pulp2ManifestList(Pulp2to3Content):
@@ -204,9 +205,10 @@ class Pulp2ManifestList(Pulp2to3Content):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
-        return Manifest(digest=self.digest,
-                        media_type=self.media_type,
-                        schema_version=self.schema_version)
+        future_relations = {'man_rel': self.listed_manifests}
+        return (Manifest(digest=self.digest,
+                         media_type=self.media_type,
+                         schema_version=self.schema_version), future_relations)
 
 
 class Pulp2Tag(Pulp2to3Content):
@@ -253,4 +255,5 @@ class Pulp2Tag(Pulp2to3Content):
         """
         Create a Pulp 3 Tag unit for saving it later in a bulk operation.
         """
-        return Tag(name=self.name)
+        future_relations = {'tag_rel': self.tagged_manifest}
+        return (Tag(name=self.name), future_relations)

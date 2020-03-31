@@ -122,7 +122,7 @@ class Pulp2Rpm(Pulp2to3Content):
         cr_package = await get_cr_obj(self)
         pkg_dict = Package.createrepo_to_dict(cr_package)
         pkg_dict['is_modular'] = self.is_modular
-        return Package(**pkg_dict)
+        return (Package(**pkg_dict), None)
 
 
 class Pulp2Erratum(Pulp2to3Content):
@@ -261,7 +261,7 @@ class Pulp2Erratum(Pulp2to3Content):
         # digest = hash_update_record(cr_update)
         advisory = UpdateRecord(**cr_update)
         # advisory.digest = digest
-        return advisory, relations
+        return (advisory, relations)
 
 
 class Pulp2YumRepoMetadataFile(Pulp2to3Content):
@@ -321,9 +321,9 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
         """
         Create a Pulp 3 RepoMetadataFile unit for saving it later in a bulk operation.
         """
-        return RepoMetadataFile(data_type=self.data_type,
-                                checksum=self.checksum,
-                                checksum_type=self.checksum_type)
+        return (RepoMetadataFile(data_type=self.data_type,
+                                 checksum=self.checksum,
+                                 checksum_type=self.checksum_type), None)
 
 
 class Pulp2Modulemd(Pulp2to3Content):
@@ -397,9 +397,9 @@ class Pulp2Modulemd(Pulp2to3Content):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
-        return Modulemd(name=self.name, stream=self.stream, version=self.version,
-                        context=self.context, arch=self.arch, artifacts=self.artifacts,
-                        dependencies=self.dependencies)
+        return (Modulemd(name=self.name, stream=self.stream, version=self.version,
+                         context=self.context, arch=self.arch, artifacts=self.artifacts,
+                         dependencies=self.dependencies), None)
 
 
 class Pulp2ModulemdDefaults(Pulp2to3Content):
@@ -472,8 +472,8 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
-        return ModulemdDefaults(module=self.module, stream=self.stream,
-                                profiles=self.profiles, digest=self.digest)
+        return (ModulemdDefaults(module=self.module, stream=self.stream,
+                                 profiles=self.profiles, digest=self.digest), None)
 
 
 class Pulp2Distribution(Pulp2to3Content):

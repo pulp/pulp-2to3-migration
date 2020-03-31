@@ -61,5 +61,5 @@ class Pulp2ISO(Pulp2to3Content):
         """
         Create a Pulp 3 FileContent unit for saving it later in a bulk operation.
         """
-        return FileContent(relative_path=self.name,
-                           digest=self.checksum)
+        return (FileContent(relative_path=self.name,
+                            digest=self.checksum), None)

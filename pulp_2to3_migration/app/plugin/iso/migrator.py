@@ -41,6 +41,9 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     distributor_migrators = {
         'iso_distributor': IsoDistributor,
     }
+    lazy_types = {
+        'iso': Pulp2ISO,
+    }
 
     @classmethod
     async def migrate_content_to_pulp3(cls):
