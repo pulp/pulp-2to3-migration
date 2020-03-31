@@ -2,7 +2,7 @@ import json
 
 from collections import OrderedDict
 
-from django.db import IntegrityError
+from django.db import transaction
 
 from . import pulp2_models
 from . import utils
@@ -137,17 +137,35 @@ class InterrelateContent(Stage):
         """
         Relate each item in the input queue to objects specified on the DeclarativeContent.
         """
-        async for dc in self.items():
+        async for batch in self.batches():
+            manifestlist_manifest_batch = []
+            blob_manifest_batch = []
+            manifest_batch = []
+            with transaction.atomic():
+                for dc in batch:
+                    if dc.extra_data.get('man_rel'):
+                        thru = self.relate_manifest_to_list(dc)
+                        manifestlist_manifest_batch.extend(thru)
+                    elif dc.extra_data.get('blob_rel'):
+                        thru = self.relate_blob(dc)
+                        blob_manifest_batch.extend(thru)
 
-            if dc.extra_data.get('man_rel'):
-                self.relate_manifest_to_list(dc)
-            elif dc.extra_data.get('blob_rel'):
-                self.relate_blob(dc)
+                    if dc.extra_data.get('config_blob_rel'):
+                        manifest_to_update = self.relate_config_blob(dc)
+                        manifest_batch.append(manifest_to_update)
 
-            if dc.extra_data.get('config_blob_rel'):
-                self.relate_config_blob(dc)
+                ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
+                                                         ignore_conflicts=True,
+                                                         batch_size=1000)
+                BlobManifest.objects.bulk_create(objs=blob_manifest_batch,
+                                                 ignore_conflicts=True,
+                                                 batch_size=1000)
 
-            await self.put(dc)
+                Manifest.objects.bulk_update(objs=manifest_batch,
+                                             fields=['config_blob'],
+                                             batch_size=1000)
+            for dc in batch:
+                await self.put(dc)
 
     def relate_config_blob(self, dc):
         """
@@ -162,7 +180,7 @@ class InterrelateContent(Stage):
         # Blobs should have passed through ContentSaver stage already
         blob = Blob.objects.filter(digest=configured_dc_id).first()
         dc.content.config_blob = blob
-        dc.content.save()
+        return dc.content
 
     def relate_blob(self, dc):
         """
@@ -176,12 +194,10 @@ class InterrelateContent(Stage):
         # We are relying on the order of the processed DC
         # Blobs should have passed through ContentSaver stage already
         blob_list = Blob.objects.filter(digest__in=related_dc_id_list)
+        thru = []
         for blob in blob_list:
-            thru = BlobManifest(manifest=dc.content, manifest_blob=blob)
-            try:
-                thru.save()
-            except IntegrityError:
-                pass
+            thru.append(BlobManifest(manifest=dc.content, manifest_blob=blob))
+        return thru
 
     def relate_manifest_to_list(self, dc):
         """
@@ -201,6 +217,7 @@ class InterrelateContent(Stage):
         content_data = json.loads(raw)
         manifests_from_json = content_data['manifests']
 
+        mlm = []
         for manifest in manifests_from_json:
             digest = manifest['digest']
             for item in man_list:
@@ -215,10 +232,9 @@ class InterrelateContent(Stage):
                                         os_version=platform.get('os.version', ''),
                                         os_features=platform.get('os.features', '')
                                         )
-            try:
-                thru.save()
-            except IntegrityError:
-                pass
+            mlm.append(thru)
+
+        return mlm
 
 
 class DockerContentSaver(ContentSaver):
