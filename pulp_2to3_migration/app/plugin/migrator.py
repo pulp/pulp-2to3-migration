@@ -24,7 +24,8 @@ class Pulp2to3PluginMigrator:
                           Optional.
         future_types(dict): {'content_type_id': 'detail content class to pre-migrate to'}.
                             Optional.
-
+        multi_artifact_types(dict): {'content_type_id': 'detail content class to pre-migrate to'}.
+                                    Optional.
 
     """
     mutable_content_models = {}

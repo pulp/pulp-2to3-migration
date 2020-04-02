@@ -158,20 +158,26 @@ class ContentMigrationFirstStage(Stage):
         """
         for ctype, cmodel in self.migrator.content_models.items():
             # we need to go through all content in case any of Remotes changed
-            pulp2content_qs = cmodel.objects.all().prefetch_related('pulp2content')
-            total_pulp2content = pulp2content_qs.count()
+
+            # order by pulp2_repo if it's set
+            if cmodel.set_pulp2_repo:
+                pulp_2to3_detail_qs = cmodel.objects.all().order_by(
+                    'repo_id').prefetch_related('pulp2content')
+            else:
+                pulp_2to3_detail_qs = cmodel.objects.all().prefetch_related('pulp2content')
+            total_pulp_2to3_detail_content = pulp_2to3_detail_qs.count()
 
             with ProgressReport(
                 message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
                                                                    ctype),
                 code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
-                total=total_pulp2content
+                total=total_pulp_2to3_detail_content
             ) as pb:
                 # We are waiting on the coroutine to finish, because the order of the processed
                 # content for plugins like Container and RPM is important because of the relations
                 # between the content types.
                 await asyncio.wait(
-                    [self.migrate_to_pulp3(pulp2content_qs, self.migrator, ctype, pb=pb)]
+                    [self.migrate_to_pulp3(pulp_2to3_detail_qs, self.migrator, ctype, pb=pb)]
                 )
 
     async def migrate_to_pulp3(self, batch, migrator, content_type, pb=None):

@@ -10,22 +10,18 @@ from pulp_2to3_migration.app.plugin.api import (
     RelatePulp2to3Content,
 )
 
-from pulp_rpm.app import models as pulp3_models
+from pulp_rpm.app.models import (
+    Modulemd,
+    Package,
+    PackageCategory,
+    PackageEnvironment,
+    PackageGroup,
+    RpmRepository,
+)
 from pulp_rpm.app.tasks.synchronizing import RpmContentSaver
 
-from .pulp2_models import (
-    Distribution,
-    Errata,
-    Modulemd,
-    ModulemdDefaults,
-    PackageCategory,
-    PackageGroup,
-    PackageEnvironment,
-    PackageLangpacks,
-    RPM,
-    SRPM,
-    YumMetadataFile,
-)
+from . import pulp2_models
+
 from .pulp_2to3_models import (
     Pulp2Distribution,
     Pulp2Erratum,
@@ -78,21 +74,20 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     """
     pulp2_plugin = 'rpm'
     pulp2_content_models = {
-        'distribution': Distribution,
-        'rpm': RPM,
-        'srpm': SRPM,
-        'erratum': Errata,
-        'modulemd': Modulemd,
-        'modulemd_defaults': ModulemdDefaults,
-        'yum_repo_metadata_file': YumMetadataFile,
-        'package_langpacks': PackageLangpacks,
-        'package_group': PackageGroup,
-        'package_category': PackageCategory,
-        'package_environment': PackageEnvironment,
+        'distribution': pulp2_models.Distribution,
+        'erratum': pulp2_models.Errata,
+        'modulemd': pulp2_models.Modulemd,
+        'modulemd_defaults': pulp2_models.ModulemdDefaults,
+        'package_category': pulp2_models.PackageCategory,
+        'package_environment': pulp2_models.PackageEnvironment,
+        'package_group': pulp2_models.PackageGroup,
+        'package_langpacks': pulp2_models.PackageLangpacks,
+        'rpm': pulp2_models.RPM,
+        'srpm': pulp2_models.SRPM,
     }
     pulp2_collection = 'units_rpm'
     pulp3_plugin = 'pulp_rpm'
-    pulp3_repository = pulp3_models.RpmRepository
+    pulp3_repository = RpmRepository
     content_models = OrderedDict([
         ('rpm', Pulp2Rpm),
         ('srpm', Pulp2Srpm),
@@ -128,6 +123,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         'package_category': Pulp2PackageCategory,
     }
     artifactless_types = {
+        'erratum': Pulp2Erratum,
         'package_langpacks': Pulp2PackageLangpacks,
         'package_group': Pulp2PackageGroup,
         'package_category': Pulp2PackageCategory,
@@ -194,37 +190,37 @@ class InterrelateContent(Stage):
             environment_options_batch = []
             with transaction.atomic():
                 for dc in batch:
-                    if type(dc.content) == pulp3_models.Modulemd:
+                    if type(dc.content) == Modulemd:
                         thru = self.relate_packages_to_module(dc)
                         modulemd_packages_batch.extend(thru)
-                    elif type(dc.content) == pulp3_models.PackageGroup:
+                    elif type(dc.content) == PackageGroup:
                         thru = self.relate_packages_to_group(dc)
                         group_packages_batch.extend(thru)
-                    elif type(dc.content) == pulp3_models.PackageCategory:
+                    elif type(dc.content) == PackageCategory:
                         thru = self.relate_groups_to_category(dc)
                         category_groups_batch.extend(thru)
-                    elif type(dc.content) == pulp3_models.PackageEnvironment:
+                    elif type(dc.content) == PackageEnvironment:
                         groups_thru, options_thru = self.relate_groups_to_environment(dc)
                         environment_groups_batch.extend(groups_thru)
                         environment_options_batch.extend(groups_thru)
 
-                ModulemdPackages = pulp3_models.Modulemd.packages.through
+                ModulemdPackages = Modulemd.packages.through
                 ModulemdPackages.objects.bulk_create(objs=modulemd_packages_batch,
                                                      ignore_conflicts=True,
                                                      batch_size=1000)
-                PackageGroupPackages = pulp3_models.PackageGroup.related_packages.through
+                PackageGroupPackages = PackageGroup.related_packages.through
                 PackageGroupPackages.objects.bulk_create(objs=group_packages_batch,
                                                          ignore_conflicts=True,
                                                          batch_size=1000)
-                PackageCategoryGroups = pulp3_models.PackageCategory.packagegroups.through
+                PackageCategoryGroups = PackageCategory.packagegroups.through
                 PackageCategoryGroups.objects.bulk_create(objs=category_groups_batch,
                                                           ignore_conflicts=True,
                                                           batch_size=1000)
-                PackageEnvironmentGroups = pulp3_models.PackageEnvironment.packagegroups.through
+                PackageEnvironmentGroups = PackageEnvironment.packagegroups.through
                 PackageEnvironmentGroups.objects.bulk_create(objs=environment_groups_batch,
                                                              ignore_conflicts=True,
                                                              batch_size=1000)
-                PackageEnvOptGroups = pulp3_models.PackageEnvironment.optionalgroups.through
+                PackageEnvOptGroups = PackageEnvironment.optionalgroups.through
                 PackageEnvOptGroups.objects.bulk_create(objs=environment_options_batch,
                                                         ignore_conflicts=True,
                                                         batch_size=1000)
@@ -239,7 +235,7 @@ class InterrelateContent(Stage):
         Args:
             module_dc (pulpcore.plugin.stages.DeclarativeContent): dc for a Module
         """
-        ModulemdPackages = pulp3_models.Modulemd.packages.through
+        ModulemdPackages = Modulemd.packages.through
         artifacts_list = module_dc.content.artifacts
         # find rpm by nevra
         # We are relying on the order of the processed DC
@@ -256,7 +252,8 @@ class InterrelateContent(Stage):
                 is_modular=True)
         packages_list = []
         if pq:
-            packages_list = pulp3_models.Package.objects.filter(pq).only('pk').iterator()
+            packages_list = Package.objects.filter(pq).only('pk').iterator()
+
         thru = []
         # keep track of rpm nevra for which we already created a relation with module.
         # it can happen that we have 2 rpms with same nevra but different checksum
@@ -275,7 +272,7 @@ class InterrelateContent(Stage):
         Args:
             module_dc (pulpcore.plugin.stages.DeclarativeContent): dc for a PackageGroup
         """
-        PackageGroupPackages = pulp3_models.PackageGroup.related_packages.through
+        PackageGroupPackages = PackageGroup.related_packages.through
         packages = group_dc.content.packages
         package_list = [pkg['name'] for pkg in packages]
         pulp2_repo_id = group_dc.extra_data.get('pulp2_repo_id')
@@ -289,7 +286,7 @@ class InterrelateContent(Stage):
         # all pulp3 rpm pks within the pulp2repo
         pulp3_content = Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
             'pulp3_content').values_list('pulp3_content__pk', flat=True).iterator()
-        pulp3_packages = pulp3_models.Package.objects.filter(
+        pulp3_packages = Package.objects.filter(
             name__in=package_list,
             pk__in=pulp3_content).only('pk').values_list('pk', flat=True).iterator()
         thru = []
@@ -304,7 +301,7 @@ class InterrelateContent(Stage):
         Args:
             module_dc (pulpcore.plugin.stages.DeclarativeContent): dc for a PackageCategory
         """
-        PackageCategoryGroups = pulp3_models.PackageCategory.packagegroups.through
+        PackageCategoryGroups = PackageCategory.packagegroups.through
         groups = category_dc.content.group_ids
         group_list = [grp['name'] for grp in groups]
         pulp2_repo_id = category_dc.extra_data.get('pulp2_repo_id')
@@ -317,7 +314,7 @@ class InterrelateContent(Stage):
         # all pulp3 groups pks within the pulp2repo
         pulp3_content = Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
             'pulp3_content').values_list('pulp3_content__pk', flat=True).iterator()
-        pulp3_groups = pulp3_models.PackageGroup.objects.filter(
+        pulp3_groups = PackageGroup.objects.filter(
             id__in=group_list,
             pk__in=pulp3_content).only('pk').values_list('pk', flat=True).iterator()
         thru = []
@@ -333,8 +330,8 @@ class InterrelateContent(Stage):
         Args:
             module_dc (pulpcore.plugin.stages.DeclarativeContent): dc for a PackageCategory
         """
-        PackageEnvGroups = pulp3_models.PackageEnvironment.packagegroups.through
-        PackageEnvOptGroups = pulp3_models.PackageEnvironment.optionalgroups.through
+        PackageEnvGroups = PackageEnvironment.packagegroups.through
+        PackageEnvOptGroups = PackageEnvironment.optionalgroups.through
         groups = env_dc.content.group_ids
         options = env_dc.content.option_ids
         group_list = [grp['name'] for grp in groups]
@@ -349,7 +346,7 @@ class InterrelateContent(Stage):
         # all pulp3 groups pks within the pulp2repo
         pulp3_content = Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
             'pulp3_content').values_list('pulp3_content__pk', flat=True).iterator()
-        pulp3_groups = pulp3_models.PackageGroup.objects.filter(
+        pulp3_groups = PackageGroup.objects.filter(
             id__in=group_list + option_list,
             pk__in=pulp3_content).only('pk', 'id').iterator()
         group_thru = []
