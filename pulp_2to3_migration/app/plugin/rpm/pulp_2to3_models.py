@@ -40,10 +40,26 @@ from .comps_utils import (
     pkg_grp_to_libcomps
 )
 
-from .xml_utils import get_cr_obj
+from .xml_utils import get_cr_obj, decompress_repodata
+
+SRPM_UNIT_FIELDS = set([
+    'name',
+    'epoch',
+    'version',
+    'release',
+    'arch',
+    'checksum',
+    'checksumtype',
+    'repodata',
+    'size',
+    'filename',
+    'pk',
+])
+
+RPM_UNIT_FIELDS = SRPM_UNIT_FIELDS | set(['is_modular'])
 
 
-class Pulp2Rpm(Pulp2to3Content):
+class Pulp2RpmBase(Pulp2to3Content):
     """
     Pulp 2to3 detail content model to store Pulp 2 RPM content details for Pulp 3 content creation.
     """
@@ -61,13 +77,8 @@ class Pulp2Rpm(Pulp2to3Content):
     size = models.PositiveIntegerField()
     filename = models.TextField()
 
-    pulp2_type = 'rpm'
-
     class Meta:
-        unique_together = (
-            'name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum',
-            'pulp2content')
-        default_related_name = 'rpm_detail_model'
+        abstract = True
 
     @property
     def expected_digests(self):
@@ -93,33 +104,13 @@ class Pulp2Rpm(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.RPM.objects.filter(id__in=pulp2_ids).as_pymongo().only(
-            'name',
-            'epoch',
-            'version',
-            'release',
-            'arch',
-            'checksum',
-            'checksumtype',
-            'repodata',
-            'is_modular',
-            'size',
-            'filename',
-            'pk',
-        )
-        import gzip
-
+        pulp2_content_batch = cls.pulp2_model.objects.filter(id__in=pulp2_ids).as_pymongo().only(
+            *cls.unit_fields)
         pulp2rpm_to_save = []
         for rpm in pulp2_content_batch:
-            compressed_repodata = rpm['repodata']
-            decompressed_repodata = {}
-            for name, gzipped_data in compressed_repodata.items():
-                decompressed_repodata[name] = gzip.zlib.decompress(
-                    bytearray(gzipped_data)).decode()
-            rpm['repodata'] = decompressed_repodata
+            rpm['repodata'] = decompress_repodata(rpm['repodata'])
 
             pulp2rpm_to_save.append(
                 cls(name=rpm['name'],
@@ -130,7 +121,7 @@ class Pulp2Rpm(Pulp2to3Content):
                     checksum=rpm['checksum'],
                     checksumtype=rpm['checksumtype'],
                     repodata=rpm['repodata'],
-                    is_modular=rpm['is_modular'],
+                    is_modular=rpm.get('is_modular', False),
                     size=rpm['size'],
                     filename=rpm['filename'],
                     pulp2content=pulp2_id_obj_map[rpm['_id']])
@@ -145,6 +136,40 @@ class Pulp2Rpm(Pulp2to3Content):
         pkg_dict = Package.createrepo_to_dict(cr_package)
         pkg_dict['is_modular'] = self.is_modular
         return (Package(**pkg_dict), None)
+
+
+class Pulp2Rpm(Pulp2RpmBase):
+    """
+    Pulp 2to3 detail content model to store Pulp 2 RPM content details for Pulp 3 content creation.
+    """
+
+    unit_fields = RPM_UNIT_FIELDS
+    pulp2_model = pulp2_models.RPM
+
+    pulp2_type = 'rpm'
+
+    class Meta:
+        unique_together = (
+            'name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum',
+            'pulp2content')
+        default_related_name = 'rpm_detail_model'
+
+
+class Pulp2Srpm(Pulp2RpmBase):
+    """
+    Pulp 2to3 detail content model to store Pulp 2 SRPM content details for Pulp 3 content creation.
+    """
+
+    unit_fields = SRPM_UNIT_FIELDS
+    pulp2_model = pulp2_models.SRPM
+
+    pulp2_type = 'srpm'
+
+    class Meta:
+        unique_together = (
+            'name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum',
+            'pulp2content')
+        default_related_name = 'srpm_detail_model'
 
 
 class Pulp2Erratum(Pulp2to3Content):
