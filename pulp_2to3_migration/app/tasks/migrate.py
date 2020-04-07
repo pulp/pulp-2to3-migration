@@ -10,11 +10,10 @@ from pulp_2to3_migration.app.pre_migration import (
 )
 
 from pulp_2to3_migration.app.migration import (
-    create_repo_versions,
+    create_repoversions_publications_distributions,
     migrate_content,
     migrate_importers,
     migrate_repositories,
-    migrate_distributors,
 )
 from pulp_2to3_migration.app.models import MigrationPlan
 from pulp_2to3_migration.exceptions import PlanValidationError
@@ -114,5 +113,4 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     migrate_importers(plan)
     pre_migrate_all_content(plan)
     migrate_content(plan)
-    create_repo_versions(plan)
-    migrate_distributors(plan)
+    create_repoversions_publications_distributions(plan)
