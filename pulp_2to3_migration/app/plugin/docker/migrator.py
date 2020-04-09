@@ -144,14 +144,14 @@ class InterrelateContent(Stage):
             with transaction.atomic():
                 for dc in batch:
                     if dc.extra_data.get('man_rel'):
-                        thru = self.relate_manifest_to_list(dc)
+                        thru = await self.relate_manifest_to_list(dc)
                         manifestlist_manifest_batch.extend(thru)
                     elif dc.extra_data.get('blob_rel'):
-                        thru = self.relate_blob(dc)
+                        thru = await self.relate_blob(dc)
                         blob_manifest_batch.extend(thru)
 
                     if dc.extra_data.get('config_blob_rel'):
-                        manifest_to_update = self.relate_config_blob(dc)
+                        manifest_to_update = await self.relate_config_blob(dc)
                         manifest_batch.append(manifest_to_update)
 
                 ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
@@ -167,7 +167,7 @@ class InterrelateContent(Stage):
             for dc in batch:
                 await self.put(dc)
 
-    def relate_config_blob(self, dc):
+    async def relate_config_blob(self, dc):
         """
         Relate a Blob to a Manifest as a config layer.
 
@@ -182,7 +182,7 @@ class InterrelateContent(Stage):
         dc.content.config_blob = blob
         return dc.content
 
-    def relate_blob(self, dc):
+    async def relate_blob(self, dc):
         """
         Relate a Blob to a Manifest.
 
@@ -199,7 +199,7 @@ class InterrelateContent(Stage):
             thru.append(BlobManifest(manifest=dc.content, manifest_blob=blob))
         return thru
 
-    def relate_manifest_to_list(self, dc):
+    async def relate_manifest_to_list(self, dc):
         """
         Relate an ImageManifest to a ManifestList.
 

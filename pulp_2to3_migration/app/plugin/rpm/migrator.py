@@ -182,16 +182,16 @@ class InterrelateContent(Stage):
             with transaction.atomic():
                 for dc in batch:
                     if type(dc.content) == pulp3_models.Modulemd:
-                        thru = self.relate_packages_to_module(dc)
+                        thru = await self.relate_packages_to_module(dc)
                         modulemd_packages_batch.extend(thru)
                     elif type(dc.content) == pulp3_models.PackageGroup:
-                        thru = self.relate_packages_to_group(dc)
+                        thru = await self.relate_packages_to_group(dc)
                         group_packages_batch.extend(thru)
                     elif type(dc.content) == pulp3_models.PackageCategory:
-                        thru = self.relate_groups_to_category(dc)
+                        thru = await self.relate_groups_to_category(dc)
                         category_groups_batch.extend(thru)
                     elif type(dc.content) == pulp3_models.PackageEnvironment:
-                        groups_thru, options_thru = self.relate_groups_to_environment(dc)
+                        groups_thru, options_thru = await self.relate_groups_to_environment(dc)
                         environment_groups_batch.extend(groups_thru)
                         environment_options_batch.extend(groups_thru)
 
@@ -219,7 +219,7 @@ class InterrelateContent(Stage):
             for dc in batch:
                 await self.put(dc)
 
-    def relate_packages_to_module(self, module_dc):
+    async def relate_packages_to_module(self, module_dc):
         """
         Relate Packages to a Module.
 
@@ -255,7 +255,7 @@ class InterrelateContent(Stage):
                 already_related.append(pkg.nevra)
         return thru
 
-    def relate_packages_to_group(self, group_dc):
+    async def relate_packages_to_group(self, group_dc):
         """
         Relate Packages to a Group.
 
@@ -282,7 +282,7 @@ class InterrelateContent(Stage):
             thru.append(PackageGroupPackages(package_id=pkg, packagegroup_id=group_dc.content.pk))
         return thru
 
-    def relate_groups_to_category(self, category_dc):
+    async def relate_groups_to_category(self, category_dc):
         """
         Relate groups to a Category
 
@@ -311,7 +311,7 @@ class InterrelateContent(Stage):
                                               packagecategory_id=category_dc.content.pk))
         return thru
 
-    def relate_groups_to_environment(self, env_dc):
+    async def relate_groups_to_environment(self, env_dc):
         """
         Relate groups to a Environment
 

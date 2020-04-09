@@ -8,7 +8,7 @@ import libcomps
 from pulp_rpm.app.comps import dict_to_strdict, list_to_idlist
 
 
-def langpacks_to_libcomps(obj):
+async def langpacks_to_libcomps(obj):
     """
     Convert standard dict to langpacks libcomps StrDict type object.
 
@@ -25,7 +25,7 @@ def langpacks_to_libcomps(obj):
     return strdict
 
 
-def pkg_cat_to_libcomps(obj):
+async def pkg_cat_to_libcomps(obj):
     """
     Convert PackageCategory object to libcomps Category object.
 
@@ -49,7 +49,7 @@ def pkg_cat_to_libcomps(obj):
     return cat
 
 
-def pkg_grp_to_libcomps(obj):
+async def pkg_grp_to_libcomps(obj):
     """
     Convert PackageGroup object to libcomps Group object.
 
@@ -76,7 +76,7 @@ def pkg_grp_to_libcomps(obj):
     return group
 
 
-def pkg_env_to_libcomps(obj):
+async def pkg_env_to_libcomps(obj):
     """
     Convert PackageEnvironment object to libcomps Environment object.
 
