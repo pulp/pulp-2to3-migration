@@ -128,3 +128,18 @@ data.
     {
         "task": "/pulp/api/v3/tasks/65db2086-cf2e-438f-b5b7-cd0dbb7c8cf5/"
     }
+
+.. _level_of_deb_support:
+
+The current level of Debian support
+-----------------------------------
+
+.. important::
+   The migration plugins Debian support is still undergoing active development, and should be considered to have "tech preview" status.
+
+The migration plugin can be used to create a ``deb`` type migration plan to migrate any Pulp 2 APT repositories into a Pulp 3 instance.
+Only package type content units will be migrated (as well as published using the Pulp 3 Debian plugins APT publisher using simple mode only).
+This creates usable repositories, however, any repository structure information like what packages were organized into which components will not be migrated.
+
+The plan is to add the ability to migrate releases and component type content units in a second step.
+Users who migrate their packages now, may be able to migrate those additional content units once that functionality is added, but should be prepared to start over with a clean Pulp 3 instance if necessary.
