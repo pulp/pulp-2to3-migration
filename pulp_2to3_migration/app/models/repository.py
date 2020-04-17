@@ -7,6 +7,7 @@ from pulpcore.app.models import (  # it has to be imported directly from pulpcor
 from pulpcore.plugin.models import (
     BaseModel,
     BaseDistribution,
+    Repository,
     RepositoryVersion,
     Publication,
 )
@@ -55,6 +56,11 @@ class Pulp2Repository(BaseModel):
     pulp3_repository_remote = models.ForeignKey(Remote,
                                                 on_delete=models.SET_NULL,
                                                 null=True)
+
+    # This is needed for migrating Variants of the DistributionTree
+    pulp3_repository = models.ForeignKey(Repository,
+                                         on_delete=models.SET_NULL,
+                                         null=True)
 
 
 class Pulp2RepoContent(BaseModel):

@@ -32,6 +32,7 @@ class Pulp2to3PluginMigrator:
     artifactless_types = {}
     lazy_types = {}
     future_types = {}
+    multi_artifact_types = {}
 
     @classmethod
     async def migrate_to_pulp3(cls):

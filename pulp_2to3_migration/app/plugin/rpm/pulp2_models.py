@@ -279,6 +279,8 @@ class Distribution(FileContentUnit):
     A distribution tree is described by a file in root of an RPM repository named either
     "treeinfo" or ".treeinfo".
     """
+    TYPE_ID = 'distribution'
+
     distribution_id = StringField(required=True)
     family = StringField(required=True)
     variant = StringField(default='')
