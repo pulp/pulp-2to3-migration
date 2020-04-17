@@ -23,6 +23,7 @@ from .pulp2_models import (
     PackageEnvironment,
     PackageLangpacks,
     RPM,
+    SRPM,
     YumMetadataFile,
 )
 from .pulp_2to3_models import (
@@ -35,6 +36,7 @@ from .pulp_2to3_models import (
     Pulp2PackageGroup,
     Pulp2PackageLangpacks,
     Pulp2Rpm,
+    Pulp2Srpm,
     Pulp2YumRepoMetadataFile,
 )
 
@@ -78,6 +80,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     pulp2_content_models = {
         'distribution': Distribution,
         'rpm': RPM,
+        'srpm': SRPM,
         'erratum': Errata,
         'modulemd': Modulemd,
         'modulemd_defaults': ModulemdDefaults,
@@ -92,6 +95,7 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     pulp3_repository = pulp3_models.RpmRepository
     content_models = OrderedDict([
         ('rpm', Pulp2Rpm),
+        ('srpm', Pulp2Srpm),
         ('distribution', Pulp2Distribution),
         ('erratum', Pulp2Erratum),
         ('modulemd', Pulp2Modulemd),
@@ -115,7 +119,8 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     }
     lazy_types = {
         'distribution': Pulp2Distribution,
-        'rpm': Pulp2Rpm
+        'rpm': Pulp2Rpm,
+        'srpm': Pulp2Srpm,
     }
     future_types = {
         'rpm': Pulp2Rpm,
@@ -276,9 +281,11 @@ class InterrelateContent(Stage):
         pulp2_repo_id = group_dc.extra_data.get('pulp2_repo_id')
         pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id)
         # all pulp2 unit_ids for rpm within the pulp2repo
-        unit_ids = Pulp2RepoContent.objects.filter(
-            pulp2_repository=pulp2_repo,
-            pulp2_content_type_id='rpm').values_list('pulp2_unit_id', flat=True).iterator()
+        filters = dict(pulp2_repository=pulp2_repo,
+                       pulp2_content_type_id__in=['rpm', 'srpm'])
+
+        unit_ids = Pulp2RepoContent.objects.filter(**filters).values_list(
+            'pulp2_unit_id', flat=True).iterator()
         # all pulp3 rpm pks within the pulp2repo
         pulp3_content = Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
             'pulp3_content').values_list('pulp3_content__pk', flat=True).iterator()

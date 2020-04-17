@@ -5,6 +5,7 @@ Mostly ported from Pulp 2.
 
 """
 
+import gzip
 import re
 from collections import namedtuple
 
@@ -229,3 +230,20 @@ def parse_repodata(primary_xml, filelists_xml, other_xml):
     cr.xml_parse_filelists_snippet(filelists_xml, newpkgcb=newpkgcb)
     cr.xml_parse_other_snippet(other_xml, newpkgcb=newpkgcb)
     return list(packages.values())[0]
+
+
+def decompress_repodata(compressed_repodata):
+    """
+    Decompress repodata.
+    Args:
+        compressed_repodata(dict): compressed repodata with the primary/filelists/other as a key
+    Returns:
+        dict: decompressed repodata with the primary/filelists/other as a key
+
+    """
+
+    decompressed_repodata = {}
+    for name, gzipped_data in compressed_repodata.items():
+        decompressed_repodata[name] = gzip.zlib.decompress(
+            bytearray(gzipped_data)).decode()
+    return decompressed_repodata

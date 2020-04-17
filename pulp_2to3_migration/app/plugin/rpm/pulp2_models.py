@@ -113,6 +113,26 @@ class RPM(RpmBase):
     }
 
 
+class SRPM(RpmBase):
+    """
+    A model for Pulp 2 SRPM content type.
+
+    It will become a Package content type in Pulp 3 world.
+    """
+    TYPE_ID = 'srpm'
+
+    # For backward compatibility
+    _ns = StringField(default='units_srpm')
+    _content_type_id = StringField(required=True, default='srpm')
+
+    unit_display_name = 'SRPM'
+    unit_description = 'SRPM'
+
+    meta = {
+        'collection': 'units_srpm',
+        'allow_inheritance': False}
+
+
 class Errata(ContentUnit):
     """
     A model for Pulp 2 Erratum content type.
