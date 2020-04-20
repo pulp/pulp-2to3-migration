@@ -3,6 +3,8 @@ import os
 from bson import BSON
 from collections import defaultdict
 
+import createrepo_c as cr
+
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 
@@ -13,6 +15,7 @@ from pulp_2to3_migration.app.models import (
 )
 
 from pulp_rpm.app.comps import dict_digest
+from pulp_rpm.app.advisory import hash_update_record
 from pulp_rpm.app.models import (
     DistributionTree,
     Modulemd,
@@ -23,7 +26,10 @@ from pulp_rpm.app.models import (
     PackageGroup,
     PackageLangpacks,
     RepoMetadataFile,
+    UpdateCollection,
+    UpdateCollectionPackage,
     UpdateRecord,
+    UpdateReference,
 )
 
 from pulp_rpm.app.kickstart.treeinfo import (
@@ -40,7 +46,16 @@ from .comps_utils import (
     pkg_grp_to_libcomps
 )
 
-from .xml_utils import get_cr_obj, decompress_repodata
+from .erratum import (
+    get_bool,
+    get_datetime,
+    get_package_checksum,
+    get_pulp2_filtered_collections
+)
+from .xml_utils import (
+    decompress_repodata,
+    get_cr_obj,
+)
 
 SRPM_UNIT_FIELDS = set([
     'name',
@@ -176,43 +191,87 @@ class Pulp2Erratum(Pulp2to3Content):
     """
     Pulp 2to3 detail content model to store Pulp2 Errata content details.
 
-    Relations:
-        pulp2content(models.ManyToManyField): relation to the generic model. It needs to be
-                                              many-to-many because multiple Pulp2Content can
-                                              refer to the same detail model of errata.
-
     """
-
     # Required fields
     errata_id = models.TextField()
     updated = models.TextField()
     repo_id = models.TextField()
 
-    issued = models.TextField()
-    status = models.TextField()
-    description = models.TextField()
-    pushcount = models.TextField()
+    issued = models.TextField(null=True)
+    status = models.TextField(null=True)
+    description = models.TextField(null=True)
+    pushcount = models.TextField(null=True)
     references = JSONField()
     reboot_suggested = models.BooleanField()
     relogin_suggested = models.BooleanField()
     restart_suggested = models.BooleanField()
-    errata_from = models.TextField()
-    severity = models.TextField()
-    rights = models.TextField()
-    version = models.TextField()
-    release = models.TextField()
-    errata_type = models.TextField()
+    errata_from = models.TextField(null=True)
+    severity = models.TextField(null=True)
+    rights = models.TextField(null=True)
+    version = models.TextField(null=True)
+    release = models.TextField(null=True)
+    errata_type = models.TextField(null=True)
     pkglist = JSONField()
-    title = models.TextField()
-    solution = models.TextField()
-    summary = models.TextField()
+    title = models.TextField(null=True)
+    solution = models.TextField(null=True)
+    summary = models.TextField(null=True)
 
     pulp2_type = 'erratum'
     set_pulp2_repo = True
+    cached_repo_data = {}
 
     class Meta:
         unique_together = ('errata_id', 'repo_id')
         default_related_name = 'erratum_detail_model'
+
+    @classmethod
+    def get_repo_data(cls, pulp2_repo):
+        """
+        Get content data of a repository, NEVRA of packages and NSVCA of modules.
+
+        Args:
+            pulp2_repo(Pulp2Repository): a pre-migrated repo to collect data from
+
+        Returns:
+            dict: {'packages': list of NEVRA tuples of the packages which are in this repo,
+                   'modules': list of NSVCA tuples of the module which are in this repo}
+
+        """
+        if pulp2_repo.pk in cls.cached_repo_data:
+            return cls.cached_repo_data[pulp2_repo.pk]
+
+        repo_pkg_nevra = []
+        repo_module_nsvca = []
+
+        # gather info about available packages
+        package_pulp2_ids = Pulp2RepoContent.objects.filter(
+            pulp2_repository=pulp2_repo,
+            pulp2_content_type_id='rpm'
+        ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
+
+        pulp2rpms = Pulp2Rpm.objects.filter(pulp2content__pulp2_id__in=package_pulp2_ids)
+        for pkg in pulp2rpms.iterator():
+            repo_pkg_nevra.append((pkg.name, pkg.epoch or '0', pkg.version, pkg.release, pkg.arch))
+
+        # gather info about available modules
+        modulemd_pulp2_ids = Pulp2RepoContent.objects.filter(
+            pulp2_repository=pulp2_repo,
+            pulp2_content_type_id='modulemd'
+        ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
+
+        pulp2modulemds = Pulp2Modulemd.objects.filter(pulp2content__pulp2_id__in=modulemd_pulp2_ids)
+        for module in pulp2modulemds.iterator():
+            repo_module_nsvca.append((module.name, module.stream, module.version, module.context,
+                                      module.arch))
+
+        # data for only one repo is cached (it should be enough, because content is ordered by
+        # a repo it belongs to)
+        cls.cached_repo_data.clear()
+        cls.cached_repo_data[pulp2_repo.pk] = {
+            'packages': repo_pkg_nevra,
+            'modules': repo_module_nsvca
+        }
+        return cls.cached_repo_data[pulp2_repo.pk]
 
     @classmethod
     async def pre_migrate_content_detail(cls, content_batch):
@@ -295,20 +354,92 @@ class Pulp2Erratum(Pulp2to3Content):
                         pulp2content=pulp2content))
         cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True)
 
+    async def get_collections(self):
+        """
+        Get collections with the relevant packages to the repo this erratum belongs to.
+
+        """
+        repo_data = Pulp2Erratum.get_repo_data(self.pulp2content.pulp2_repo)
+        return await get_pulp2_filtered_collections(self, repo_data['packages'],
+                                                    repo_data['modules'])
+
     async def create_pulp3_content(self):
         """
         Create a Pulp 3 Advisory content for saving it later in a bulk operation.
         """
+        rec = cr.UpdateRecord()
+        rec.fromstr = self.errata_from
+        rec.status = self.status
+        rec.type = self.errata_type
+        rec.version = self.version
+        rec.id = self.errata_id
+        rec.title = self.title
+        rec.issued_date = await get_datetime(self.issued)
+        rec.updated_date = await get_datetime(self.updated)
+        rec.rights = self.rights
+        rec.summary = self.summary
+        rec.description = self.description
+        rec.reboot_suggested = await get_bool(self.reboot_suggested)
+        rec.severity = self.severity
+        rec.solution = self.solution
+        rec.release = self.release
+        rec.pushcount = self.pushcount
 
-        # TODO: figure out
-        #    - how to split back merged errata into multiple ones
+        collections = await self.get_collections()
+        for collection in collections:
+            col = cr.UpdateCollection()
+            col.shortname = collection.get('short')
+            col.name = collection.get('name')
+            module = collection.get('module')
+            if module:
+                col.module = cr.UpdateCollectionModule(**module)
 
-        cr_update = {}  # Create creterepo_c update record based on pulp2 data
-        relations = {}  # TODO: UpdateCollection and UpdateReference
-        # digest = hash_update_record(cr_update)
-        advisory = UpdateRecord(**cr_update)
-        # advisory.digest = digest
-        return (advisory, relations)
+            for package in collection.get('packages', []):
+                pkg = cr.UpdateCollectionPackage()
+                pkg.name = package['name']
+                pkg.version = package['version']
+                pkg.release = package['release']
+                pkg.epoch = package['epoch']
+                pkg.arch = package['arch']
+                pkg.src = package.get('src')
+                pkg.filename = package['filename']
+                pkg.reboot_suggested = await get_bool(package.get('reboot_suggested'))
+                pkg.restart_suggested = await get_bool(package.get('restart_suggested'))
+                pkg.relogin_suggested = await get_bool(package.get('relogin_suggested'))
+                checksum_tuple = await get_package_checksum(package)
+                if checksum_tuple:
+                    pkg.sum_type, pkg.sum = checksum_tuple
+                col.append(pkg)
+
+            rec.append_collection(col)
+
+        for reference in self.references:
+            ref = cr.UpdateReference()
+            ref.href = reference.get('href')
+            ref.id = reference.get('id')
+            ref.type = reference.get('type')
+            ref.title = reference.get('title')
+            rec.append_reference(ref)
+
+        update_record = UpdateRecord(**UpdateRecord.createrepo_to_dict(rec))
+        update_record.digest = hash_update_record(rec)
+        relations = {'collections': defaultdict(list), 'references': []}
+
+        for collection in rec.collections:
+            coll_dict = UpdateCollection.createrepo_to_dict(collection)
+            coll = UpdateCollection(**coll_dict)
+
+            for package in collection.packages:
+                pkg_dict = UpdateCollectionPackage.createrepo_to_dict(package)
+                pkg = UpdateCollectionPackage(**pkg_dict)
+                relations['collections'][coll].append(pkg)
+
+        for reference in rec.references:
+            reference_dict = UpdateReference.createrepo_to_dict(reference)
+            ref = UpdateReference(**reference_dict)
+            relations['references'].append(ref)
+
+        return (update_record, relations)
 
 
 class Pulp2YumRepoMetadataFile(Pulp2to3Content):
