@@ -3,12 +3,10 @@
 from setuptools import find_packages, setup
 
 requirements = [
-    'pulpcore>=3.1',
+    'pulpcore>=3.3',
     'mongoengine',
     'semantic_version',
     'jsonschema',
-    # 'createrepo-c>=0.15.9'
-    # Disabled due to "reasons", it makes the CI fail until version 0.15.9 is pushed out as an RPM
 ]
 
 setup(
