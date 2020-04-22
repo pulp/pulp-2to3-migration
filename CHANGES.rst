@@ -13,6 +13,39 @@ Changelog
 
 .. towncrier release notes start
 
+
+0.2.0b2 (2020-04-22)
+========================
+
+Features
+--------
+
+- Migrate errata content.
+  `#6178 <https://pulp.plan.io/issues/6178>`_
+- As a user I can migrate comps content into pulp3.
+  `#6358 <https://pulp.plan.io/issues/6358>`_
+- As a user I can migrate SRPMS.
+  `#6388 <https://pulp.plan.io/issues/6388>`_
+- Improve performance by looking only at lazy content types and not through all the migrated content.
+  `#6499 <https://pulp.plan.io/issues/6499>`_
+
+
+Bugfixes
+--------
+
+- Set properly relative_path Pulp2YumRepoMetadataFile content_artifact.
+  `#6400 <https://pulp.plan.io/issues/6400>`_
+
+
+Misc
+----
+
+- `#6199 <https://pulp.plan.io/issues/6199>`_, `#6200 <https://pulp.plan.io/issues/6200>`_, `#6201 <https://pulp.plan.io/issues/6201>`_
+
+
+----
+
+
 0.2.0b1 (2020-03-24)
 ====================
 
