@@ -157,14 +157,18 @@ class ContentMigrationFirstStage(Stage):
         override this method.
         """
         for ctype, cmodel in self.migrator.content_models.items():
-            # we need to go through all content in case any of Remotes changed
+            # we need to go through all lazy content in case any of Remotes changed
+            if ctype in self.migrator.lazy_types:
+                pulp_2to3_detail_qs = cmodel.objects.all()
+            else:
+                pulp_2to3_detail_qs = cmodel.objects.filter(pulp2content__pulp3_content=None)
 
             # order by pulp2_repo if it's set
             if cmodel.set_pulp2_repo:
-                pulp_2to3_detail_qs = cmodel.objects.all().order_by(
+                pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by(
                     'repo_id').prefetch_related('pulp2content')
             else:
-                pulp_2to3_detail_qs = cmodel.objects.all().prefetch_related('pulp2content')
+                pulp_2to3_detail_qs = pulp_2to3_detail_qs.prefetch_related('pulp2content')
             total_pulp_2to3_detail_content = pulp_2to3_detail_qs.count()
 
             with ProgressReport(
