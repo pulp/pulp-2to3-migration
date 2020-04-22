@@ -168,7 +168,7 @@ def render_metadata(pkg, md_type):
         return render_filelists(xml_template, pkg.checksum)
 
 
-async def get_cr_obj(pkg):
+def get_cr_obj(pkg):
     """
     Convert a pulp 2 package object into a createrepo_c one.
 

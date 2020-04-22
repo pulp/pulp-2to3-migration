@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from collections import namedtuple
@@ -33,14 +32,14 @@ _logger = logging.getLogger(__name__)
 ContentModel = namedtuple('ContentModel', ['pulp2', 'pulp_2to3_detail'])
 
 
-async def pre_migrate_all_content(plan):
+def pre_migrate_all_content(plan):
     """
     Pre-migrate all content for the specified plugins.
 
     Args:
         plan (MigrationPlan): Migration Plan to use for migration.
     """
-    pre_migrators = []
+    _logger.debug('Pre-migrating Pulp 2 content')
 
     # get all the content models for the migrating plugins
     for plugin in plan.get_plugin_plans():
@@ -59,13 +58,10 @@ async def pre_migrate_all_content(plan):
             premigrate_hook = None
             if content_model.pulp2.TYPE_ID in plugin.migrator.premigrate_hook:
                 premigrate_hook = plugin.migrator.premigrate_hook[content_model.pulp2.TYPE_ID]
-            pre_migrators.append(pre_migrate_content(content_model, mutable_type, premigrate_hook))
-
-    _logger.debug('Pre-migrating Pulp 2 content')
-    await asyncio.wait(pre_migrators)
+            pre_migrate_content(content_model, mutable_type, premigrate_hook)
 
 
-async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
+def pre_migrate_content(content_model, mutable_type, premigrate_hook):
     """
     A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
@@ -190,7 +186,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
             pulp2content_pb.done += content_saved
             pulp2content_pb.save()
 
-            await content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
+            content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
 
             pulp2detail_pb.done += content_saved
             pulp2detail_pb.save()
@@ -215,7 +211,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
                                             fields=['is_migrated'],
                                             batch_size=1000)
 
-    await pre_migrate_lazycatalog(content_type)
+    pre_migrate_lazycatalog(content_type)
 
     pulp2content_pb.state = TASK_STATES.COMPLETED
     pulp2content_pb.save()
@@ -223,7 +219,7 @@ async def pre_migrate_content(content_model, mutable_type, premigrate_hook):
     pulp2detail_pb.save()
 
 
-async def pre_migrate_lazycatalog(content_type):
+def pre_migrate_lazycatalog(content_type):
     """
     A coroutine to pre-migrate Pulp 2 Lazy Catalog Entries (LCE) for a specific content type.
 
@@ -256,7 +252,7 @@ async def pre_migrate_lazycatalog(content_type):
             pulp2lazycatalog = []
 
 
-async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
+def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
     """
     Pre-migrate repositories, relations to their contents, importers and distributors.
 
@@ -304,20 +300,20 @@ async def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_typ
                 repo_id = repo_data.repo_id
                 with transaction.atomic():
                     if not repos or repos and repo_id in repos:
-                        repo = await pre_migrate_repo(repo_data, repo_id_to_type)
+                        repo = pre_migrate_repo(repo_data, repo_id_to_type)
                     # do not pre-migrate importers/distributors in case of special repo setup
                     # and no importers/distributors were specified in the MP
                     if not repos or repos and importers_repos:
-                        await pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
+                        pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
                     if not repos or repos and distributors_repos:
-                        await pre_migrate_distributor(
+                        pre_migrate_distributor(
                             repo_id, distributors_repos, distributor_types, repo)
                     if repo:
-                        await pre_migrate_repocontent(repo)
+                        pre_migrate_repocontent(repo)
                 pb.increment()
 
 
-async def pre_migrate_repo(record, repo_id_to_type):
+def pre_migrate_repo(record, repo_id_to_type):
     """
     Pre-migrate a pulp 2 repo.
 
@@ -358,7 +354,7 @@ async def pre_migrate_repo(record, repo_id_to_type):
     return repo
 
 
-async def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
+def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
     """
     Pre-migrate a pulp 2 importer.
 
@@ -412,7 +408,7 @@ async def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
     )
 
 
-async def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None):
+def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None):
     """
     Pre-migrate a pulp 2 distributor.
 
@@ -453,7 +449,7 @@ async def pre_migrate_distributor(repo_id, distributors, distributor_types, repo
         )
 
 
-async def pre_migrate_repocontent(repo):
+def pre_migrate_repocontent(repo):
     """
     Pre-migrate a relation between repositories and content in pulp 2.
 
@@ -485,7 +481,7 @@ async def pre_migrate_repocontent(repo):
     Pulp2RepoContent.objects.bulk_create(repocontent)
 
 
-async def mark_removed_resources(plan, type_to_repo_ids):
+def mark_removed_resources(plan, type_to_repo_ids):
     """
     Marks repositories which are no longer present in Pulp2.
 
@@ -524,7 +520,7 @@ async def mark_removed_resources(plan, type_to_repo_ids):
                                             batch_size=1000)
 
 
-async def delete_old_resources(plan):
+def delete_old_resources(plan):
     """
     Delete pre-migrated and migrated data for resources which are migrated fully on every run.
 

@@ -236,7 +236,7 @@ class ContentMigrationFirstStage(Stage):
                     continue
 
             # create pulp3 content and assign relations if present
-            pulp3content, extra_info = await pulp_2to3_detail_content.create_pulp3_content()
+            pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
             if extra_info:
                 future_relations.update(extra_info)

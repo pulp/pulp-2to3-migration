@@ -18,7 +18,7 @@ class RpmImporter(Pulp2to3Importer):
     pulp3_remote_models = [RpmRemote]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2importer):
+    def migrate_to_pulp3(cls, pulp2importer):
         """
         Migrate importer to Pulp 3.
 
@@ -42,7 +42,7 @@ class RpmDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [RpmDistribution]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
         Migrate distributor to Pulp 3.
 

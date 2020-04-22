@@ -16,7 +16,7 @@ class IsoImporter(Pulp2to3Importer):
     pulp3_remote_models = [FileRemote]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2importer):
+    def migrate_to_pulp3(cls, pulp2importer):
         """
         Migrate importer to Pulp 3.
 
@@ -40,7 +40,7 @@ class IsoDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [FileDistribution]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
         Migrate distributor to Pulp 3.
 

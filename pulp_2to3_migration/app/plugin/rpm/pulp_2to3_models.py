@@ -111,7 +111,7 @@ class Pulp2RpmBase(Pulp2to3Content):
         return self.filename
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 RPM content with all the fields needed to create a Pulp 3 Package.
 
@@ -143,11 +143,11 @@ class Pulp2RpmBase(Pulp2to3Content):
             )
         cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Package content for saving it later in a bulk operation.
         """
-        cr_package = await get_cr_obj(self)
+        cr_package = get_cr_obj(self)
         pkg_dict = Package.createrepo_to_dict(cr_package)
         pkg_dict['is_modular'] = self.is_modular
         return (Package(**pkg_dict), None)
@@ -274,7 +274,7 @@ class Pulp2Erratum(Pulp2to3Content):
         return cls.cached_repo_data[pulp2_repo.pk]
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 Erratum content with all the fields needed to create a Pulp 3 Package.
 
@@ -354,16 +354,19 @@ class Pulp2Erratum(Pulp2to3Content):
                         pulp2content=pulp2content))
         cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True)
 
-    async def get_collections(self):
+    def get_collections(self):
         """
         Get collections with the relevant packages to the repo this erratum belongs to.
 
         """
         repo_data = Pulp2Erratum.get_repo_data(self.pulp2content.pulp2_repo)
-        return await get_pulp2_filtered_collections(self, repo_data['packages'],
-                                                    repo_data['modules'])
+        return get_pulp2_filtered_collections(
+            self,
+            repo_data['packages'],
+            repo_data['modules']
+        )
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Advisory content for saving it later in a bulk operation.
         """
@@ -374,18 +377,18 @@ class Pulp2Erratum(Pulp2to3Content):
         rec.version = self.version
         rec.id = self.errata_id
         rec.title = self.title
-        rec.issued_date = await get_datetime(self.issued)
-        rec.updated_date = await get_datetime(self.updated)
+        rec.issued_date = get_datetime(self.issued)
+        rec.updated_date = get_datetime(self.updated)
         rec.rights = self.rights
         rec.summary = self.summary
         rec.description = self.description
-        rec.reboot_suggested = await get_bool(self.reboot_suggested)
+        rec.reboot_suggested = get_bool(self.reboot_suggested)
         rec.severity = self.severity
         rec.solution = self.solution
         rec.release = self.release
         rec.pushcount = self.pushcount
 
-        collections = await self.get_collections()
+        collections = self.get_collections()
         for collection in collections:
             col = cr.UpdateCollection()
             col.shortname = collection.get('short')
@@ -403,10 +406,10 @@ class Pulp2Erratum(Pulp2to3Content):
                 pkg.arch = package['arch']
                 pkg.src = package.get('src')
                 pkg.filename = package['filename']
-                pkg.reboot_suggested = await get_bool(package.get('reboot_suggested'))
-                pkg.restart_suggested = await get_bool(package.get('restart_suggested'))
-                pkg.relogin_suggested = await get_bool(package.get('relogin_suggested'))
-                checksum_tuple = await get_package_checksum(package)
+                pkg.reboot_suggested = get_bool(package.get('reboot_suggested'))
+                pkg.restart_suggested = get_bool(package.get('restart_suggested'))
+                pkg.relogin_suggested = get_bool(package.get('relogin_suggested'))
+                checksum_tuple = get_package_checksum(package)
                 if checksum_tuple:
                     pkg.sum_type, pkg.sum = checksum_tuple
                 col.append(pkg)
@@ -476,7 +479,7 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
         return os.path.join('repodata', metadata_file_name)
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 YumMetadataFile with all the fields needed to create a Pulp 3 content
 
@@ -495,7 +498,7 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
                                  for meta in pulp2_metadata_content_batch]
         cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 RepoMetadataFile unit for saving it later in a bulk operation.
         """
@@ -547,7 +550,7 @@ class Pulp2Modulemd(Pulp2to3Content):
         return relative_path
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 modulemd content with all the fields needed to create a Pulp 3 content.
 
@@ -571,7 +574,7 @@ class Pulp2Modulemd(Pulp2to3Content):
             for md in pulp2_content_batch]
         cls.objects.bulk_create(pulp2modules_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
@@ -616,7 +619,7 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
         return relative_path
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 defaults content with all the fields needed to create a Pulp 3 content.
 
@@ -646,7 +649,7 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
             for defaults in pulp2_content_batch]
         cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
@@ -681,7 +684,7 @@ class Pulp2Distribution(Pulp2to3Content):
         return self.filename
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 Distribution content with all the fields needed to create a Pulp 3
         DistributionTree.
@@ -704,7 +707,7 @@ class Pulp2Distribution(Pulp2to3Content):
             for distribution in pulp2_distribution_content_batch]
         cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Distribution content for saving later in a bulk operation.
         """
@@ -753,7 +756,7 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
         default_related_name = 'package_langpacks_detail_model'
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 langpacks content with all the fields needed to create a Pulp 3 content.
 
@@ -771,7 +774,7 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
             for p in pulp2_content_batch]
         cls.objects.bulk_create(pulp2langpacks_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Package Langpacks content for saving it later in a bulk operation.
         """
@@ -807,7 +810,7 @@ class Pulp2PackageGroup(Pulp2to3Content):
         default_related_name = 'package_group_detail_model'
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 package groups with all the fields needed to create a Pulp 3 content.
 
@@ -839,7 +842,7 @@ class Pulp2PackageGroup(Pulp2to3Content):
             for p in pulp2_content_batch]
         cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Package Group content for saving it later in a bulk operation.
         """
@@ -876,7 +879,7 @@ class Pulp2PackageCategory(Pulp2to3Content):
         default_related_name = 'package_category_detail_model'
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 package category with all the fields needed to create a Pulp 3 content.
 
@@ -900,7 +903,7 @@ class Pulp2PackageCategory(Pulp2to3Content):
             for p in pulp2_content_batch]
         cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Package Category content for saving it later in a bulk operation.
         """
@@ -934,7 +937,7 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
         default_related_name = 'package_environment_detail_model'
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 package env. with all the fields needed to create a Pulp 3 content.
 
@@ -959,7 +962,7 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
             for p in pulp2_content_batch]
         cls.objects.bulk_create(pulp2envs_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Package Environment content for saving it later in a bulk operation.
         """

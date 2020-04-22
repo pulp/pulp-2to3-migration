@@ -1,5 +1,6 @@
-import json
 
+import asyncio
+import json
 from collections import OrderedDict
 
 from django.db import transaction
@@ -90,13 +91,16 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     }
 
     @classmethod
-    async def migrate_content_to_pulp3(cls):
+    def migrate_content_to_pulp3(cls):
         """
         Migrate pre-migrated Pulp 2 docker content.
         """
         first_stage = ContentMigrationFirstStage(cls)
         dm = DockerDeclarativeContentMigration(first_stage=first_stage)
-        await dm.create()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(dm.create())
+        loop.close()
 
 
 class DockerDeclarativeContentMigration(DeclarativeContentMigration):

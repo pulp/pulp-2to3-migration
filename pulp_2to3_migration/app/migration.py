@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from pulpcore.plugin.models import (
@@ -18,20 +17,18 @@ from pulp_2to3_migration.app.models import (
 _logger = logging.getLogger(__name__)
 
 
-async def migrate_content(plan):
+def migrate_content(plan):
     """
     A coroutine to initiate content migration for each plugin.
 
     Args:
          plan (MigrationPlan): Migration Plan to use
     """
-    content_migration_coros = []
-
     progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
     with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
         for plugin in plan.get_plugin_plans():
-            content_migration_coros.append(plugin.migrator.migrate_content_to_pulp3())
+            plugin.migrator.migrate_content_to_pulp3()
 
             # only used for progress bar counters
             content_types = plugin.migrator.content_models.keys()
@@ -39,13 +36,10 @@ async def migrate_content(plan):
                                                           pulp3_content=None)
             pb.total += pulp2content_qs.count()
         pb.save()
-
-        await asyncio.wait(content_migration_coros)
-
         pb.done = pb.total
 
 
-async def migrate_repositories(plan):
+def migrate_repositories(plan):
     """
     A coroutine to migrate pre-migrated repositories.
     """
@@ -106,7 +100,7 @@ async def migrate_repositories(plan):
                         pb.save()
 
 
-async def migrate_importers(plan):
+def migrate_importers(plan):
     """
     A coroutine to migrate pre-migrated importers.
 
@@ -131,7 +125,7 @@ async def migrate_importers(plan):
 
         for pulp2importer in pulp2importers_qs:
             importer_migrator = importer_migrators.get(pulp2importer.pulp2_type_id)
-            remote, created = await importer_migrator.migrate_to_pulp3(pulp2importer)
+            remote, created = importer_migrator.migrate_to_pulp3(pulp2importer)
             pulp2importer.pulp3_remote = remote
             pulp2importer.is_migrated = True
             pulp2importer.save()
@@ -142,14 +136,14 @@ async def migrate_importers(plan):
                 pb.save()
 
 
-async def migrate_distributors(plan):
+def migrate_distributors(plan):
     """
     A coroutine to migrate pre-migrated distributors.
 
     Args:
         plan (MigrationPlan): Migration Plan to use.
     """
-    async def migrate_repo_distributor(pb, dist_migrator, pulp2dist, repo_version=None):
+    def migrate_repo_distributor(pb, dist_migrator, pulp2dist, repo_version=None):
         """
         Migrate repo distributor.
 
@@ -159,7 +153,7 @@ async def migrate_distributors(plan):
             repo_version(RepositoryVersion): a pulp3 repo version
         """
 
-        publication, distribution, created = await dist_migrator.migrate_to_pulp3(
+        publication, distribution, created = dist_migrator.migrate_to_pulp3(
             pulp2dist, repo_version)
         if publication:
             pulp2dist.pulp3_publication = publication
@@ -195,12 +189,11 @@ async def migrate_distributors(plan):
             pb.save()
 
             distributor_migrators = plugin.migrator.distributor_migrators
-
             pulp3_repo_setup = plugin.get_repo_creation_setup()
             if not pulp3_repo_setup:
                 for pulp2dist in pulp2distributors_qs:
                     dist_migrator = distributor_migrators.get(pulp2dist.pulp2_type_id)
-                    await migrate_repo_distributor(pb, dist_migrator, pulp2dist)
+                    migrate_repo_distributor(pb, dist_migrator, pulp2dist)
             else:
                 for repo_name in pulp3_repo_setup:
                     for repo_dist in pulp3_repo_setup[repo_name]['repository_versions']:
@@ -221,13 +214,13 @@ async def migrate_distributors(plan):
                             )
                             for dist in pulp2dist:
                                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
-                                await migrate_repo_distributor(
+                                migrate_repo_distributor(
                                     pb, dist_migrator, dist,
                                     migrated_repo.pulp3_repository_version
                                 )
 
 
-async def create_repo_versions(plan):
+def create_repo_versions(plan):
     """
     A coroutine to create repository versions.
 

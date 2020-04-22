@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from collections import defaultdict
@@ -108,16 +107,12 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     # TODO: if plan is empty for a plugin, only migrate downloaded content
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(delete_old_resources(plan))
-    loop.run_until_complete(pre_migrate_all_without_content(plan,
-                                                            type_to_repo_ids,
-                                                            repo_id_to_type))
-    loop.run_until_complete(mark_removed_resources(plan, type_to_repo_ids))
-    loop.run_until_complete(migrate_repositories(plan))
-    loop.run_until_complete(migrate_importers(plan))
-    loop.run_until_complete(pre_migrate_all_content(plan))
-    loop.run_until_complete(migrate_content(plan))
-    loop.run_until_complete(create_repo_versions(plan))
-    loop.run_until_complete(migrate_distributors(plan))
-    loop.close()
+    delete_old_resources(plan)
+    pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type)
+    mark_removed_resources(plan, type_to_repo_ids)
+    migrate_repositories(plan)
+    migrate_importers(plan)
+    pre_migrate_all_content(plan)
+    migrate_content(plan)
+    create_repo_versions(plan)
+    migrate_distributors(plan)

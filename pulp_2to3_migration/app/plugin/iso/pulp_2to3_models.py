@@ -38,7 +38,7 @@ class Pulp2ISO(Pulp2to3Content):
         return self.name
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 ISO content with all the fields needed to create a Pulp 3 FileContent
 
@@ -57,7 +57,7 @@ class Pulp2ISO(Pulp2to3Content):
                             for iso in pulp2_iso_content_batch]
         cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 FileContent unit for saving it later in a bulk operation.
         """

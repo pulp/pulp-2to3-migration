@@ -60,7 +60,7 @@ class Pulp2to3Content(BaseModel):
         abstract = True
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 content with all the fields needed to create a Pulp 3 Content
 
@@ -80,7 +80,7 @@ class Pulp2to3Content(BaseModel):
         """
         raise NotImplementedError()
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 detail Content unit for saving it later in a bulk operation.
 
