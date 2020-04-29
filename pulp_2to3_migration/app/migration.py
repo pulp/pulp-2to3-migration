@@ -121,8 +121,7 @@ def migrate_importers(plan):
     )
     with ProgressReport(**progress_data) as pb:
         pulp2importers_qs = Pulp2Importer.objects.filter(
-            pulp3_remote=None,
-            not_in_plan=False)
+            is_migrated=False, not_in_plan=False)
         pb.total += pulp2importers_qs.count()
         pb.save()
 

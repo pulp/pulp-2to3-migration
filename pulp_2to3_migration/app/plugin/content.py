@@ -68,6 +68,7 @@ class DeclarativeContentMigration:
             QueryExistingContents(),
             ContentSaver(),
             RemoteArtifactSaver(),
+            UpdateLCEs(),
             RelatePulp2to3Content()
         ]
 
@@ -221,22 +222,32 @@ class ContentMigrationFirstStage(Stage):
         is_multi_artifact = content_type in migrator.multi_artifact_types
         for pulp_2to3_detail_content in batch:
             pulp2content = pulp_2to3_detail_content.pulp2content
-
             # only content that supports on_demand download can have entries in LCE
             if is_lazy_type:
 
                 # get all Lazy Catalog Entries (LCEs) for this content
                 pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
-                    pulp2_unit_id=pulp2content.pulp2_id)
+                    pulp2_unit_id=pulp2content.pulp2_id, is_migrated=False)
 
-                if not pulp2content.downloaded and not pulp2lazycatalog:
-                    _logger.warn(_('On_demand content cannot be migrated without an entry in the '
-                                   'lazy catalog, pulp2 unit_id: '
-                                   '{}'.format(pulp2content.pulp2_id)))
-                    continue
+            lazy_wo_catalog = is_lazy_type and not pulp2lazycatalog
+            if pulp2content.pulp3_content is not None and (not is_lazy_type or lazy_wo_catalog):
+                if pb:
+                    pb.increment()
+                continue
+            if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
+                _logger.warn(_('On_demand content cannot be migrated without an entry in the '
+                               'lazy catalog, pulp2 unit_id: '
+                               '{}'.format(pulp2content.pulp2_id)))
+                continue
 
-            # create pulp3 content and assign relations if present
-            pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
+            if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
+                # find already created pulp3 content
+                pulp3content = pulp2content.pulp3_content
+                extra_info = None
+
+            else:
+                # create pulp3 content and assign relations if present
+                pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
             future_relations = {'pulp2content': pulp2content}
             if extra_info:
                 future_relations.update(extra_info)
@@ -267,6 +278,8 @@ class ContentMigrationFirstStage(Stage):
                                 remote=remote,
                                 deferred_download=not downloaded)
                             d_artifacts.append(da)
+                            lce.is_migrated = True
+                        future_relations.update({'lces': list(lces)})
                     else:
                         da = DeclarativeArtifact(
                             artifact=artifact,
@@ -310,6 +323,7 @@ class ContentMigrationFirstStage(Stage):
                 dc.extra_data = future_relations
                 await self.put(dc)
             else:
+
                 # create artifact for content that has file
                 artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
                                                       pulp_2to3_detail_content.expected_digests,
@@ -337,9 +351,11 @@ class ContentMigrationFirstStage(Stage):
                             relative_path=relative_path,
                             remote=remote,
                             deferred_download=deferred_download)
+                        lce.is_migrated = True
                         dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
                         dc.extra_data = future_relations
                         await self.put(dc)
+                    future_relations.update({'lces': list(pulp2lazycatalog)})
                 else:
                     da = DeclarativeArtifact(
                         artifact=artifact,
@@ -361,6 +377,31 @@ class ContentMigrationFirstStage(Stage):
                     for dc in futures:
                         await dc.resolution()
                     futures.clear()
+
+
+class UpdateLCEs(Stage):
+    """
+    Update migrated pulp2lazy_catalog entries with the is_migrated set to True only after
+    RemoteArtifact has been saved.
+    """
+    async def run(self):
+        """
+        Find LCEs in the extra_data and flip the is_migrated flag to True
+        """
+        async for batch in self.batches():
+            pulp2lces_batch = []
+            with transaction.atomic():
+                for d_content in batch:
+                    lces = d_content.extra_data.get('lces')
+                    if lces:
+                        pulp2lces_batch.extend(lces)
+
+                Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lces_batch,
+                                                     fields=['is_migrated'],
+                                                     batch_size=1000)
+
+            for d_content in batch:
+                await self.put(d_content)
 
 
 class RelatePulp2to3Content(Stage):

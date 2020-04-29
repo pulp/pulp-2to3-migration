@@ -44,7 +44,6 @@ class Pulp2to3Importer:
         remote_name = '{}-{}'.format(pulp2importer.pulp2_object_id,
                                      pulp2importer.pulp2_repo_id)
         base_config['proxy_url'] = proxy_url
-        base_config['name'] = remote_name
         base_config['url'] = pulp2_config.get('feed', '')  # what to do if there is no feed?
         base_config['ca_cert'] = pulp2_config.get('ssl_ca_cert')
         base_config['client_cert'] = pulp2_config.get('ssl_client_cert')
@@ -56,7 +55,7 @@ class Pulp2to3Importer:
         base_config['download_concurrency'] = pulp2_config.get('max_downloads') or 20
         policy = PULP_2TO3_POLICIES.get(pulp2_config.get('download_policy', 'immediate'))
         base_config['policy'] = policy
-        return base_config
+        return base_config, remote_name
 
     @classmethod
     def migrate_to_pulp3(cls, pulp2importer):

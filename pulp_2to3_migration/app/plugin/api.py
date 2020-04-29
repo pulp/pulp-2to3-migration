@@ -2,6 +2,7 @@ from .content import (  # noqa
     DeclarativeContentMigration,
     ContentMigrationFirstStage,
     RelatePulp2to3Content,
+    UpdateLCEs,
 )
 
 from .migrator import Pulp2to3PluginMigrator  # noqa

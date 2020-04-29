@@ -22,11 +22,11 @@ class DockerImporter(Pulp2to3Importer):
             created(bool): True if Remote has just been created; False if Remote is an existing one
         """
         pulp2_config = pulp2importer.pulp2_config
-        base_config = cls.parse_base_config(pulp2importer, pulp2_config)
+        base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
         # what to do if there is no upstream name?
         base_config['upstream_name'] = pulp2_config.get('upstream_name', '')
         base_config['whitelist_tags'] = pulp2_config.get('tags')
-        return ContainerRemote.objects.update_or_create(**base_config)
+        return ContainerRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
 class DockerDistributor(Pulp2to3Distributor):
