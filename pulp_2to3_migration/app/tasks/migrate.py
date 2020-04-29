@@ -2,6 +2,8 @@ import logging
 
 from collections import defaultdict
 
+from pulpcore.plugin.models import CreatedResource, Task, TaskGroup
+
 from pulp_2to3_migration.app.pre_migration import (
     delete_old_resources,
     mark_removed_resources,
@@ -100,6 +102,14 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     if dry_run:
         return
+
+    task_group = TaskGroup(description="Migration Sub-tasks")
+    task_group.save()
+    current_task = Task.current()
+    current_task.task_group = task_group
+    current_task.save()
+    resource = CreatedResource(content_object=task_group)
+    resource.save()
 
     # call it here and not inside steps below to generate mapping only once
     repo_id_to_type, type_to_repo_ids = get_repo_types(plan)

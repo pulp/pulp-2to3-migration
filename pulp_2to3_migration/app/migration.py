@@ -5,7 +5,7 @@ from pulpcore.plugin.models import (
     CreatedResource,
     ProgressReport,
     Repository,
-    TaskGroup,
+    Task,
 )
 from pulpcore.plugin.tasking import enqueue_with_reservation
 
@@ -253,9 +253,6 @@ def create_repoversions_publications_distributions(plan, parallel=True):
             task_func = complex_repo_migration
 
             if parallel:
-                task_group = TaskGroup.objects.create(
-                    description="Migration Sub-tasks"
-                )
                 for repo_name in pulp3_repo_setup:
                     repo = Repository.objects.get(name=repo_name).cast()
                     task_args = [plugin, pulp3_repo_setup, repo_name]
@@ -263,10 +260,8 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                         task_func,
                         [repo],
                         args=task_args,
-                        task_group=task_group
+                        task_group=Task.current().task_group
                     )
-                resource = CreatedResource(content_object=task_group)
-                resource.save()
             else:
                 # Serial (non-parallel)
                 for repo_name in pulp3_repo_setup:
