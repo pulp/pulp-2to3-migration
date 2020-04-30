@@ -129,7 +129,7 @@ class Pulp2ContentSerializer(ModelSerializer):
     A serializer for the Pulp2Content model
     """
     pulp_href = IdentityField(
-        view_name='migration-plans-detail'
+        view_name='pulp2content-detail'
     )
     pulp2_id = serializers.CharField(max_length=255)
     pulp2_content_type_id = serializers.CharField(max_length=255)
@@ -140,10 +140,33 @@ class Pulp2ContentSerializer(ModelSerializer):
         required=False, allow_null=True, queryset=Pulp2Content.objects.all()
     )
 
+    pulp3_repository_version = serializers.SerializerMethodField(read_only=True)
+
+    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    def get_pulp3_repository_version(self, obj):
+        """
+        Get pulp3_repository_version href from pulp2repo if available
+        """
+        pulp2_repo = obj.pulp2_repo
+        if pulp2_repo and pulp2_repo.is_migrated:
+            pulp3_repo_href = get_pulp_href(pulp2_repo.pulp3_repository)
+            pulp3_repo_version = pulp2_repo.pulp3_repository_version
+            return f"{pulp3_repo_href}versions/{pulp3_repo_version.number}/"
+
+    def to_representation(self, instance):
+        """
+        Do not serialize pulp3_repository_version if it is null.
+        """
+        result = super(Pulp2ContentSerializer, self).to_representation(instance)
+        if not result.get('pulp3_repository_version'):
+            del result['pulp3_repository_version']
+        return result
+
     class Meta:
         fields = ModelSerializer.Meta.fields + ('pulp2_id', 'pulp2_content_type_id',
                                                 'pulp2_last_updated', 'pulp2_storage_path',
-                                                'downloaded', 'pulp3_content')
+                                                'downloaded', 'pulp3_content',
+                                                'pulp3_repository_version')
         model = Pulp2Content
 
 
