@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_datetime
 _logger = logging.getLogger(__name__)
 
 
-async def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsvca):
+def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsvca):
     """
     Make a lists of package collections which will be in the migrated advisory.
 
@@ -90,7 +90,7 @@ async def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_modu
     return filtered_pkglist
 
 
-async def get_package_checksum(errata_pkg):
+def get_package_checksum(errata_pkg):
     """
     Extract package checksum and checksum type from a pulp 2 package listed in an erratum.
 
@@ -133,7 +133,7 @@ async def get_package_checksum(errata_pkg):
         return (checksum_type_id, checksum)
 
 
-async def get_bool(value):
+def get_bool(value):
     """
     Convert a value from an erratum to a boolean.
 
@@ -155,7 +155,7 @@ async def get_bool(value):
     return False
 
 
-async def get_datetime(datetime_str):
+def get_datetime(datetime_str):
     """
     Convert a pulp2 datetime value to the Django one.
 

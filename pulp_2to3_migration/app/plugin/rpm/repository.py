@@ -18,7 +18,7 @@ class RpmImporter(Pulp2to3Importer):
     pulp3_remote_models = [RpmRemote]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2importer):
+    def migrate_to_pulp3(cls, pulp2importer):
         """
         Migrate importer to Pulp 3.
 
@@ -42,7 +42,7 @@ class RpmDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [RpmDistribution]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
         Migrate distributor to Pulp 3.
 
@@ -69,8 +69,7 @@ class RpmDistributor(Pulp2to3Distributor):
         distribution_data = cls.parse_base_config(pulp2distributor, pulp2_config)
 
         # ensure that the base_path does not end with / in Pulp 3, it's often present in Pulp 2.
-        base_path = pulp2_config.get(
-            'relative_url', pulp2distributor.pulp2_repo_id)
+        base_path = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
         distribution_data['base_path'] = base_path.rstrip('/')
         distribution_data['publication'] = publication
         distribution, created = RpmDistribution.objects.update_or_create(**distribution_data)

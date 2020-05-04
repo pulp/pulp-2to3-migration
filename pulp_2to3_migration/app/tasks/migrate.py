@@ -1,7 +1,8 @@
-import asyncio
 import logging
 
 from collections import defaultdict
+
+from pulpcore.plugin.models import CreatedResource, Task, TaskGroup
 
 from pulp_2to3_migration.app.pre_migration import (
     delete_old_resources,
@@ -11,11 +12,10 @@ from pulp_2to3_migration.app.pre_migration import (
 )
 
 from pulp_2to3_migration.app.migration import (
-    create_repo_versions,
+    create_repoversions_publications_distributions,
     migrate_content,
     migrate_importers,
     migrate_repositories,
-    migrate_distributors,
 )
 from pulp_2to3_migration.app.models import MigrationPlan
 from pulp_2to3_migration.exceptions import PlanValidationError
@@ -103,21 +103,24 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     if dry_run:
         return
 
+    task_group = TaskGroup(description="Migration Sub-tasks")
+    task_group.save()
+    current_task = Task.current()
+    current_task.task_group = task_group
+    current_task.save()
+    resource = CreatedResource(content_object=task_group)
+    resource.save()
+
     # call it here and not inside steps below to generate mapping only once
     repo_id_to_type, type_to_repo_ids = get_repo_types(plan)
 
     # TODO: if plan is empty for a plugin, only migrate downloaded content
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(delete_old_resources(plan))
-    loop.run_until_complete(pre_migrate_all_without_content(plan,
-                                                            type_to_repo_ids,
-                                                            repo_id_to_type))
-    loop.run_until_complete(mark_removed_resources(plan, type_to_repo_ids))
-    loop.run_until_complete(migrate_repositories(plan))
-    loop.run_until_complete(migrate_importers(plan))
-    loop.run_until_complete(pre_migrate_all_content(plan))
-    loop.run_until_complete(migrate_content(plan))
-    loop.run_until_complete(create_repo_versions(plan))
-    loop.run_until_complete(migrate_distributors(plan))
-    loop.close()
+    delete_old_resources(plan)
+    pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type)
+    mark_removed_resources(plan, type_to_repo_ids)
+    migrate_repositories(plan)
+    migrate_importers(plan)
+    pre_migrate_all_content(plan)
+    migrate_content(plan)
+    create_repoversions_publications_distributions(plan)

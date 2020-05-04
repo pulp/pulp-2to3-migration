@@ -36,7 +36,7 @@ class Pulp2to3PluginMigrator:
     multi_artifact_types = {}
 
     @classmethod
-    async def migrate_to_pulp3(cls):
+    def migrate_to_pulp3(cls):
         """
         Migrate all pre-migrated plugin content to Pulp 3.
 
@@ -44,6 +44,6 @@ class Pulp2to3PluginMigrator:
         Here the default implementation of the first stage is used:
         >>> first_stage = ContentMigrationFirstStage(cls)
         >>> dm = DeclarativeContentMigration(first_stage=first_stage)
-        >>> await dm.create()
+        >>> dm.create()
         """
         raise NotImplementedError()

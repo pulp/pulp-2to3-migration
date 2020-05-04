@@ -16,7 +16,7 @@ class IsoImporter(Pulp2to3Importer):
     pulp3_remote_models = [FileRemote]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2importer):
+    def migrate_to_pulp3(cls, pulp2importer):
         """
         Migrate importer to Pulp 3.
 
@@ -40,7 +40,7 @@ class IsoDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [FileDistribution]
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
         Migrate distributor to Pulp 3.
 
@@ -67,8 +67,7 @@ class IsoDistributor(Pulp2to3Distributor):
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
-        base_config['base_path'] = pulp2_config.get(
-            'relative_url', pulp2distributor.pulp2_repo_id)
+        base_config['base_path'] = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
         base_config['publication'] = publication
         distribution, created = FileDistribution.objects.update_or_create(**base_config)
 

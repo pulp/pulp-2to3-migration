@@ -1,3 +1,5 @@
+import asyncio
+
 from django.db import transaction
 from django.db.models import Q
 
@@ -134,13 +136,16 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     }
 
     @classmethod
-    async def migrate_content_to_pulp3(cls):
+    def migrate_content_to_pulp3(cls):
         """
         Migrate pre-migrated Pulp 2 RPM plugin content.
         """
         first_stage = ContentMigrationFirstStage(cls)
         dm = RpmDeclarativeContentMigration(first_stage=first_stage)
-        await dm.create()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(dm.create())
+        loop.close()
 
 
 class RpmDeclarativeContentMigration(DeclarativeContentMigration):

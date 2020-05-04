@@ -1,3 +1,5 @@
+import asyncio
+
 from pulp_2to3_migration.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,
@@ -46,10 +48,13 @@ class IsoMigrator(Pulp2to3PluginMigrator):
     }
 
     @classmethod
-    async def migrate_content_to_pulp3(cls):
+    def migrate_content_to_pulp3(cls):
         """
         Migrate pre-migrated Pulp 2 ISO content.
         """
         first_stage = ContentMigrationFirstStage(cls)
         dm = DeclarativeContentMigration(first_stage=first_stage)
-        await dm.create()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(dm.create())
+        loop.close()

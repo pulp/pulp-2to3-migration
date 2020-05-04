@@ -40,7 +40,7 @@ class Pulp2Blob(Pulp2to3Content):
         return self.digest
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 Blob content with all the fields needed to create a Pulp 3 Blob
 
@@ -57,7 +57,7 @@ class Pulp2Blob(Pulp2to3Content):
                              for blob in pulp2_blob_content_batch]
         cls.objects.bulk_create(pulp2blob_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Blob unit for saving it later in a bulk operation.
         """
@@ -98,7 +98,7 @@ class Pulp2Manifest(Pulp2to3Content):
         return self.digest
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 Manifest content with all the fields needed to create a Pulp 3 Manifest
 
@@ -137,7 +137,7 @@ class Pulp2Manifest(Pulp2to3Content):
             )
         cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
@@ -181,7 +181,7 @@ class Pulp2ManifestList(Pulp2to3Content):
         return self.digest
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 ManifestList content with all the fields needed to create
         a Pulp 3 Manifest
@@ -201,7 +201,7 @@ class Pulp2ManifestList(Pulp2to3Content):
                           for m in pulp2_m_content_batch]
         cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Manifest unit for saving it later in a bulk operation.
         """
@@ -233,7 +233,7 @@ class Pulp2Tag(Pulp2to3Content):
         return self.name
 
     @classmethod
-    async def pre_migrate_content_detail(cls, content_batch):
+    def pre_migrate_content_detail(cls, content_batch):
         """
         Pre-migrate Pulp 2 Tag content with all the fields needed to create a Pulp 3 Tag
 
@@ -251,7 +251,7 @@ class Pulp2Tag(Pulp2to3Content):
                             for tag in pulp2_tag_content_batch]
         cls.objects.bulk_create(pulp2tag_to_save, ignore_conflicts=True)
 
-    async def create_pulp3_content(self):
+    def create_pulp3_content(self):
         """
         Create a Pulp 3 Tag unit for saving it later in a bulk operation.
         """

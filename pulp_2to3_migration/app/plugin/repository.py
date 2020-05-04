@@ -59,7 +59,7 @@ class Pulp2to3Importer:
         return base_config
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2importer):
+    def migrate_to_pulp3(cls, pulp2importer):
         """
         Migrate pre-migrated Pulp 2 importer.
 
@@ -103,7 +103,7 @@ class Pulp2to3Distributor:
         return base_config
 
     @classmethod
-    async def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
         """
         Migrate pre-migrated Pulp 2 distributor.
 
