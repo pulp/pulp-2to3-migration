@@ -124,3 +124,5 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     pre_migrate_all_content(plan)
     migrate_content(plan)
     create_repoversions_publications_distributions(plan)
+
+    task_group.finish()
