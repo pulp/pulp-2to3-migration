@@ -119,9 +119,9 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     delete_old_resources(plan)
     pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type)
     mark_removed_resources(plan, type_to_repo_ids)
+    pre_migrate_all_content(plan)
     migrate_repositories(plan)
     migrate_importers(plan)
-    pre_migrate_all_content(plan)
     migrate_content(plan)
     create_repoversions_publications_distributions(plan)
 

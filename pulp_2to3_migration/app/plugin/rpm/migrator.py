@@ -10,6 +10,7 @@ from pulp_2to3_migration.app.plugin.api import (
     DeclarativeContentMigration,
     Pulp2to3PluginMigrator,
     RelatePulp2to3Content,
+    UpdateLCEs,
 )
 
 from pulp_rpm.app.models import (
@@ -170,6 +171,7 @@ class RpmDeclarativeContentMigration(DeclarativeContentMigration):
             QueryExistingContents(),
             RpmContentSaver(),
             RemoteArtifactSaver(),
+            UpdateLCEs(),
             InterrelateContent(),
             RelatePulp2to3Content(),
             ResolveContentFutures(),

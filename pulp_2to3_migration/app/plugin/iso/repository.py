@@ -28,8 +28,8 @@ class IsoImporter(Pulp2to3Importer):
             created(bool): True if Remote has just been created; False if Remote is an existing one
         """
         pulp2_config = pulp2importer.pulp2_config
-        base_config = cls.parse_base_config(pulp2importer, pulp2_config)
-        return FileRemote.objects.update_or_create(**base_config)
+        base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
+        return FileRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
 class IsoDistributor(Pulp2to3Distributor):

@@ -54,14 +54,16 @@ def pre_migrate_all_content(plan):
                                          pulp_2to3_detail=pulp_2to3_detail_model)
             # identify wether the content is mutable
             mutable_type = content_model.pulp2.TYPE_ID in plugin.migrator.mutable_content_models
+            # identify wether the content is lazy
+            lazy_type = content_model.pulp2.TYPE_ID in plugin.migrator.lazy_types
             # check if the content type has a premigration hook
             premigrate_hook = None
             if content_model.pulp2.TYPE_ID in plugin.migrator.premigrate_hook:
                 premigrate_hook = plugin.migrator.premigrate_hook[content_model.pulp2.TYPE_ID]
-            pre_migrate_content(content_model, mutable_type, premigrate_hook)
+            pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
 
 
-def pre_migrate_content(content_model, mutable_type, premigrate_hook):
+def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook):
     """
     A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
@@ -210,8 +212,8 @@ def pre_migrate_content(content_model, mutable_type, premigrate_hook):
         Pulp2Repository.objects.bulk_update(objs=repos_to_update,
                                             fields=['is_migrated'],
                                             batch_size=1000)
-
-    pre_migrate_lazycatalog(content_type)
+    if lazy_type:
+        pre_migrate_lazycatalog(content_type)
 
     pulp2content_pb.state = TASK_STATES.COMPLETED
     pulp2content_pb.save()
@@ -232,9 +234,6 @@ def pre_migrate_lazycatalog(content_type):
     batch_size = 10000
     pulp2lazycatalog = []
 
-    # delete previous pre-migration results since it might be outdated
-    Pulp2LazyCatalog.objects.filter(pulp2_content_type_id=content_type).delete()
-
     mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)
     total_lce = mongo_lce_qs.count()
     for i, lce in enumerate(mongo_lce_qs.batch_size(batch_size)):
@@ -243,7 +242,8 @@ def pre_migrate_lazycatalog(content_type):
                                 pulp2_content_type_id=lce.unit_type_id,
                                 pulp2_storage_path=lce.path,
                                 pulp2_url=lce.url,
-                                pulp2_revision=lce.revision)
+                                pulp2_revision=lce.revision,
+                                is_migrated=False)
         pulp2lazycatalog.append(item)
 
         save_batch = (i and not (i + 1) % batch_size or i == total_lce - 1)
@@ -397,15 +397,35 @@ def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
     last_updated = (importer_data.last_updated
                     and timezone.make_aware(importer_data.last_updated, timezone.utc))
 
-    Pulp2Importer.objects.create(
+    importer, created = Pulp2Importer.objects.get_or_create(
         pulp2_object_id=importer_data.id,
-        pulp2_type_id=importer_data.importer_type_id,
-        pulp2_last_updated=last_updated,
-        pulp2_config=importer_data.config,
-        pulp2_repository=repo,
-        pulp2_repo_id=repo_id,
-        is_migrated=False
-    )
+        defaults={'pulp2_type_id': importer_data.importer_type_id,
+                  'pulp2_last_updated': last_updated,
+                  'pulp2_config': importer_data.config,
+                  'pulp2_repository': repo,
+                  'pulp2_repo_id': repo_id,
+                  'is_migrated': False})
+
+    if not created:
+        # if it was marked as such because it was not present in the migration plan
+        importer.not_in_plan = False
+        # check if there were any changes since last time
+        if last_updated != importer.pulp2_last_updated:
+            # remove Remote in case of feed change
+            if importer.pulp2_config.get('feed') != importer_data.config.get('feed'):
+                importer.pulp3_remote.delete()
+                importer.pulp3_remote = None
+                # find LCEs
+                pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
+                    pulp2_importer_id=importer.pulp2_object_id)
+                for lce in pulp2lazycatalog:
+                    lce.is_migrated = False
+                Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lazycatalog,
+                                                     fields=['is_migrated'])
+            importer.pulp2_last_updated = last_updated
+            importer.pulp2_config = importer_data.config
+            importer.is_migrated = False
+        importer.save()
 
 
 def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None):
@@ -483,7 +503,7 @@ def pre_migrate_repocontent(repo):
 
 def mark_removed_resources(plan, type_to_repo_ids):
     """
-    Marks repositories which are no longer present in Pulp2.
+    Marks repositories, importers which are no longer present in Pulp2.
 
     Args:
         plan(MigrationPlan): A Migration Plan
@@ -519,12 +539,30 @@ def mark_removed_resources(plan, type_to_repo_ids):
                                             fields=['not_in_plan'],
                                             batch_size=1000)
 
+        # Mark importers
+        mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
+        premigrated_imps = Pulp2Importer.objects.filter(
+            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
+                                                                      flat=True))
+        removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
+
+        removed_imps = []
+        for pulp2importer in Pulp2Importer.objects.filter(
+                pulp2_object_id__in=removed_imp_object_ids):
+            pulp2importer.not_in_plan = True
+            removed_imps.append(pulp2importer)
+
+        Pulp2Importer.objects.bulk_update(objs=removed_imps,
+                                          fields=['not_in_plan'],
+                                          batch_size=1000)
+
 
 def delete_old_resources(plan):
     """
     Delete pre-migrated and migrated data for resources which are migrated fully on every run.
 
-    Delete pre-migrated importers and distributors, migrated Remotes, Publications,
+    Delete pre-migrated distributors, Publications,
     and Distributions according to a specified Migration Plan.
 
     Args:
@@ -534,12 +572,6 @@ def delete_old_resources(plan):
 
     for plugin in plan.get_plugin_plans():
         with transaction.atomic():
-            for importer_type, importer_migrator in plugin.migrator.importer_migrators.items():
-                # delete all pre-migrated importers for this plugin
-                Pulp2Importer.objects.filter(pulp2_type_id=importer_type).delete()
-                # delete all migrated Remotes for this plugin
-                for remote_model in importer_migrator.pulp3_remote_models:
-                    remote_model.objects.all().delete()
             for distributor_type, distributor_migrator in \
                     plugin.migrator.distributor_migrators.items():
                 # delete all pre-migrated distributors for this plugin

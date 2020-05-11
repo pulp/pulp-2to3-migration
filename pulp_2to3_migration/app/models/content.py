@@ -107,7 +107,8 @@ class Pulp2LazyCatalog(BaseModel):
     pulp2_content_type_id = models.CharField(max_length=255)
     pulp2_storage_path = models.TextField()
     pulp2_url = models.TextField()
-    pulp2_revision = models.IntegerField(default=0)
+    pulp2_revision = models.IntegerField(default=1)
+    is_migrated = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('pulp2_storage_path', 'pulp2_importer_id', 'pulp2_revision')

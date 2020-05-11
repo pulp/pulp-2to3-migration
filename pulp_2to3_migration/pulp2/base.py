@@ -128,7 +128,7 @@ class LazyCatalogEntry(Document):
     url = StringField(required=True)
     checksum = StringField()  # not used in the migration plugin
     checksum_algorithm = StringField()  # not used in the migration plugin
-    revision = IntField(default=0)
+    revision = IntField(default=1)
     data = DictField()  # not used in the migration plugin
 
     # For backward compatibility
