@@ -1,5 +1,7 @@
 import asyncio
 
+from collections import OrderedDict
+
 from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
@@ -35,13 +37,19 @@ class DebMigrator(Pulp2to3PluginMigrator):
     pulp2_plugin = 'deb'
     pulp2_content_models = {
         'deb': pulp2_models.DebPackage,
+        'deb_release': pulp2_models.DebRelease,
+        'deb_component': pulp2_models.DebComponent,
     }
     pulp2_collection = 'units_deb'
     pulp3_plugin = 'pulp_deb'
     pulp3_repository = pulp3_models.AptRepository
-    content_models = {
-        'deb': pulp_2to3_models.Pulp2DebPackage,
-    }
+    content_models = OrderedDict([
+        ('deb_release', pulp_2to3_models.Pulp2DebRelease),
+        ('deb', pulp_2to3_models.Pulp2DebPackage),
+        ('deb_component', pulp_2to3_models.Pulp2DebComponent),
+        ('deb_component2', pulp_2to3_models.Pulp2DebComponentPackage),
+        ('deb_component3', pulp_2to3_models.Pulp2DebReleaseArchitecture),
+    ])
     importer_migrators = {
         'deb_importer': repository.DebImporter,
     }
@@ -50,6 +58,14 @@ class DebMigrator(Pulp2to3PluginMigrator):
     }
     future_types = {
         'deb': pulp_2to3_models.Pulp2DebPackage,
+        'deb_release': pulp_2to3_models.Pulp2DebRelease,
+        'deb_component': pulp_2to3_models.Pulp2DebComponent,
+    }
+    artifactless_types = {
+        'deb_release': pulp_2to3_models.Pulp2DebRelease,
+        'deb_component': pulp_2to3_models.Pulp2DebComponent,
+        'deb_component2': pulp_2to3_models.Pulp2DebComponentPackage,
+        'deb_component3': pulp_2to3_models.Pulp2DebReleaseArchitecture,
     }
 
     @classmethod
