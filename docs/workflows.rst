@@ -139,11 +139,11 @@ The current level of Debian support
 -----------------------------------
 
 .. important::
-   The migration plugins Debian support is still undergoing active development, and should be considered to have "tech preview" status.
+   The migration plugins Debian support has not yet undergone large scale robustness testing, and should be considered to have "tech preview" status.
 
 The migration plugin can be used to create a ``deb`` type migration plan to migrate any Pulp 2 APT repositories into a Pulp 3 instance.
-Only package type content units will be migrated (as well as published using the Pulp 3 Debian plugins APT publisher using simple mode only).
-This creates usable repositories, however, any repository structure information like what packages were organized into which components will not be migrated.
+Both simple and structured content can be migrated making the ``deb`` migration feature complete.
 
-The plan is to add the ability to migrate releases and component type content units in a second step.
-Users who migrate their packages now, may be able to migrate those additional content units once that functionality is added, but should be prepared to start over with a clean Pulp 3 instance if necessary.
+.. note::
+   Since the Pulp 2 version of the ``pulp_deb`` plugin had nothing equivalent to verbatim publications, it is not possible to migrate content for Pulp 3 verbatim publications.
+   Only the APT publisher (in both simple and structured mode) is supported for ``pulp_deb`` content that was migrated from Pulp 2.

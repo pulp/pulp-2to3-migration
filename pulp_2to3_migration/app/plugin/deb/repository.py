@@ -68,7 +68,7 @@ class DebDistributor(Pulp2to3Distributor):
         publication = repo_version.publication_set.first()
         if not publication:
             # create publication
-            publish(repo_version.pk, simple=True)
+            publish(repo_version.pk, simple=True, structured=True)
             publication = repo_version.publication_set.first()
 
         # create distribution
