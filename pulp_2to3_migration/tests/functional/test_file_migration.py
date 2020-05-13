@@ -1,5 +1,4 @@
 import json
-import socket
 import unittest
 
 from pulpcore.client.pulpcore import (
@@ -118,7 +117,7 @@ class TestMigrationPlan(unittest.TestCase):
         configuration = Configuration()
         configuration.username = 'admin'
         configuration.password = 'password'
-        configuration.host = 'http://{}:24817'.format(socket.gethostname())
+        configuration.host = 'http://pulp'
         configuration.safe_chars_for_path_param = '/'
 
         core_client = CoreApiClient(configuration)
