@@ -2,9 +2,12 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-- { name: pulp_file, branch: master }
-- { name: pulp_container, branch: master }
-- { name: pulp_rpm, branch: master }
+- branch: master
+  name: pulp_file
+- branch: master
+  name: pulp_container
+- branch: master
+  name: pulp_rpm
 black: false
 check_commit_message: true
 cherry_pick_automation: true
@@ -30,9 +33,11 @@ pulpcore_branch: master
 pulpcore_pip_version_specifier: null
 pydocstyle: false
 pypi_username: pulp
+redmine_project: null
 stable_branch: '0.1'
 test_bindings: false
 test_performance: false
+test_s3: false
 travis_addtl_services:
 - mongodb
 travis_notifications:
