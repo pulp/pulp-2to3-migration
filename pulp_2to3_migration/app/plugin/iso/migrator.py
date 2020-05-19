@@ -57,4 +57,3 @@ class IsoMigrator(Pulp2to3PluginMigrator):
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(dm.create())
-        loop.close()

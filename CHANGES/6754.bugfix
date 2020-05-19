@@ -1,0 +1,1 @@
+Fix an issue where a migration with many plugin types would crash on execution.
