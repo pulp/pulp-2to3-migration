@@ -1,7 +1,10 @@
 from django_filters.rest_framework import filters
+from gettext import gettext as _
+
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
+from rest_framework.serializers import ValidationError
 
 from pulpcore.app.viewsets.base import DATETIME_FILTER_OPTIONS
 from pulpcore.app.viewsets.custom_filters import (
@@ -9,6 +12,7 @@ from pulpcore.app.viewsets.custom_filters import (
     IsoDateTimeFilter
 )
 
+from pulpcore.plugin.models import Task
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
 from pulpcore.plugin.tasking import enqueue_with_reservation
 from pulpcore.plugin.viewsets import (
@@ -56,6 +60,21 @@ class MigrationPlanViewSet(NamedModelViewSet,
         serializer.is_valid(raise_exception=True)
         validate = serializer.validated_data.get('validate', False)
         dry_run = serializer.validated_data.get('dry_run', False)
+
+        # find running/waiting migration plugin tasks
+        qs = Task.objects.filter(state__in=['waiting', 'running'],
+                                 reserved_resources_record__resource='pulp_2to3_migration')
+        if qs:
+            raise ValidationError(_("Only one migration plan can run at a time"))
+        groups_with_running_tasks = Task.objects.filter(
+            state__in=['waiting', 'running'],
+            task_group__isnull=False).values_list('task_group_id', flat=True)
+        groups_with_migration_tasks = Task.objects.filter(
+            task_group__isnull=False,
+            reserved_resources_record__resource='pulp_2to3_migration').values_list(
+            'task_group_id', flat=True)
+        if groups_with_running_tasks.intersection(groups_with_migration_tasks):
+            raise ValidationError(_("Only one migration plan can run at a time"))
 
         result = enqueue_with_reservation(
             migrate_from_pulp2,
