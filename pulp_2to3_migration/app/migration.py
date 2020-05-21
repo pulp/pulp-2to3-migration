@@ -52,6 +52,8 @@ def migrate_repositories(plan):
     )
     with ProgressReport(**progress_data) as pb:
         for plugin in plan.get_plugin_plans():
+
+            # TODO: Should we filter out repos which have is_migrated=True?
             pulp2repos_qs = Pulp2Repository.objects.filter(
                 pulp3_repository_version=None,
                 not_in_plan=False,
@@ -191,6 +193,7 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
             pass
     for pulp2_repo_info in repo_versions_setup:
         try:
+            # TODO: should we check the is_migrated=True?
             pulp2_repo = Pulp2Repository.objects.get(
                 pulp2_repo_id=pulp2_repo_info['repo_id'],
                 not_in_plan=False
@@ -217,8 +220,9 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
             continue
         else:
             pulp2dist = Pulp2Distributor.objects.filter(
+                is_migrated=False,
                 pulp2_repo_id__in=dist_repositories,
-                pulp2_type_id__in=distributor_types
+                pulp2_type_id__in=distributor_types,
             )
             for dist in pulp2dist:
                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
@@ -281,6 +285,7 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
         pulp3_remote(remote): a pulp3 remote
     """
 
+    # TODO: adjust either the comment or the code due to tracking of remotes
     # Add a remote to every repo, even the migrated one, because remotes are migrated on
     # every run
     if pulp3_remote:
