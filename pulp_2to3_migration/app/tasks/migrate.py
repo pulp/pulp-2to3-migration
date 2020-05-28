@@ -65,7 +65,9 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
             for content_type in plugin.migrator.pulp2_content_models:
                 content_type_to_plugin[content_type] = plugin.migrator.pulp2_plugin
 
-            repos = plugin.get_repositories()
+            repos = set(plugin.get_repositories())
+            repos |= set(plugin.get_importers_repos())
+            repos |= set(plugin.get_distributors_repos())
 
             for repo in repos:
                 repo_id_to_type[repo] = plugin.type
