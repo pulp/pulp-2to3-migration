@@ -151,3 +151,26 @@ class Pulp2to3Distributor:
 
         """
         raise NotImplementedError()
+
+
+def is_different_relative_url(pulp2distributor):
+    """
+    Check if a distribution associated with the pre_migrated distributor has the same relative url.
+
+    Args:
+        pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+    Return:
+        bool: True, if a relative url is different; False otherwise
+
+    """
+    if not pulp2distributor.pulp3_distribution:
+        return True
+
+    new_base_path = pulp2distributor.pulp2_config.get('relative_url',
+                                                      pulp2distributor.pulp2_repo_id)
+    current_base_path = pulp2distributor.pulp3_distribution.base_path
+    if new_base_path != current_base_path:
+        return True
+
+    return False

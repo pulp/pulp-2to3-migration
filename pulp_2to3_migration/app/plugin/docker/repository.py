@@ -55,7 +55,10 @@ class DockerDistributor(Pulp2to3Distributor):
         base_config['base_path'] = pulp2_config.get(
             'repo-registry-id', pulp2distributor.pulp2_repo_id)
         base_config['repository_version'] = repo_version
-        distribution, created = ContainerDistribution.objects.update_or_create(**base_config)
+        distribution, created = ContainerDistribution.objects.update_or_create(
+            name=base_config['name'],
+            base_path=base_config['base_path'],
+            defaults=base_config)
         return None, distribution, created
 
     @classmethod

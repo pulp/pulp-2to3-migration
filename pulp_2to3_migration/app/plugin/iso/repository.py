@@ -1,4 +1,8 @@
-from pulp_2to3_migration.app.plugin.api import Pulp2to3Importer, Pulp2to3Distributor
+from pulp_2to3_migration.app.plugin.api import (
+    is_different_relative_url,
+    Pulp2to3Importer,
+    Pulp2to3Distributor
+)
 
 from pulp_file.app.models import FileRemote, FilePublication, FileDistribution
 from pulp_file.manifest import Manifest
@@ -69,7 +73,10 @@ class IsoDistributor(Pulp2to3Distributor):
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
         base_config['base_path'] = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
         base_config['publication'] = publication
-        distribution, created = FileDistribution.objects.update_or_create(**base_config)
+        distribution, created = FileDistribution.objects.update_or_create(
+            name=base_config['name'],
+            base_path=base_config['base_path'],
+            defaults=base_config)
 
         return publication, distribution, created
 
@@ -100,13 +107,4 @@ class IsoDistributor(Pulp2to3Distributor):
             bool: True, if a distribution needs to be recreated; False if no changes are needed
 
         """
-        if not pulp2distributor.pulp3_distribution:
-            return True
-
-        new_base_path = pulp2distributor.pulp2_config.get('relative_url',
-                                                          pulp2distributor.pulp2_repo_id)
-        current_base_path = pulp2distributor.pulp3_distribution.base_path
-        if new_base_path != current_base_path:
-            return True
-
-        return False
+        return is_different_relative_url(pulp2distributor)

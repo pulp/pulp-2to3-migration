@@ -477,17 +477,18 @@ def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=N
 
             if last_updated != distributor.pulp2_last_updated:
                 distributor.pulp2_config = dist_data.config
-                dist_migrator = distributor_migrators.get(distributor.pulp2_type_id)
-                needs_new_publication = dist_migrator.needs_new_publication(distributor)
-                if needs_new_publication and distributor.pulp3_publication:
-                    distributor.pulp3_publication.delete()
-                else:
-                    needs_new_distribution = dist_migrator.needs_new_distribution(distributor)
-                    if needs_new_distribution and distributor.pulp3_distribution:
-                        distributor.pulp3_distribution.delete()
-
                 distributor.pulp2_last_updated = last_updated
                 distributor.is_migrated = False
+                dist_migrator = distributor_migrators.get(distributor.pulp2_type_id)
+                needs_new_publication = dist_migrator.needs_new_publication(distributor)
+                needs_new_distribution = dist_migrator.needs_new_distribution(distributor)
+                remove_publication = needs_new_publication and distributor.pulp3_publication
+                remove_distribution = needs_new_distribution and distributor.pulp3_distribution
+                if remove_publication:
+                    distributor.pulp3_publication.delete()
+                if remove_publication or remove_distribution:
+                    distributor.pulp3_distribution.delete()
+
             distributor.save()
 
 

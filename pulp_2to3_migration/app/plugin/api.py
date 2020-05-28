@@ -6,4 +6,8 @@ from .content import (  # noqa
 )
 
 from .migrator import Pulp2to3PluginMigrator  # noqa
-from .repository import Pulp2to3Importer, Pulp2to3Distributor  # noqa
+from .repository import (  # noqa
+    is_different_relative_url,
+    Pulp2to3Importer,
+    Pulp2to3Distributor
+)
