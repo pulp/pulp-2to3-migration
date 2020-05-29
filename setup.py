@@ -6,7 +6,7 @@ requirements = [
     'pulpcore>=3.3',
     'mongoengine',
     'semantic_version',
-    'jsonschema',
+    'jsonschema>=3.0',
 ]
 
 setup(
