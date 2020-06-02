@@ -7,6 +7,7 @@ SPHINXBUILD          = sphinx-build
 PAPER                =
 BUILDDIR             = _build
 DIAGRAM_BUILD_DIR    = _diagrams
+PULP_URL      = "http://localhost:24817"
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -53,7 +54,7 @@ diagrams:
 
 html:
 	mkdir -p $(BUILDDIR)/html
-	curl -o _static/api.json "http://localhost:24817/pulp/api/v3/docs/api.json?plugin=pulp_2to3_migration"
+	curl -o _static/api.json "$(PULP_URL)/pulp/api/v3/docs/api.json?plugin=pulp_2to3_migration"
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
