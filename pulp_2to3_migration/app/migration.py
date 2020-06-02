@@ -184,7 +184,8 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
     if pulp2_importer_repo_id:
         try:
             pulp2_importer = Pulp2Importer.objects.get(
-                pulp2_repo_id=pulp2_importer_repo_id
+                pulp2_repo_id=pulp2_importer_repo_id,
+                not_in_plan=False
             )
             pulp3_remote = pulp2_importer.pulp3_remote
         except Pulp2Importer.DoesNotExist:
