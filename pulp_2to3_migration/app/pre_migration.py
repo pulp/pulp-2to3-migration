@@ -3,7 +3,10 @@ import logging
 from collections import namedtuple
 
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import (
+    Max,
+    Q,
+)
 from django.utils import timezone
 
 from mongoengine.queryset.visitor import Q as mongo_Q
@@ -287,7 +290,7 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
             importers_repos = plugin_plan.get_importers_repos()
             distributors_repos = plugin_plan.get_distributors_repos()
 
-            distributor_types = list(plugin_plan.migrator.distributor_migrators.keys())
+            distributor_migrators = plugin_plan.migrator.distributor_migrators
             importer_types = list(plugin_plan.migrator.importer_migrators.keys())
 
             for repo_data in mongo_repo_qs.only('id',
@@ -307,7 +310,7 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
                         pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
                     if not repos or repos and distributors_repos:
                         pre_migrate_distributor(
-                            repo_id, distributors_repos, distributor_types, repo)
+                            repo_id, distributors_repos, distributor_migrators, repo)
                     if repo:
                         pre_migrate_repocontent(repo)
                 pb.increment()
@@ -428,7 +431,7 @@ def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
         importer.save()
 
 
-def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None):
+def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=None):
     """
     Pre-migrate a pulp 2 distributor.
 
@@ -436,9 +439,10 @@ def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None)
         repo_id(str): An id of a pulp 2 repository which distributor should be migrated
         distributors(list): A list of distributors which are expected to be migrated. If empty,
                             all are migrated.
-        distributor_types(list): a list of supported distributor types
+        distributor_migrators(dict): supported distributor types and their models for migration
         repo(Pulp2Repository): A pre-migrated pulp 2 repository for this distributor
     """
+    distributor_types = list(distributor_migrators.keys())
     mongo_distributor_q = mongo_Q(repo_id=repo_id,
                                   distributor_type_id__in=distributor_types)
 
@@ -457,16 +461,35 @@ def pre_migrate_distributor(repo_id, distributors, distributor_types, repo=None)
         last_updated = (dist_data.last_updated
                         and timezone.make_aware(dist_data.last_updated, timezone.utc))
 
-        Pulp2Distributor.objects.create(
+        distributor, created = Pulp2Distributor.objects.get_or_create(
             pulp2_object_id=dist_data.id,
-            pulp2_id=dist_data.distributor_id,
-            pulp2_type_id=dist_data.distributor_type_id,
-            pulp2_last_updated=last_updated,
-            pulp2_config=dist_data.config,
-            pulp2_repository=repo,
-            pulp2_repo_id=repo_id,
-            is_migrated=False
-        )
+            defaults={'pulp2_id': dist_data.distributor_id,
+                      'pulp2_type_id': dist_data.distributor_type_id,
+                      'pulp2_last_updated': last_updated,
+                      'pulp2_config': dist_data.config,
+                      'pulp2_repository': repo,
+                      'pulp2_repo_id': repo_id,
+                      'is_migrated': False})
+
+        if not created:
+            # if it was marked as such because it was not present in the migration plan
+            distributor.not_in_plan = False
+
+            if last_updated != distributor.pulp2_last_updated:
+                distributor.pulp2_config = dist_data.config
+                distributor.pulp2_last_updated = last_updated
+                distributor.is_migrated = False
+                dist_migrator = distributor_migrators.get(distributor.pulp2_type_id)
+                needs_new_publication = dist_migrator.needs_new_publication(distributor)
+                needs_new_distribution = dist_migrator.needs_new_distribution(distributor)
+                remove_publication = needs_new_publication and distributor.pulp3_publication
+                remove_distribution = needs_new_distribution and distributor.pulp3_distribution
+                if remove_publication:
+                    distributor.pulp3_publication.delete()
+                if remove_publication or remove_distribution:
+                    distributor.pulp3_distribution.delete()
+
+            distributor.save()
 
 
 def pre_migrate_repocontent(repo):
@@ -557,27 +580,55 @@ def mark_removed_resources(plan, type_to_repo_ids):
                                           fields=['not_in_plan'],
                                           batch_size=1000)
 
+        # Mark distributors
+        mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
+        premigrated_dists = Pulp2Distributor.objects.filter(
+            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
+                                                                        flat=True))
+        removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
+
+        removed_dists = []
+        for pulp2dist in Pulp2Distributor.objects.filter(
+                pulp2_object_id__in=removed_dist_object_ids):
+            pulp2dist.not_in_pulp2 = True
+            removed_dists.append(pulp2dist)
+
+        Pulp2Distributor.objects.bulk_update(objs=removed_dists,
+                                             fields=['not_in_plan'],
+                                             batch_size=1000)
+
 
 def delete_old_resources(plan):
     """
-    Delete pre-migrated and migrated data for resources which are migrated fully on every run.
+    Delete old Publications/Distributions which are no longer present in Pulp2.
 
-    Delete pre-migrated distributors, Publications,
-    and Distributions according to a specified Migration Plan.
+    It's critical to remove Distributions to avoid base_path overlap.
+    It make the migration logic easier if we remove old Publications as well.
+
+    Delete criteria:
+        - pulp2distributor is no longer in plan
+        - pulp2repository content changed (repo.is_migrated=False) or it is no longer in plan
 
     Args:
         plan(MigrationPlan): A Migration Plan
 
     """
+    repos_with_old_distributions_qs = Pulp2Repository.objects.filter(
+        Q(is_migrated=False) | Q(not_in_plan=True))
 
-    for plugin in plan.get_plugin_plans():
-        with transaction.atomic():
-            for distributor_type, distributor_migrator in \
-                    plugin.migrator.distributor_migrators.items():
-                # delete all pre-migrated distributors for this plugin
-                Pulp2Distributor.objects.filter(pulp2_type_id=distributor_type).delete()
-                # delete all migrated Publications and Distributions for this plugin
-                for pub_model in distributor_migrator.pulp3_publication_models:
-                    pub_model.objects.all().delete()
-                for distribution_model in distributor_migrator.pulp3_distribution_models:
-                    distribution_model.objects.all().delete()
+    old_dist_query = Q(pulp3_distribution__isnull=False) | Q(pulp3_publication__isnull=False)
+    old_dist_query &= Q(pulp2_repository__in=repos_with_old_distributions_qs) | Q(not_in_plan=True)
+
+    with transaction.atomic():
+        pulp2distributors_with_old_distributions_qs = Pulp2Distributor.objects.filter(
+            old_dist_query).only('pulp3_distribution')
+
+        for pulp2distributor in pulp2distributors_with_old_distributions_qs:
+            if pulp2distributor.is_migrated:
+                pulp2distributor.is_migrated = False
+                pulp2distributor.save()
+            if pulp2distributor.pulp3_publication:
+                pulp2distributor.pulp3_publication.delete()
+            if pulp2distributor.pulp3_distribution:
+                pulp2distributor.pulp3_distribution.delete()

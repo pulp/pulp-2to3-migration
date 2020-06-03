@@ -116,3 +116,61 @@ class Pulp2to3Distributor:
 
         """
         raise NotImplementedError()
+
+    @classmethod
+    def needs_new_publication(cls, pulp2distributor):
+        """
+        Check if a publication associated with the pre_migrated distributor needs to be recreated.
+
+        Some plugins don't have publications at all, they can always return False.
+        It's not done by default, because if a plugin has publications, it needs to implement
+        this method properly. Only plugin knows which configuration of Pulp 2 distributor might
+        affect a Pulp 3 publication.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a publication needs to be recreated; False if no changes are needed
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def needs_new_distribution(cls, pulp2distributor):
+        """
+        Check if a distribution associated with the pre_migrated distributor needs to be recreated.
+
+        Only plugin knows which configuration of Pulp 2 distributor might affect a Pulp 3
+        distribution.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a distribution needs to be recreated; False if no changes are needed
+
+        """
+        raise NotImplementedError()
+
+
+def is_different_relative_url(pulp2distributor):
+    """
+    Check if a distribution associated with the pre_migrated distributor has the same relative url.
+
+    Args:
+        pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+    Return:
+        bool: True, if a relative url is different; False otherwise
+
+    """
+    if not pulp2distributor.pulp3_distribution:
+        return True
+
+    new_base_path = pulp2distributor.pulp2_config.get('relative_url',
+                                                      pulp2distributor.pulp2_repo_id)
+    current_base_path = pulp2distributor.pulp3_distribution.base_path
+    if new_base_path != current_base_path:
+        return True
+
+    return False

@@ -52,6 +52,8 @@ def migrate_repositories(plan):
     )
     with ProgressReport(**progress_data) as pb:
         for plugin in plan.get_plugin_plans():
+
+            # TODO: Should we filter out repos which have is_migrated=True?
             pulp2repos_qs = Pulp2Repository.objects.filter(
                 pulp3_repository_version=None,
                 not_in_plan=False,
@@ -211,14 +213,16 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
 
         try:
             migrated_repo = Pulp2Repository.objects.get(pulp2_repo_id=repo_id,
-                                                        not_in_plan=False)
+                                                        not_in_plan=False,
+                                                        is_migrated=True)
         except Pulp2Repository.DoesNotExist:
             # not in Pulp 2 anymore
             continue
         else:
             pulp2dist = Pulp2Distributor.objects.filter(
+                is_migrated=False,
                 pulp2_repo_id__in=dist_repositories,
-                pulp2_type_id__in=distributor_types
+                pulp2_type_id__in=distributor_types,
             )
             for dist in pulp2dist:
                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
@@ -272,7 +276,8 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
     """
     Create a repo version based on a pulp2 repository.
 
-    Add a remote to a corresponding pulp 2 repository.
+    Add a remote to a corresponding pulp 2 repository. Since any remote can change without a repo
+    being changed itself, re-set it here for every repo.
 
     Args:
         migrator: migrator to use, provides repo type information
@@ -281,8 +286,6 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
         pulp3_remote(remote): a pulp3 remote
     """
 
-    # Add a remote to every repo, even the migrated one, because remotes are migrated on
-    # every run
     if pulp3_remote:
         pulp2_repo.pulp3_repository_remote = pulp3_remote
     # pulp2importer might not be migrated, e.g. config was empty

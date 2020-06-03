@@ -1,4 +1,5 @@
 from pulp_2to3_migration.app.plugin.api import (
+    is_different_relative_url,
     Pulp2to3Importer,
     Pulp2to3Distributor
 )
@@ -72,6 +73,38 @@ class RpmDistributor(Pulp2to3Distributor):
         base_path = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
         distribution_data['base_path'] = base_path.rstrip('/')
         distribution_data['publication'] = publication
-        distribution, created = RpmDistribution.objects.update_or_create(**distribution_data)
-
+        distribution, created = RpmDistribution.objects.update_or_create(
+            name=distribution_data['name'],
+            base_path=distribution_data['base_path'],
+            defaults=distribution_data)
         return publication, distribution, created
+
+    @classmethod
+    def needs_new_publication(cls, pulp2distributor):
+        """
+        Check if a publication associated with the pre_migrated distributor needs to be recreated.
+
+        TODO: If checksum changes, publication needs to be recreated. Update this method when
+        TODO: adding a checksum support to the migration.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a publication needs to be recreated; False if no changes are needed
+        """
+        return False
+
+    @classmethod
+    def needs_new_distribution(cls, pulp2distributor):
+        """
+        Check if a distribution associated with the pre_migrated distributor needs to be recreated.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a distribution needs to be recreated; False if no changes are needed
+
+        """
+        return is_different_relative_url(pulp2distributor)

@@ -1,4 +1,8 @@
-from pulp_2to3_migration.app.plugin.api import Pulp2to3Importer, Pulp2to3Distributor
+from pulp_2to3_migration.app.plugin.api import (
+    is_different_relative_url,
+    Pulp2to3Importer,
+    Pulp2to3Distributor
+)
 
 from pulp_file.app.models import FileRemote, FilePublication, FileDistribution
 from pulp_file.manifest import Manifest
@@ -69,6 +73,38 @@ class IsoDistributor(Pulp2to3Distributor):
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
         base_config['base_path'] = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
         base_config['publication'] = publication
-        distribution, created = FileDistribution.objects.update_or_create(**base_config)
+        distribution, created = FileDistribution.objects.update_or_create(
+            name=base_config['name'],
+            base_path=base_config['base_path'],
+            defaults=base_config)
 
         return publication, distribution, created
+
+    @classmethod
+    def needs_new_publication(cls, pulp2distributor):
+        """
+        Check if a publication associated with the pre_migrated distributor needs to be recreated.
+
+        Nothing in a Pulp 2 distributor configuration can cause a Pulp3 publication to change.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a publication needs to be recreated; False if no changes are needed
+        """
+        return False
+
+    @classmethod
+    def needs_new_distribution(cls, pulp2distributor):
+        """
+        Check if a distribution associated with the pre_migrated distributor needs to be recreated.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a distribution needs to be recreated; False if no changes are needed
+
+        """
+        return is_different_relative_url(pulp2distributor)

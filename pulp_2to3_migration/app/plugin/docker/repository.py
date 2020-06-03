@@ -55,5 +55,46 @@ class DockerDistributor(Pulp2to3Distributor):
         base_config['base_path'] = pulp2_config.get(
             'repo-registry-id', pulp2distributor.pulp2_repo_id)
         base_config['repository_version'] = repo_version
-        distribution, created = ContainerDistribution.objects.update_or_create(**base_config)
+        distribution, created = ContainerDistribution.objects.update_or_create(
+            name=base_config['name'],
+            base_path=base_config['base_path'],
+            defaults=base_config)
         return None, distribution, created
+
+    @classmethod
+    def needs_new_publication(cls, pulp2distributor):
+        """
+        Check if a publication associated with the pre_migrated distributor needs to be recreated.
+
+        No publications in the Container plugin.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a publication needs to be recreated; False if no changes are needed
+        """
+        return False
+
+    @classmethod
+    def needs_new_distribution(cls, pulp2distributor):
+        """
+        Check if a distribution associated with the pre_migrated distributor needs to be recreated.
+
+        Args:
+            pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
+
+        Return:
+            bool: True, if a distribution needs to be recreated; False if no changes are needed
+
+        """
+        if not pulp2distributor.pulp3_distribution:
+            return True
+
+        new_base_path = pulp2distributor.pulp2_config.get('repo-registry-id',
+                                                          pulp2distributor.pulp2_repo_id)
+        current_base_path = pulp2distributor.pulp3_distribution.base_path
+        if new_base_path != current_base_path:
+            return True
+
+        return False

@@ -232,7 +232,8 @@ class ContentMigrationFirstStage(Stage):
             lazy_wo_catalog = is_lazy_type and not pulp2lazycatalog
             if pulp2content.pulp3_content is not None and (not is_lazy_type or lazy_wo_catalog):
                 if pb:
-                    pb.increment()
+                    pb.total -= 1
+                    pb.save()
                 continue
             if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
                 _logger.warn(_('On_demand content cannot be migrated without an entry in the '
