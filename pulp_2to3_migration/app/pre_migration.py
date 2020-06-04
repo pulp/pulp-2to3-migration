@@ -591,7 +591,7 @@ def mark_removed_resources(plan, type_to_repo_ids):
         removed_dists = []
         for pulp2dist in Pulp2Distributor.objects.filter(
                 pulp2_object_id__in=removed_dist_object_ids):
-            pulp2dist.not_in_pulp2 = True
+            pulp2dist.not_in_plan = True
             removed_dists.append(pulp2dist)
 
         Pulp2Distributor.objects.bulk_update(objs=removed_dists,
