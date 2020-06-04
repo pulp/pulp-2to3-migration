@@ -158,11 +158,11 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
                                             pulp2_storage_path=record._storage_path,
                                             downloaded=downloaded,
                                             pulp2_repo=pulp2_repo)
-                    _logger.debug(
-                        'Add content item to the list to migrate: {item}'.format(item=item))
-                    pulp2content.append(item)
-                    pulp2content_pb.total += 1
-                    pulp2detail_pb.total += 1
+                        _logger.debug(
+                            'Add content item to the list to migrate: {item}'.format(item=item))
+                        pulp2content.append(item)
+                        pulp2content_pb.total += 1
+                        pulp2detail_pb.total += 1
 
                 # total needs to be adjusted, proper counting happened in the loop above,
                 # so we subtract one because this content is also a part of initial 'total' counter.
