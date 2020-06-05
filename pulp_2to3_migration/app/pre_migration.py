@@ -564,8 +564,8 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         # Mark importers
         mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
-        premigrated_imps = Pulp2Importer.objects.filter(
-            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        imp_types = plugin_plan.migrator.importer_migrators.keys()
+        premigrated_imps = Pulp2Importer.objects.filter(pulp2_type_id__in=imp_types)
         premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
                                                                       flat=True))
         removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
@@ -582,8 +582,8 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         # Mark distributors
         mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
-        premigrated_dists = Pulp2Distributor.objects.filter(
-            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        dist_types = plugin_plan.migrator.distributor_migrators.keys()
+        premigrated_dists = Pulp2Distributor.objects.filter(pulp2_type_id__in=dist_types)
         premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
                                                                         flat=True))
         removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
