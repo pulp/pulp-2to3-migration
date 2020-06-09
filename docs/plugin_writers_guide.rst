@@ -37,7 +37,13 @@ first stage of DeclarativeContentMigration, on your Content model you also need:
 
 5. Subclass the provided ``Pulp2to3Importer`` class and define ``migrate_to_pulp3`` method which
 creates a plugin Remote instance based on the provided pre-migrated ``Pulp2Importer``.
+When creating a Remote it is important to use ``update_or_create`` function in case on re-run
+Importer has been changed.
 
 6. Subclass the provided ``Pulp2to3Distributor`` class and define ``migrate_to_pulp3`` method which
 creates a plugin Publication and/or Distribution instance (depends on the plugin) based on the
 provided pre-migrated ``Pulp2Distributor``.
+When creating a Distribution it is important to use ``update_or_create`` function in case on re-run
+Distributor has been changed.
+It is also important to relate Distributor to Publication or RepoVersion (depends on the plugin)
+when defining ``migrate_to_pulp3`` method.
