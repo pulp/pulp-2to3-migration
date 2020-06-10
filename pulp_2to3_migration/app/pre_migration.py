@@ -12,8 +12,11 @@ from django.utils import timezone
 from mongoengine.queryset.visitor import Q as mongo_Q
 
 from pulpcore.constants import TASK_STATES
-from pulpcore.plugin.models import ProgressReport
-
+from pulpcore.plugin.models import (
+    BaseDistribution,
+    Publication,
+    ProgressReport,
+)
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Distributor,
@@ -484,10 +487,21 @@ def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=N
                 needs_new_distribution = dist_migrator.needs_new_distribution(distributor)
                 remove_publication = needs_new_publication and distributor.pulp3_publication
                 remove_distribution = needs_new_distribution and distributor.pulp3_distribution
+
                 if remove_publication:
+                    # check if publication is shared by multiple distributions
+                    # on the corresponding distributor flip the flag to false so the affected
+                    # distribution will be updated with the new publication
+                    pulp2dists = distributor.pulp3_publication.pulp2distributor_set.all()
+                    for dist in pulp2dists:
+                        if dist.is_migrated:
+                            dist.is_migrated = False
+                            dist.save()
                     distributor.pulp3_publication.delete()
+                    distributor.pulp3_publication = None
                 if remove_publication or remove_distribution:
                     distributor.pulp3_distribution.delete()
+                    distributor.pulp3_distribution = None
 
             distributor.save()
 
@@ -564,8 +578,8 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         # Mark importers
         mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
-        premigrated_imps = Pulp2Importer.objects.filter(
-            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        imp_types = plugin_plan.migrator.importer_migrators.keys()
+        premigrated_imps = Pulp2Importer.objects.filter(pulp2_type_id__in=imp_types)
         premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
                                                                       flat=True))
         removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
@@ -582,8 +596,8 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         # Mark distributors
         mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
-        premigrated_dists = Pulp2Distributor.objects.filter(
-            pulp2_repository__pulp2_repo_type=plugin_plan.type)
+        dist_types = plugin_plan.migrator.distributor_migrators.keys()
+        premigrated_dists = Pulp2Distributor.objects.filter(pulp2_type_id__in=dist_types)
         premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
                                                                         flat=True))
         removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
@@ -622,13 +636,24 @@ def delete_old_resources(plan):
 
     with transaction.atomic():
         pulp2distributors_with_old_distributions_qs = Pulp2Distributor.objects.filter(
-            old_dist_query).only('pulp3_distribution')
-
+            old_dist_query)
+        pubs_to_delete = set()
+        dists_to_delete = []
         for pulp2distributor in pulp2distributors_with_old_distributions_qs:
             if pulp2distributor.is_migrated:
                 pulp2distributor.is_migrated = False
                 pulp2distributor.save()
             if pulp2distributor.pulp3_publication:
-                pulp2distributor.pulp3_publication.delete()
+                # check if publication is shared by multiple distributions
+                # on the corresponding distributor flip the flag to false so the affected
+                # distribution will be updated with the new publication
+                pulp2dists = pulp2distributor.pulp3_publication.pulp2distributor_set.all()
+                for dist in pulp2dists:
+                    if dist.is_migrated:
+                        dist.is_migrated = False
+                        dist.save()
+                pubs_to_delete.add(pulp2distributor.pulp3_publication.pk)
             if pulp2distributor.pulp3_distribution:
-                pulp2distributor.pulp3_distribution.delete()
+                dists_to_delete.append(pulp2distributor.pulp3_distribution.pk)
+        Publication.objects.filter(pk__in=pubs_to_delete).delete()
+        BaseDistribution.objects.filter(pk__in=dists_to_delete).delete()
