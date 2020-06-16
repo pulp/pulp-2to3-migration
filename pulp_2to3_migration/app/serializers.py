@@ -149,8 +149,9 @@ class Pulp2ContentSerializer(ModelSerializer):
         """
         pulp2_repo = obj.pulp2_repo
         if pulp2_repo and pulp2_repo.is_migrated:
-            pulp3_repo_href = get_pulp_href(pulp2_repo.pulp3_repository)
             pulp3_repo_version = pulp2_repo.pulp3_repository_version
+            pulp3_repo = pulp3_repo_version.repository
+            pulp3_repo_href = get_pulp_href(pulp3_repo)
             return f"{pulp3_repo_href}versions/{pulp3_repo_version.number}/"
 
     def to_representation(self, instance):

@@ -77,6 +77,9 @@ def migrate_repositories(plan):
                         pulp2repo.pulp3_repository = repo
                         pulp2repo.save()
                     else:
+                        if not pulp2repo.pulp3_repository:
+                            pulp2repo.pulp3_repository = repo
+                            pulp2repo.save()
                         pb.total -= 1
                         pb.save()
 
@@ -90,6 +93,7 @@ def migrate_repositories(plan):
                         pulp2repo = pulp2repos_qs.get(pulp2_repo_id=pulp3_repo_name)
                     except Pulp2Repository.DoesNotExist:
                         description = pulp3_repo_name
+                        pulp2repo = None
                     else:
                         description = pulp2repo.pulp2_description
                     repository_class = plugin.migrator.pulp3_repository
@@ -98,9 +102,13 @@ def migrate_repositories(plan):
                         defaults={'description': description})
                     if created:
                         pb.increment()
-                        pulp2repo.pulp3_repository = repo
-                        pulp2repo.save()
+                        if pulp2repo:
+                            pulp2repo.pulp3_repository = repo
+                            pulp2repo.save()
                     else:
+                        if pulp2repo and not pulp2repo.pulp3_repository:
+                            pulp2repo.pulp3_repository = repo
+                            pulp2repo.save()
                         pb.total -= 1
                         pb.save()
 
@@ -296,7 +304,6 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
     if pulp2_repo.is_migrated:
         pulp2_repo.save()
         return
-
     repository_class = migrator.pulp3_repository
     pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
     unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
