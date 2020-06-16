@@ -1,0 +1,1 @@
+Fixed `UnboundLocalError` during migration of a repo with a custom name.
