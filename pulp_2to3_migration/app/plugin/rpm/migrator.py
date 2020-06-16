@@ -282,7 +282,8 @@ class InterrelateContent(Stage):
         packages = group_dc.content.packages
         package_list = [pkg['name'] for pkg in packages]
         pulp2_repo_id = group_dc.extra_data.get('pulp2_repo_id')
-        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id)
+        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
+                                                 not_in_plan=False)
         # all pulp2 unit_ids for rpm within the pulp2repo
         filters = dict(pulp2_repository=pulp2_repo,
                        pulp2_content_type_id__in=['rpm', 'srpm'])
@@ -311,7 +312,8 @@ class InterrelateContent(Stage):
         groups = category_dc.content.group_ids
         group_list = [grp['name'] for grp in groups]
         pulp2_repo_id = category_dc.extra_data.get('pulp2_repo_id')
-        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id)
+        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
+                                                 not_in_plan=False)
         # all pulp2 unit_ids for groups within the pulp2repo
         unit_ids = Pulp2RepoContent.objects.filter(
             pulp2_repository=pulp2_repo,
@@ -331,7 +333,7 @@ class InterrelateContent(Stage):
 
     def relate_groups_to_environment(self, env_dc):
         """
-        Relate groups to a Environment
+        Relate groups to an Environment
 
         Args:
             module_dc (pulpcore.plugin.stages.DeclarativeContent): dc for a PackageCategory
@@ -343,7 +345,8 @@ class InterrelateContent(Stage):
         group_list = [grp['name'] for grp in groups]
         option_list = [opt['name'] for opt in options]
         pulp2_repo_id = env_dc.extra_data.get('pulp2_repo_id')
-        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id)
+        pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id,
+                                                 not_in_plan=False)
         # all pulp2 unit_ids for groups within the pulp2repo
         unit_ids = Pulp2RepoContent.objects.filter(
             pulp2_repository=pulp2_repo,

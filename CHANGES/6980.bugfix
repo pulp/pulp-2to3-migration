@@ -1,0 +1,1 @@
+Fix comps migration when repo is recreated between the migration runs.
