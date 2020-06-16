@@ -72,10 +72,11 @@ def migrate_repositories(plan):
                     repo, created = repository_class.objects.get_or_create(
                         name=pulp3_repo_name,
                         defaults={'description': pulp2repo.pulp2_description})
-                    if created:
-                        pb.increment()
+                    if not pulp2repo.pulp3_repository:
                         pulp2repo.pulp3_repository = repo
                         pulp2repo.save()
+                    if created:
+                        pb.increment()
                     else:
                         pb.total -= 1
                         pb.save()
@@ -96,10 +97,18 @@ def migrate_repositories(plan):
                     repo, created = repository_class.objects.get_or_create(
                         name=pulp3_repo_name,
                         defaults={'description': description})
+
+                    pulp2_repo_ids = []
+                    repo_version_setup = repos_to_create[pulp3_repo_name].get('repository_versions')
+                    for repo_version in repo_version_setup:
+                        pulp2_repo_ids.append(repo_version['repo_id'])
+                    pulp2repos_qs = Pulp2Repository.objects.filter(pulp2_repo_id__in=pulp2_repo_ids)
+                    for pulp2repo in pulp2repos_qs:
+                        if not pulp2repo.pulp3_repository:
+                            pulp2repo.pulp3_repository = repo
+                            pulp2repo.save()
                     if created:
                         pb.increment()
-                        pulp2repo.pulp3_repository = repo
-                        pulp2repo.save()
                     else:
                         pb.total -= 1
                         pb.save()
