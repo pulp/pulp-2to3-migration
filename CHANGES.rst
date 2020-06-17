@@ -13,9 +13,54 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0b3 (2020-06-17)
+====================
+
+Features
+--------
+
+- Slightly improve performance by allowing repos to be migrated in parallel.
+  `#6374 <https://pulp.plan.io/issues/6374>`_
+- As a user, I can track Remotes and not remigrate them on every run.
+  `#6375 <https://pulp.plan.io/issues/6375>`_
+- Track Publications and Distributions, recreate if needed and not on every run.
+  `#6376 <https://pulp.plan.io/issues/6376>`_
+
+
+Bugfixes
+--------
+
+- Expose pulp3_repository_version on pulp2content if it is available.
+  `#6580 <https://pulp.plan.io/issues/6580>`_
+- Ensure that only one migration plan can be run at a time.
+  `#6639 <https://pulp.plan.io/issues/6639>`_
+- Fixed `UnboundLocalError` during migration of a repo with a custom name.
+  `#6640 <https://pulp.plan.io/issues/6640>`_
+- Fix an issue where a migration with many plugin types would crash on execution.
+  `#6754 <https://pulp.plan.io/issues/6754>`_
+- Fixed distribution creation when a distributor is from a repo which is not being migrated.
+  `#6853 <https://pulp.plan.io/issues/6853>`_
+- Fixed migration of a sub-set of previously migrated repos.
+  `#6886 <https://pulp.plan.io/issues/6886>`_
+- Handle already-migrated 're-created' pulp2 repos
+  `#6887 <https://pulp.plan.io/issues/6887>`_
+- Fixed marking of old distributors, when distributor only is migrated without the repo.
+  `#6932 <https://pulp.plan.io/issues/6932>`_
+- Fixed case when a publication is shared by multiple distributions.
+  `#6947 <https://pulp.plan.io/issues/6947>`_
+- Set pulp3_repo relation for all the cases, including remigration.
+  `#6964 <https://pulp.plan.io/issues/6964>`_
+- Fixed incorrect pulp3_repo_version href for advisories after remigration.
+  `#6966 <https://pulp.plan.io/issues/6966>`_
+- Fix comps migration when repo is recreated between the migration runs.
+  `#6980 <https://pulp.plan.io/issues/6980>`_
+
+
+----
+
 
 0.2.0b2 (2020-04-22)
-========================
+====================
 
 Features
 --------
