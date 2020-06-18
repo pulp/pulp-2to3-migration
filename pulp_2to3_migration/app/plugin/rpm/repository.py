@@ -55,18 +55,23 @@ class RpmDistributor(Pulp2to3Distributor):
             distribution(RpmDistribution): distribution in Pulp 3
             created(bool): True if a distribution has just been created; False if a distribution
                            is an existing one
+
         """
+        pulp2_config = pulp2distributor.pulp2_config
 
         if not repo_version:
             repo_version = pulp2distributor.pulp2_repository.pulp3_repository_version
         publication = repo_version.publication_set.first()
         if not publication:
-            # create publication
-            publish(repo_version.pk)
+            pulp2_checksum_type = pulp2_config.get('checksum_type')
+            checksum_types = None
+            if pulp2_checksum_type:
+                checksum_types = {'metadata': pulp2_checksum_type,
+                                  'package': pulp2_checksum_type}
+            publish(repo_version.pk, checksum_types=checksum_types)
             publication = repo_version.publication_set.first()
 
         # create distribution
-        pulp2_config = pulp2distributor.pulp2_config
         distribution_data = cls.parse_base_config(pulp2distributor, pulp2_config)
 
         # ensure that the base_path does not end with / in Pulp 3, it's often present in Pulp 2.
@@ -84,15 +89,19 @@ class RpmDistributor(Pulp2to3Distributor):
         """
         Check if a publication associated with the pre_migrated distributor needs to be recreated.
 
-        TODO: If checksum changes, publication needs to be recreated. Update this method when
-        TODO: adding a checksum support to the migration.
-
         Args:
             pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to check
 
         Return:
             bool: True, if a publication needs to be recreated; False if no changes are needed
+
         """
+        new_checksum_type = pulp2distributor.pulp2_config.get('checksum_type')
+        current_checksum_type = pulp2distributor.pulp3_publication.metadata_checksum_type
+
+        if new_checksum_type != current_checksum_type:
+            return True
+
         return False
 
     @classmethod
