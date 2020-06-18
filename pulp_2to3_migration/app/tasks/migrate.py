@@ -2,7 +2,12 @@ import logging
 
 from collections import defaultdict
 
-from pulpcore.plugin.models import CreatedResource, Task, TaskGroup
+from pulpcore.plugin.models import (
+    CreatedResource,
+    GroupProgressReport,
+    Task,
+    TaskGroup,
+)
 
 from pulp_2to3_migration.app.pre_migration import (
     delete_old_resources,
@@ -107,6 +112,14 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     task_group = TaskGroup(description="Migration Sub-tasks")
     task_group.save()
+    GroupProgressReport(
+        message="Repo version creation",
+        code="create.repo_version",
+        task_group=task_group).save()
+    GroupProgressReport(
+        message="Distribution creation",
+        code="create.distribution",
+        task_group=task_group).save()
     current_task = Task.current()
     current_task.task_group = task_group
     current_task.save()

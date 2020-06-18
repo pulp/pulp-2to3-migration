@@ -1,11 +1,13 @@
 import logging
 
+from django.db.models import F
+
 from pulpcore.plugin.models import (
     Content,
     CreatedResource,
     ProgressReport,
     Repository,
-    Task,
+    TaskGroup,
 )
 from pulpcore.plugin.tasking import enqueue_with_reservation
 
@@ -166,12 +168,23 @@ def simple_plugin_migration(plugin):
     )
     repos_to_migrate = Pulp2Repository.objects.filter(pulp2_repo_type=plugin.type,
                                                       not_in_plan=False)
+
+    task_group = TaskGroup.current()
+    # find appropriate group_progress_reports that later will be updated
+    progress_dist = task_group.group_progress_reports.filter(
+        code='create.distribution'
+    )
+    progress_dist.update(total=F('total') + pulp2distributors_qs.count())
+    progress_rv = task_group.group_progress_reports.filter(
+        code='create.repo_version'
+    )
+    progress_rv.update(total=F('total') + repos_to_migrate.count())
     for pulp2_repo in repos_to_migrate:
         # Create one repo version for each pulp 2 repo if needed.
-        create_repo_version(plugin.migrator, pulp2_repo)
+        create_repo_version(plugin.migrator, progress_rv, pulp2_repo)
     for pulp2_dist in pulp2distributors_qs:
         dist_migrator = distributor_migrators.get(pulp2_dist.pulp2_type_id)
-        migrate_repo_distributor(dist_migrator, pulp2_dist)
+        migrate_repo_distributor(dist_migrator, progress_dist, pulp2_dist)
 
 
 def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
@@ -201,6 +214,16 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
             pulp3_remote = pulp2_importer.pulp3_remote
         except Pulp2Importer.DoesNotExist:
             pass
+
+    task_group = TaskGroup.current()
+    # find appropriate group_progress_reports that later will be updated
+    progress_dist = task_group.group_progress_reports.filter(
+        code='create.distribution'
+    )
+    progress_rv = task_group.group_progress_reports.filter(
+        code='create.repo_version'
+    )
+
     for pulp2_repo_info in repo_versions_setup:
         try:
             pulp2_repo = Pulp2Repository.objects.get(
@@ -214,7 +237,7 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
             # it's possible to have a random order of the repo versions (after migration
             # re-run, a repo can be changed in pulp 2 and it might not be for the last
             # repo version)
-            create_repo_version(plugin.migrator, pulp2_repo, pulp3_remote)
+            create_repo_version(plugin.migrator, progress_rv, pulp2_repo, pulp3_remote)
 
     for pulp2_repo_info in repo_versions_setup:
         # find pulp2repo by id
@@ -235,10 +258,15 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
                 pulp2_repo_id__in=dist_repositories,
                 pulp2_type_id__in=distributor_types,
             )
+            # decrease the number of total because some dists have already been migrated
+            decrease_total = len(dist_repositories) - len(pulp2dist)
+            if decrease_total:
+                progress_dist.update(total=F('total') - decrease_total)
+
             for dist in pulp2dist:
                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
                 migrate_repo_distributor(
-                    dist_migrator, dist,
+                    dist_migrator, progress_dist, dist,
                     migrated_repo.pulp3_repository_version
                 )
 
@@ -265,17 +293,29 @@ def create_repoversions_publications_distributions(plan, parallel=True):
             task_func(*task_args)
         else:
             task_func = complex_repo_migration
-
+            repo_ver_to_create = 0
+            dist_to_create = 0
             if parallel:
                 for repo_name in pulp3_repo_setup:
+                    repo_versions = pulp3_repo_setup[repo_name]['repository_versions']
+                    repo_ver_to_create += len(repo_versions)
+                    for repo_ver in repo_versions:
+                        dist_to_create += len(repo_ver['dist_repo_ids'])
                     repo = Repository.objects.get(name=repo_name).cast()
                     task_args = [plugin, pulp3_repo_setup, repo_name]
                     enqueue_with_reservation(
                         task_func,
                         [repo],
                         args=task_args,
-                        task_group=Task.current().task_group
+                        task_group=TaskGroup.current()
                     )
+                task_group = TaskGroup.current()
+                progress_rv = task_group.group_progress_reports.filter(code='create.repo_version')
+                progress_rv.update(total=F('total') + repo_ver_to_create)
+                progress_dist = task_group.group_progress_reports.filter(
+                    code='create.distribution'
+                )
+                progress_dist.update(total=F('total') + dist_to_create)
             else:
                 # Serial (non-parallel)
                 for repo_name in pulp3_repo_setup:
@@ -283,7 +323,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     task_func(*task_args)
 
 
-def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
+def create_repo_version(migrator, progress_rv, pulp2_repo, pulp3_remote=None):
     """
     Create a repo version based on a pulp2 repository.
 
@@ -292,6 +332,7 @@ def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
 
     Args:
         migrator: migrator to use, provides repo type information
+        progress_rv: GroupProgressReport queryset for repo_version creation
         pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
         pulp3_remote(remote): a pulp3 remote
     """
@@ -303,6 +344,7 @@ def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
         pulp2_repo.pulp3_repository_remote = pulp2_repo.pulp2importer.pulp3_remote
     if pulp2_repo.is_migrated:
         pulp2_repo.save()
+        progress_rv.update(total=F('total') - 1)
         return
 
     pulp3_repo = pulp2_repo.pulp3_repository
@@ -317,20 +359,27 @@ def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
         to_delete = repo_content - incoming_content
         new_version.add_content(Content.objects.filter(pk__in=to_add))
         new_version.remove_content(Content.objects.filter(pk__in=to_delete))
+
+    is_empty_repo = not pulp2_repo.pulp3_repository_version
     if new_version.complete:
         pulp2_repo.pulp3_repository_version = new_version
-    if not pulp2_repo.pulp3_repository_version:
+        progress_rv.update(done=F('done') + 1)
+    elif is_empty_repo:
         pulp2_repo.pulp3_repository_version = pulp3_repo.latest_version()
+        progress_rv.update(done=F('done') + 1)
+    else:
+        progress_rv.update(total=F('total') - 1)
     pulp2_repo.is_migrated = True
     pulp2_repo.save()
 
 
-def migrate_repo_distributor(dist_migrator, pulp2dist, repo_version=None):
+def migrate_repo_distributor(dist_migrator, progress_dist, pulp2dist, repo_version=None):
     """
     Migrate repo distributor.
 
     Args:
         dist_migrator(Pulp2to3Distributor): distributor migrator class
+        progress_dist: GroupProgressReport queryset for distribution creation
         pulp2dist(Pulp2Distributor): a pre-migrated distributor to migrate
         repo_version(RepositoryVersion): a pulp3 repo version
     """
@@ -339,10 +388,10 @@ def migrate_repo_distributor(dist_migrator, pulp2dist, repo_version=None):
         pulp2dist, repo_version)
     if publication:
         pulp2dist.pulp3_publication = publication
-    if distribution:
-        pulp2dist.pulp3_distribution = distribution
+    pulp2dist.pulp3_distribution = distribution
     pulp2dist.is_migrated = True
     pulp2dist.save()
+    progress_dist.update(done=F('done') + 1)
     # CreatedResource were added  here because publications and repo versions
     # were listed among created resources and distributions were not. it could
     # create some confusion remotes are not listed still
