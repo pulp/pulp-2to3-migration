@@ -168,7 +168,7 @@ def simple_plugin_migration(plugin):
                                                       not_in_plan=False)
     for pulp2_repo in repos_to_migrate:
         # Create one repo version for each pulp 2 repo if needed.
-        create_repo_version(plugin.migrator, pulp2_repo.pulp2_repo_id, pulp2_repo)
+        create_repo_version(plugin.migrator, pulp2_repo)
     for pulp2_dist in pulp2distributors_qs:
         dist_migrator = distributor_migrators.get(pulp2_dist.pulp2_type_id)
         migrate_repo_distributor(dist_migrator, pulp2_dist)
@@ -214,7 +214,7 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
             # it's possible to have a random order of the repo versions (after migration
             # re-run, a repo can be changed in pulp 2 and it might not be for the last
             # repo version)
-            create_repo_version(plugin.migrator, repo_name, pulp2_repo, pulp3_remote)
+            create_repo_version(plugin.migrator, pulp2_repo, pulp3_remote)
 
     for pulp2_repo_info in repo_versions_setup:
         # find pulp2repo by id
@@ -283,7 +283,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     task_func(*task_args)
 
 
-def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None):
+def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
     """
     Create a repo version based on a pulp2 repository.
 
@@ -292,7 +292,6 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
 
     Args:
         migrator: migrator to use, provides repo type information
-        pulp3_repo_name(str): repository name in Pulp 3
         pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
         pulp3_remote(remote): a pulp3 remote
     """
@@ -306,8 +305,7 @@ def create_repo_version(migrator, pulp3_repo_name, pulp2_repo, pulp3_remote=None
         pulp2_repo.save()
         return
 
-    repository_class = migrator.pulp3_repository
-    pulp3_repo = repository_class.objects.get(name=pulp3_repo_name)
+    pulp3_repo = pulp2_repo.pulp3_repository
     unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
         'pulp2_unit_id', flat=True)
     incoming_content = set(Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
