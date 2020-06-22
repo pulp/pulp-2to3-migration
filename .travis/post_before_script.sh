@@ -20,11 +20,3 @@ pip install $TRAVIS_BUILD_DIR/../pulpcore
 
 pip install .
 
-cd ../pulp-openapi-generator
-
-./generate.sh pulpcore python
-pip install ./pulpcore-client
-./generate.sh pulp_file python
-pip install ./pulp_file-client
-./generate.sh pulp_2to3_migration python
-pip install ./pulp_2to3_migration-client
