@@ -1,0 +1,1 @@
+Make `size` fields the same type as `Artifact.size` in pulpcore.
