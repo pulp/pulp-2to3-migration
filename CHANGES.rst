@@ -13,6 +13,26 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0b4 (2020-06-23)
+====================
+
+Features
+--------
+
+- Migrate checksum_type configuration for an RPM publication.
+  `#6813 <https://pulp.plan.io/issues/6813>`_
+
+
+Bugfixes
+--------
+
+- Fixed Ruby bindings generation.
+  `#7016 <https://pulp.plan.io/issues/7016>`_
+
+
+----
+
+
 0.2.0b3 (2020-06-17)
 ====================
 
