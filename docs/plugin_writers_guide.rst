@@ -35,6 +35,9 @@ first stage of DeclarativeContentMigration, on your Content model you also need:
 * a ``relative_path_for_content_artifact`` property to provide the relative path for content
   artifact creation.
 
+Make sure that ``expected_size`` or your custom implementation which sets size on
+the ``Artifact`` or ``RemoteArtifact`` works with values of BigIntegerField type, not smaller.
+
 5. Subclass the provided ``Pulp2to3Importer`` class and define ``migrate_to_pulp3`` method which
 creates a plugin Remote instance based on the provided pre-migrated ``Pulp2Importer``.
 When creating a Remote it is important to use ``update_or_create`` function in case on re-run

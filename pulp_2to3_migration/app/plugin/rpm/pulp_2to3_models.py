@@ -89,7 +89,7 @@ class Pulp2RpmBase(Pulp2to3Content):
 
     repodata = JSONField(dict)
     is_modular = models.BooleanField(default=False)
-    size = models.PositiveIntegerField()
+    size = models.BigIntegerField()
     filename = models.TextField()
 
     class Meta:
