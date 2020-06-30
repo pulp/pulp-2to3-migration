@@ -853,8 +853,7 @@ class Pulp2PackageGroup(Pulp2to3Content):
         for pkg in packages:
             pkg['requires'] = pkg['requires'] or None
         group_dict['digest'] = dict_digest(group_dict)
-        extra_info = {'pulp2_repo_id': self.repo_id}
-        return (PackageGroup(**group_dict), extra_info)
+        return (PackageGroup(**group_dict), None)
 
 
 class Pulp2PackageCategory(Pulp2to3Content):
@@ -910,8 +909,7 @@ class Pulp2PackageCategory(Pulp2to3Content):
         cat = pkg_cat_to_libcomps(self)
         category_dict = PackageCategory.libcomps_to_dict(cat)
         category_dict['digest'] = dict_digest(category_dict)
-        extra_info = {'pulp2_repo_id': self.repo_id}
-        return (PackageCategory(**category_dict), extra_info)
+        return (PackageCategory(**category_dict), None)
 
 
 class Pulp2PackageEnvironment(Pulp2to3Content):
@@ -969,5 +967,4 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
         env = pkg_env_to_libcomps(self)
         environment_dict = PackageEnvironment.libcomps_to_dict(env)
         environment_dict['digest'] = dict_digest(environment_dict)
-        extra_info = {'pulp2_repo_id': self.repo_id}
-        return (PackageEnvironment(**environment_dict), extra_info)
+        return (PackageEnvironment(**environment_dict), None)
