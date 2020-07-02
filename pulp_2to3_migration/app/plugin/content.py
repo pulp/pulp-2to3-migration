@@ -257,8 +257,9 @@ class ContentMigrationFirstStage(Stage):
                 d_artifacts = []
                 base_path = pulp2content.pulp2_storage_path
                 remotes = set()
-                for image in extra_info['images']:
-                    image_path = os.path.join(base_path, image['path'])
+                future_relations.update({'lces': []})
+                for image_relative_path in extra_info['download']['images']:
+                    image_path = os.path.join(base_path, image_relative_path)
                     downloaded = os.path.exists(image_path)
                     if downloaded:
                         artifact = await self.create_artifact(image_path,
@@ -275,17 +276,17 @@ class ContentMigrationFirstStage(Stage):
                             da = DeclarativeArtifact(
                                 artifact=artifact,
                                 url=lce.pulp2_url,
-                                relative_path=image['path'],
+                                relative_path=image_relative_path,
                                 remote=remote,
                                 deferred_download=not downloaded)
                             d_artifacts.append(da)
                             lce.is_migrated = True
-                        future_relations.update({'lces': list(lces)})
+                            future_relations['lces'].append(lce)
                     else:
                         da = DeclarativeArtifact(
                             artifact=artifact,
                             url=NOT_USED,
-                            relative_path=image['path'],
+                            relative_path=image_relative_path,
                             remote=None,
                             deferred_download=False)
                         d_artifacts.append(da)
