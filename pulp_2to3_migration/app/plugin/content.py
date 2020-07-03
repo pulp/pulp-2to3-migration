@@ -221,6 +221,7 @@ class ContentMigrationFirstStage(Stage):
         has_future = content_type in migrator.future_types
         is_multi_artifact = content_type in migrator.multi_artifact_types
         for pulp_2to3_detail_content in batch:
+            dc = None
             pulp2content = pulp_2to3_detail_content.pulp2content
             # only content that supports on_demand download can have entries in LCE
             if is_lazy_type:
@@ -371,13 +372,13 @@ class ContentMigrationFirstStage(Stage):
             if pb:
                 pb.increment()
 
-            if has_future:
+            if has_future and dc:
                 futures.append(dc)
-                resolve_futures = len(futures) >= batch_size or pb.done == pb.total
-                if resolve_futures:
-                    for dc in futures:
-                        await dc.resolution()
-                    futures.clear()
+            resolve_futures = len(futures) >= batch_size or pb.done == pb.total
+            if resolve_futures:
+                for dc in futures:
+                    await dc.resolution()
+                futures.clear()
 
 
 class UpdateLCEs(Stage):
