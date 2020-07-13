@@ -13,6 +13,27 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0b5 (2020-07-03)
+====================
+
+Bugfixes
+--------
+
+- Fixed distribution tree re-migration.
+  `#6949 <https://pulp.plan.io/issues/6949>`_
+- Fixed RPM migration when its remote is not migrated.
+  `#7078 <https://pulp.plan.io/issues/7078>`_
+
+
+Misc
+----
+
+- `#6939 <https://pulp.plan.io/issues/6939>`_, `#7020 <https://pulp.plan.io/issues/7020>`_
+
+
+----
+
+
 0.2.0b4 (2020-06-23)
 ====================
 
