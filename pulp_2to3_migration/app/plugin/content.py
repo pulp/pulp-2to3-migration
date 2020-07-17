@@ -220,6 +220,7 @@ class ContentMigrationFirstStage(Stage):
         is_artifactless_type = content_type in migrator.artifactless_types
         has_future = content_type in migrator.future_types
         is_multi_artifact = content_type in migrator.multi_artifact_types
+
         for pulp_2to3_detail_content in batch:
             dc = None
             pulp2content = pulp_2to3_detail_content.pulp2content
