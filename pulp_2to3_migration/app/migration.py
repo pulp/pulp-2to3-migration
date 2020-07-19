@@ -1,6 +1,6 @@
 import logging
 
-from django.db.models import F
+from django.db.models import F, Q
 
 from pulpcore.plugin.models import (
     Content,
@@ -352,7 +352,7 @@ def create_repo_version(migrator, progress_rv, pulp2_repo, pulp3_remote=None):
         'pulp2_unit_id', flat=True)
     incoming_content = set(
         Pulp2Content.objects.filter(
-            pulp2_id__in=unit_ids, pulp2_repo=pulp2_repo
+            Q(pulp2_id__in=unit_ids) & (Q(pulp2_repo=None) | Q(pulp2_repo=pulp2_repo)),
         ).only('pulp3_content').values_list('pulp3_content__pk', flat=True)
     )
 
