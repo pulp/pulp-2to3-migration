@@ -88,14 +88,19 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
     _logger.debug('The latest migrated {type} content has {timestamp} timestamp.'.format(
         type=content_type,
         timestamp=last_updated))
+    set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
+
+    query_args = {}
+
+    if not set_pulp2_repo:
+        # query only newly created/updated items
+        query_args["_last_updated__gte"] = last_updated
 
     if premigrate_hook:
         pulp2_content_ids = premigrate_hook()
-        mongo_content_qs = content_model.pulp2.objects(
-            _last_updated__gte=last_updated, id__in=pulp2_content_ids)
-    else:
-        # query only newly created/updated items
-        mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated)
+        query_args["id__in"] = pulp2_content_ids
+
+    mongo_content_qs = content_model.pulp2.objects(**query_args)
     total_content = mongo_content_qs.count()
     _logger.debug('Total count for {type} content to migrate: {total}'.format(
         type=content_type,
@@ -117,7 +122,19 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
     fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
     if hasattr(content_model.pulp2, 'downloaded'):
         fields.add('downloaded')
-    set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
+
+    if mutable_type:
+        pulp2_content_ids = [
+            c.id for c in mongo_content_qs.only('id').no_cache().batch_size(batch_size)
+        ]
+        # This is a mutable content type. Query for the existing pulp2content.
+        # If any was found, it means that the migrated content is older than the incoming.
+        # Delete outdated migrated pulp2content and create a new pulp2content
+        outdated = Pulp2Content.objects.filter(pulp2_id__in=pulp2_content_ids)
+        if outdated:
+            pulp2mutatedcontent.extend(pulp2_content_ids)
+        outdated.delete()
+
     for i, record in enumerate(mongo_content_qs.only(*fields).no_cache().batch_size(batch_size)):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
@@ -133,54 +150,46 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
                 pulp2content_pb.save()
                 pulp2detail_pb.total -= 1
                 pulp2detail_pb.save()
+                continue
+
+        downloaded = record.downloaded if hasattr(record, 'downloaded') else False
+
+        if set_pulp2_repo:
+            # This content requires to set pulp 2 repo. E.g. for errata, because 1 pulp2
+            # content unit is converted into N pulp3 content units and repo_id is the only
+            # way to have unique records for those.
+            content_relations = Pulp2RepoContent.objects.filter(
+                pulp2_unit_id=record.id,
+                pulp2_content_type_id=record._content_type_id)
+            for relation in content_relations:
+                pulp2_repo = relation.pulp2_repository
+                if not pulp2_repo.not_in_plan:
+                    item = Pulp2Content(pulp2_id=record.id,
+                                        pulp2_content_type_id=record._content_type_id,
+                                        pulp2_last_updated=record._last_updated,
+                                        pulp2_storage_path=record._storage_path,
+                                        downloaded=downloaded,
+                                        pulp2_repo=pulp2_repo)
+                    _logger.debug(
+                        'Add content item to the list to migrate: {item}'.format(item=item))
+                    pulp2content.append(item)
+                    pulp2content_pb.total += 1
+                    pulp2detail_pb.total += 1
+
+            # total needs to be adjusted, proper counting happened in the loop above,
+            # so we subtract one because this content is also a part of initial 'total' counter.
+            pulp2content_pb.total -= 1
+            pulp2detail_pb.total -= 1
+            pulp2content_pb.save()
+            pulp2detail_pb.save()
         else:
-            if mutable_type:
-                # This is a mutable content type. Query for the existing pulp2content.
-                # If any was found, it means that the migrated content is older than the incoming.
-                # Delete outdated migrated pulp2content and create a new pulp2content
-                outdated = Pulp2Content.objects.filter(pulp2_id=record.id)
-                if outdated:
-                    pulp2mutatedcontent.append(record.id)
-                outdated.delete()
-
-            downloaded = record.downloaded if hasattr(record, 'downloaded') else False
-
-            if set_pulp2_repo:
-                # This content requires to set pulp 2 repo. E.g. for errata, because 1 pulp2
-                # content unit is converted into N pulp3 content units and repo_id is the only
-                # way to have unique records for those.
-                content_relations = Pulp2RepoContent.objects.filter(
-                    pulp2_unit_id=record.id,
-                    pulp2_content_type_id=record._content_type_id)
-                for relation in content_relations:
-                    pulp2_repo = relation.pulp2_repository
-                    if not pulp2_repo.not_in_plan:
-                        item = Pulp2Content(pulp2_id=record.id,
-                                            pulp2_content_type_id=record._content_type_id,
-                                            pulp2_last_updated=record._last_updated,
-                                            pulp2_storage_path=record._storage_path,
-                                            downloaded=downloaded,
-                                            pulp2_repo=pulp2_repo)
-                        _logger.debug(
-                            'Add content item to the list to migrate: {item}'.format(item=item))
-                        pulp2content.append(item)
-                        pulp2content_pb.total += 1
-                        pulp2detail_pb.total += 1
-
-                # total needs to be adjusted, proper counting happened in the loop above,
-                # so we subtract one because this content is also a part of initial 'total' counter.
-                pulp2content_pb.total -= 1
-                pulp2detail_pb.total -= 1
-                pulp2content_pb.save()
-                pulp2detail_pb.save()
-            else:
-                item = Pulp2Content(pulp2_id=record.id,
-                                    pulp2_content_type_id=record._content_type_id,
-                                    pulp2_last_updated=record._last_updated,
-                                    pulp2_storage_path=record._storage_path,
-                                    downloaded=downloaded)
-                _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
-                pulp2content.append(item)
+            item = Pulp2Content(pulp2_id=record.id,
+                                pulp2_content_type_id=record._content_type_id,
+                                pulp2_last_updated=record._last_updated,
+                                pulp2_storage_path=record._storage_path,
+                                downloaded=downloaded)
+            _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
+            pulp2content.append(item)
 
         # determine if the batch needs to be saved, also take into account whether there is
         # anything in the pulp2content to be saved
