@@ -221,12 +221,11 @@ class ContentMigrationFirstStage(Stage):
         has_future = content_type in migrator.future_types
         is_multi_artifact = content_type in migrator.multi_artifact_types
 
-        for pulp_2to3_detail_content in batch:
+        for pulp_2to3_detail_content in batch.iterator():
             dc = None
             pulp2content = pulp_2to3_detail_content.pulp2content
             # only content that supports on_demand download can have entries in LCE
             if is_lazy_type:
-
                 # get all Lazy Catalog Entries (LCEs) for this content
                 pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
                     pulp2_unit_id=pulp2content.pulp2_id, is_migrated=False)
