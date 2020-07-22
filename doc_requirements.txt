@@ -4,7 +4,7 @@ djangorestframework
 djangorestframework-queryfields
 django-filter
 drf-nested-routers
-drf-yasg
+drf-spectacular
 dynaconf
 plantuml
 pyyaml

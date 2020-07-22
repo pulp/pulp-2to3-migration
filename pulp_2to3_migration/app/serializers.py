@@ -1,6 +1,6 @@
 import json
 
-from drf_yasg.utils import swagger_serializer_method
+from drf_spectacular.utils import extend_schema_serializer
 from gettext import gettext as _
 from django.urls import reverse
 from jsonschema import Draft7Validator
@@ -142,7 +142,7 @@ class Pulp2ContentSerializer(ModelSerializer):
 
     pulp3_repository_version = serializers.SerializerMethodField(read_only=True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_serializer(many=False)
     def get_pulp3_repository_version(self, obj):
         """
         Get pulp3_repository_version href from pulp2repo if available
@@ -194,7 +194,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     pulp3_distribution_hrefs = serializers.SerializerMethodField(read_only=True)
     pulp3_repository_href = serializers.SerializerMethodField(read_only=True)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_serializer(many=False)
     def get_pulp3_repository_href(self, obj):
         """
         Get pulp3_repository_href from pulp2repo
@@ -203,7 +203,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         if rv:
             return get_pulp_href(rv.repository)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_serializer(many=False)
     def get_pulp3_remote_href(self, obj):
         """
         Get pulp3_remote_href from pulp2repo
@@ -212,7 +212,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         if remote:
             return get_pulp_href(remote)
 
-    @swagger_serializer_method(serializer_or_field=serializers.CharField)
+    @extend_schema_serializer(many=False)
     def get_pulp3_publication_href(self, obj):
         """
         Get pulp3_publication_href from pulp3_repository_version
@@ -221,8 +221,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         if rv:
             return get_pulp_href(rv.publication_set.first())
 
-    @swagger_serializer_method(
-        serializer_or_field=serializers.ListField(child=serializers.CharField()))
+    @extend_schema_serializer(many=True)
     def get_pulp3_distribution_hrefs(self, obj):
         """
         Get pulp3_distribution_hrefs from pulp3_repository_version

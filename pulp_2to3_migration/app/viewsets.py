@@ -1,7 +1,7 @@
 from django_filters.rest_framework import filters
 from gettext import gettext as _
 
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.serializers import ValidationError
@@ -44,9 +44,9 @@ class MigrationPlanViewSet(NamedModelViewSet,
     queryset = MigrationPlan.objects.all()
     serializer_class = MigrationPlanSerializer
 
-    @swagger_auto_schema(
-        operation_summary="Run migration plan",
-        operation_description="Trigger an asynchronous task to run a migration from Pulp 2.",
+    @extend_schema(
+        summary="Run migration plan",
+        description="Trigger an asynchronous task to run a migration from Pulp 2.",
         responses={202: AsyncOperationResponseSerializer}
     )
     @action(detail=True, methods=('post',), serializer_class=MigrationPlanRunSerializer)
