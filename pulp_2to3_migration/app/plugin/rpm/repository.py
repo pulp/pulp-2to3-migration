@@ -32,6 +32,9 @@ class RpmImporter(Pulp2to3Importer):
         """
         pulp2_config = pulp2importer.pulp2_config
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
+        sles_auth_token = pulp2_config.get('query_auth_token')
+        if sles_auth_token:
+            base_config['sles_auth_token'] = sles_auth_token
         return RpmRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
