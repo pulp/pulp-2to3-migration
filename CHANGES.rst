@@ -13,6 +13,40 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0b6 (2020-07-24)
+====================
+
+Features
+--------
+
+- Add support for migrating SLES12+ repos which require auth token.
+  `#6927 <https://pulp.plan.io/issues/6927>`_
+
+
+Bugfixes
+--------
+
+- Fixed distribution tree migration when a distribution tree is present in multiple repositories.
+  `#6950 <https://pulp.plan.io/issues/6950>`_
+- Fix a bug where errata were not always migrated for new repositories.
+  `#7092 <https://pulp.plan.io/issues/7092>`_
+- Fix yum metadata files not being migrated.
+  `#7093 <https://pulp.plan.io/issues/7093>`_
+- Fix an issue causing extremely high memory usage as # of content scale up.
+  `#7152 <https://pulp.plan.io/issues/7152>`_
+- Fixed a bug where migrated repositories could have multiple different copies of an errata.
+  `#7165 <https://pulp.plan.io/issues/7165>`_
+
+
+Misc
+----
+
+- `#7206 <https://pulp.plan.io/issues/7206>`_
+
+
+----
+
+
 0.2.0b5 (2020-07-03)
 ====================
 

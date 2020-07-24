@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 requirements = [
-    'pulpcore>=3.3',
+    'pulpcore==3.4',
     'mongoengine',
     'semantic_version',
     'jsonschema>=3.0',
@@ -11,7 +11,7 @@ requirements = [
 
 setup(
     name='pulp-2to3-migration',
-    version='0.2.0b6.dev',
+    version='0.2.0b7.dev',
     description='Pulp 2 to Pulp 3 migration tool',
     license='GPLv2+',
     author='Pulp Team',
