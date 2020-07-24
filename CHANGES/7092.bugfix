@@ -1,0 +1,1 @@
+Fix a bug where errata were not always migrated for new repositories.

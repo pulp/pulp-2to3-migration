@@ -69,16 +69,17 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     """
     pulp2_plugin = 'rpm'
     pulp2_content_models = {
+        'rpm': pulp2_models.RPM,
+        'srpm': pulp2_models.SRPM,
         'distribution': pulp2_models.Distribution,
         'erratum': pulp2_models.Errata,
         'modulemd': pulp2_models.Modulemd,
         'modulemd_defaults': pulp2_models.ModulemdDefaults,
+        'yum_repo_metadata_file': pulp2_models.YumMetadataFile,
+        'package_langpacks': pulp2_models.PackageLangpacks,
+        'package_group': pulp2_models.PackageGroup,
         'package_category': pulp2_models.PackageCategory,
         'package_environment': pulp2_models.PackageEnvironment,
-        'package_group': pulp2_models.PackageGroup,
-        'package_langpacks': pulp2_models.PackageLangpacks,
-        'rpm': pulp2_models.RPM,
-        'srpm': pulp2_models.SRPM,
     }
     pulp2_collection = 'units_rpm'
     pulp3_plugin = 'pulp_rpm'

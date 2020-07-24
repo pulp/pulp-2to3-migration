@@ -1,5 +1,7 @@
 import logging
 
+from django.db.models import Q
+
 from pulpcore.plugin.models import (
     Content,
     CreatedResource,
@@ -308,8 +310,11 @@ def create_repo_version(migrator, pulp2_repo, pulp3_remote=None):
     pulp3_repo = pulp2_repo.pulp3_repository
     unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
         'pulp2_unit_id', flat=True)
-    incoming_content = set(Pulp2Content.objects.filter(pulp2_id__in=unit_ids).only(
-        'pulp3_content').values_list('pulp3_content__pk', flat=True))
+    incoming_content = set(
+        Pulp2Content.objects.filter(
+            Q(pulp2_id__in=unit_ids) & (Q(pulp2_repo=None) | Q(pulp2_repo=pulp2_repo)),
+        ).only('pulp3_content').values_list('pulp3_content__pk', flat=True)
+    )
 
     with pulp3_repo.new_version() as new_version:
         repo_content = set(new_version.content.values_list('pk', flat=True))
