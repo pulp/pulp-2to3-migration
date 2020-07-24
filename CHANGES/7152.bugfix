@@ -1,0 +1,1 @@
+Fix an issue causing extremely high memory usage as # of content scale up.
