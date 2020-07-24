@@ -1,1 +1,0 @@
-Fixed a bug where migrated repositories could have multiple different copies of an errata.
