@@ -10,7 +10,6 @@ from django.db import models
 
 from pulp_2to3_migration.app.models import (
     Pulp2to3Content,
-    Pulp2Repository,
     Pulp2RepoContent
 )
 
@@ -721,19 +720,15 @@ class Pulp2Distribution(Pulp2to3Content):
             self.filename = namespace
             treeinfo_parsed = treeinfo.parsed_sections()
             treeinfo_serialized = TreeinfoData(treeinfo_parsed).to_dict(filename=namespace)
-            # The repository must already be migrated in order to migrate the DistributionTree
-            pulp2_r_c_unit = Pulp2RepoContent.objects.get(pulp2_unit_id=self.pulp2content.pulp2_id)
-            pulp2_repo_id = pulp2_r_c_unit.pulp2_repository.pulp2_repo_id
-            pulp2_repo = Pulp2Repository.objects.get(pulp2_repo_id=pulp2_repo_id, not_in_plan=False)
             # Pulp 2 only knows about the top level kickstart repository
-            treeinfo_serialized["repositories"] = {'.': pulp2_repo.pulp3_repository.pk}
+            treeinfo_serialized["repositories"] = {'.': None}
             # Pulp 2 did not support addon repositories, so we should not list them here either
-            treeinfo_serialized['addons'] = []
+            treeinfo_serialized['addons'] = {}
             # Pulp 2 only supported variants that are in the root of the repository
-            variants = []
-            for variant in treeinfo_serialized['variants']:
+            variants = {}
+            for name, variant in treeinfo_serialized['variants'].items():
                 if variant['repository'] == '.':
-                    variants.append(variant)
+                    variants[name] = variant
             treeinfo_serialized['variants'] = variants
             # Reset build_timestamp so Pulp will fetch all the addons during the next sync
             treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
