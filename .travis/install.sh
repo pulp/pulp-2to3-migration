@@ -48,27 +48,24 @@ fi
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@1.1
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@1.4
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.5
 fi
-
-mkdir vars
 if [ -n "$TRAVIS_TAG" ]; then
   # Install the plugin only and use published PyPI packages for the rest
   # Quoting ${TAG} ensures Ansible casts the tag as a string.
-  cat > vars/main.yaml << VARSYAML
----
+  cat >> vars/main.yaml << VARSYAML
 image:
   name: pulp
   tag: "${TAG}"
@@ -90,8 +87,7 @@ services:
       - ./settings:/etc/pulp
 VARSYAML
 else
-  cat > vars/main.yaml << VARSYAML
----
+  cat >> vars/main.yaml << VARSYAML
 image:
   name: pulp
   tag: "${TAG}"
