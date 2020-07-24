@@ -133,7 +133,7 @@ class TestMigrationPlan(unittest.TestCase):
 
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})
-        mp_run_response = self.migration_plans_api.run(mp.pulp_href, data={})
+        mp_run_response = self.migration_plans_api.run(mp.pulp_href, {})
         task = monitor_task(self.tasks_api, mp_run_response.task)
         self.assertEqual(task.state, "completed")
         for repo_id in repos:
