@@ -2,12 +2,8 @@
 
 from setuptools import find_packages, setup
 
-requirements = [
-    'pulpcore>=3.3',
-    'mongoengine',
-    'semantic_version',
-    'jsonschema>=3.0',
-]
+with open("requirements.txt") as requirements:
+    requirements = requirements.readlines()
 
 setup(
     name='pulp-2to3-migration',
