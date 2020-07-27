@@ -181,8 +181,8 @@ class ContentMigrationFirstStage(Stage):
                 # We are waiting on the coroutine to finish, because the order of the processed
                 # content for plugins like Container and RPM is important because of the relations
                 # between the content types.
-                await asyncio.wait(
-                    [self.migrate_to_pulp3(pulp_2to3_detail_qs, self.migrator, ctype, pb=pb)]
+                await asyncio.gather(
+                    self.migrate_to_pulp3(pulp_2to3_detail_qs, self.migrator, ctype, pb=pb)
                 )
 
     async def migrate_to_pulp3(self, batch, migrator, content_type, pb=None):

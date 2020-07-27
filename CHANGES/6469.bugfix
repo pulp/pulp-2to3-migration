@@ -1,0 +1,1 @@
+Fix exceptions thrown by content migration not being bubbled up through the task.
