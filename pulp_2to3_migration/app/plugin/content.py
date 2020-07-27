@@ -339,12 +339,11 @@ class ContentMigrationFirstStage(Stage):
                     #
                     # To create multiple remote artifacts, create multiple instances of declarative
                     # content which will differ by url/remote in their declarative artifacts
+                    at_least_one_lce_migrated = False
                     for lce in pulp2lazycatalog:
                         remote = get_remote_by_importer_id(lce.pulp2_importer_id)
                         deferred_download = not pulp2content.downloaded
                         if not remote and deferred_download:
-                            _logger.warn(_('On_demand content cannot be migrated without a remote '
-                                           'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
                             continue
 
                         relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
@@ -355,9 +354,14 @@ class ContentMigrationFirstStage(Stage):
                             remote=remote,
                             deferred_download=deferred_download)
                         lce.is_migrated = True
+                        at_least_one_lce_migrated = True
                         dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
                         dc.extra_data = future_relations
                         await self.put(dc)
+
+                    if not at_least_one_lce_migrated:
+                        _logger.warn(_('On_demand content cannot be migrated without a remote '
+                                       'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
                     future_relations.update({'lces': list(pulp2lazycatalog)})
                 else:
                     da = DeclarativeArtifact(
