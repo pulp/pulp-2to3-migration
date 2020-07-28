@@ -21,7 +21,7 @@ from pulp_2to3_migration.pulp2.base import (
     RepositoryContentUnit
 )
 from pulp_2to3_migration.pulp2.connection import initialize
-from pulp_2to3_migration.tests.functional.util import monitor_task
+from pulp_2to3_migration.tests.functional.util import monitor_task, teardown
 
 
 # Can't import ISO model due to PLUGIN_MIGRATORS needing Django app
@@ -102,7 +102,6 @@ DIFFERENT_IMPORTER_MIGRATION_PLAN = json.dumps({
 
 
 # TODO:
-#   - Clear DB after each test
 #   - Check that distributions are created properly
 #   - Check that remotes are created properly
 
@@ -130,6 +129,12 @@ class TestMigrationPlan(unittest.TestCase):
         cls.file_content_api = ContentFilesApi(file_client)
         cls.tasks_api = TasksApi(core_client)
         cls.migration_plans_api = MigrationPlansApi(migration_client)
+
+    def tearDown(self):
+        """
+        Clean up the database after each test
+        """
+        teardown()
 
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})
@@ -165,5 +170,5 @@ class TestMigrationPlan(unittest.TestCase):
 
     def test_3_migrate_iso_repositories_with_different_importer(self):
         """Test that a Migration Plan with different importers executes correctly."""
-        repos = list(PULP_2_ISO_FIXTURE_DATA.keys())
+        repos = list(PULP_2_ISO_FIXTURE_DATA.keys())[:2]
         self._do_test(repos, DIFFERENT_IMPORTER_MIGRATION_PLAN)
