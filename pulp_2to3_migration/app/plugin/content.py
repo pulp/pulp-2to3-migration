@@ -9,6 +9,7 @@ from gettext import gettext as _
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator
 from django.db import transaction
 
 from pulpcore.app.models import storage
@@ -82,6 +83,30 @@ class DeclarativeContentMigration:
         stages.append(EndStage())
         pipeline = create_pipeline(stages)
         await pipeline
+
+
+def page_queryset(queryset, per_page=2000):
+    """
+    Yield items from a queryset, but break it up into pages behind the scenes.
+
+    In a perfect world you would use queryset.iterator(), but there is the issue that it fails to
+    load any prefetch_related() fields specified. Using Paginator() we can mimic the same
+    functionality.
+
+    > Note that if you use iterator() to run the query, prefetch_related() calls will be ignored
+    > since these two optimizations do not make sense together.
+
+    https://docs.djangoproject.com/en/2.0/ref/models/querysets/
+    """
+    if queryset._prefetch_related_lookups:
+        if not queryset.query.order_by:
+            # Paginator() throws a warning if there is no sorting attached to the queryset
+            queryset = queryset.order_by('pk')
+        paginator = Paginator(queryset, per_page)
+        for index in range(paginator.num_pages):
+            yield from paginator.get_page(index + 1)
+    else:
+        yield from queryset.iterator(chunk_size=per_page)
 
 
 class ContentMigrationFirstStage(Stage):
@@ -158,34 +183,14 @@ class ContentMigrationFirstStage(Stage):
         override this method.
         """
         for ctype, cmodel in self.migrator.content_models.items():
-            # we need to go through all lazy content in case any of Remotes changed
-            if ctype in self.migrator.lazy_types:
-                pulp_2to3_detail_qs = cmodel.objects.all()
-            else:
-                pulp_2to3_detail_qs = cmodel.objects.filter(pulp2content__pulp3_content=None)
+            # We are waiting on the coroutine to finish, because the order of the processed
+            # content for plugins like Container and RPM is important because of the relations
+            # between the content types.
+            await asyncio.gather(
+                self.migrate_to_pulp3(cmodel, ctype)
+            )
 
-            # order by pulp2_repo if it's set
-            if cmodel.set_pulp2_repo:
-                pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by(
-                    'repo_id').prefetch_related('pulp2content')
-            else:
-                pulp_2to3_detail_qs = pulp_2to3_detail_qs.prefetch_related('pulp2content')
-            total_pulp_2to3_detail_content = pulp_2to3_detail_qs.count()
-
-            with ProgressReport(
-                message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
-                                                                   ctype),
-                code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
-                total=total_pulp_2to3_detail_content
-            ) as pb:
-                # We are waiting on the coroutine to finish, because the order of the processed
-                # content for plugins like Container and RPM is important because of the relations
-                # between the content types.
-                await asyncio.gather(
-                    self.migrate_to_pulp3(pulp_2to3_detail_qs, self.migrator, ctype, pb=pb)
-                )
-
-    async def migrate_to_pulp3(self, batch, migrator, content_type, pb=None):
+    async def migrate_to_pulp3(self, content_model, content_type):
         """
         A default implementation of DeclarativeContent creation for migrating content to Pulp 3.
 
@@ -216,170 +221,199 @@ class ContentMigrationFirstStage(Stage):
 
         futures = []
         batch_size = 1000
-        is_lazy_type = content_type in migrator.lazy_types
-        is_artifactless_type = content_type in migrator.artifactless_types
-        has_future = content_type in migrator.future_types
-        is_multi_artifact = content_type in migrator.multi_artifact_types
+        is_lazy_type = content_type in self.migrator.lazy_types
+        is_artifactless_type = content_type in self.migrator.artifactless_types
+        has_future = content_type in self.migrator.future_types
+        is_multi_artifact = content_type in self.migrator.multi_artifact_types
 
-        for pulp_2to3_detail_content in batch.iterator():
-            dc = None
-            pulp2content = pulp_2to3_detail_content.pulp2content
-            # only content that supports on_demand download can have entries in LCE
-            if is_lazy_type:
-                # get all Lazy Catalog Entries (LCEs) for this content
-                pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
-                    pulp2_unit_id=pulp2content.pulp2_id, is_migrated=False)
+        # we need to go through all lazy content in case any of Remotes changed
+        if is_lazy_type:
+            pulp_2to3_detail_qs = content_model.objects.all()
+        else:
+            pulp_2to3_detail_qs = content_model.objects.filter(pulp2content__pulp3_content=None)
 
-            lazy_wo_catalog = is_lazy_type and not pulp2lazycatalog
-            if pulp2content.pulp3_content is not None and (not is_lazy_type or lazy_wo_catalog):
-                if pb:
-                    pb.total -= 1
-                    pb.save()
-                continue
-            if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
-                _logger.warn(_('On_demand content cannot be migrated without an entry in the '
-                               'lazy catalog, pulp2 unit_id: '
-                               '{}'.format(pulp2content.pulp2_id)))
-                continue
+        # order by pulp2_repo if it's set
+        if content_model.set_pulp2_repo:
+            pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by('repo_id', 'pk')
 
-            if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
-                # find already created pulp3 content
-                pulp3content = pulp2content.pulp3_content
-                extra_info = None
+        with ProgressReport(
+            message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
+                                                               content_type),
+            code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
+            total=pulp_2to3_detail_qs.count()
+        ) as pb:
+            chunked_iterator = page_queryset(pulp_2to3_detail_qs.prefetch_related('pulp2content'))
 
-            else:
-                # create pulp3 content and assign relations if present
-                pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
-            future_relations = {'pulp2content': pulp2content}
-            if extra_info:
-                future_relations.update(extra_info)
+            for pulp_2to3_detail_content in chunked_iterator:
+                dc = None
+                pulp2content = pulp_2to3_detail_content.pulp2content
+                # only content that supports on_demand download can have entries in LCE
+                if is_lazy_type:
+                    # get all Lazy Catalog Entries (LCEs) for this content
+                    pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
+                        pulp2_unit_id=pulp2content.pulp2_id, is_migrated=False)
 
-            if is_multi_artifact:
-                d_artifacts = []
-                base_path = pulp2content.pulp2_storage_path
-                remotes = set()
-                future_relations.update({'lces': []})
-                for image_relative_path in extra_info['download']['images']:
-                    image_path = os.path.join(base_path, image_relative_path)
-                    downloaded = os.path.exists(image_path)
-                    if downloaded:
-                        artifact = await self.create_artifact(image_path,
-                                                              None,
-                                                              None,
-                                                              downloaded=downloaded)
-                    else:
-                        artifact = Artifact()
-                    lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
-                    if lces:
-                        for lce in lces:
-                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
-                            remotes.add(remote)
+                lazy_wo_catalog = is_lazy_type and not pulp2lazycatalog
+                if pulp2content.pulp3_content is not None and \
+                        (not is_lazy_type or lazy_wo_catalog):
+                    if pb:
+                        pb.total -= 1
+                        pb.save()
+                    continue
+                if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
+                    _logger.warn(_('On_demand content cannot be migrated without an entry in the '
+                                   'lazy catalog, pulp2 unit_id: '
+                                   '{}'.format(pulp2content.pulp2_id)))
+                    continue
+
+                if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
+                    # find already created pulp3 content
+                    pulp3content = pulp2content.pulp3_content
+                    extra_info = None
+
+                else:
+                    # create pulp3 content and assign relations if present
+                    pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
+                future_relations = {'pulp2content': pulp2content}
+                if extra_info:
+                    future_relations.update(extra_info)
+
+                if is_multi_artifact:
+                    d_artifacts = []
+                    base_path = pulp2content.pulp2_storage_path
+                    remotes = set()
+                    future_relations.update({'lces': []})
+                    for image_relative_path in extra_info['download']['images']:
+                        image_path = os.path.join(base_path, image_relative_path)
+                        downloaded = os.path.exists(image_path)
+                        if downloaded:
+                            artifact = await self.create_artifact(image_path,
+                                                                  None,
+                                                                  None,
+                                                                  downloaded=downloaded)
+                        else:
+                            artifact = Artifact()
+                        lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
+                        if lces:
+                            for lce in lces:
+                                remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                                remotes.add(remote)
+                                da = DeclarativeArtifact(
+                                    artifact=artifact,
+                                    url=lce.pulp2_url,
+                                    relative_path=image_relative_path,
+                                    remote=remote,
+                                    deferred_download=not downloaded)
+                                d_artifacts.append(da)
+                                lce.is_migrated = True
+                                future_relations['lces'].append(lce)
+                        else:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
-                                url=lce.pulp2_url,
+                                url=NOT_USED,
                                 relative_path=image_relative_path,
-                                remote=remote,
-                                deferred_download=not downloaded)
+                                remote=None,
+                                deferred_download=False)
                             d_artifacts.append(da)
-                            lce.is_migrated = True
-                            future_relations['lces'].append(lce)
+
+                    # We do this last because we need the remote url which is only found in the LCE
+                    # of the image files. There is no LCE for the .treeninfo file itself.
+                    relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
+                    treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
+                    artifact = await self.create_artifact(
+                        treeinfo_path, None, None, downloaded=True)
+                    if remotes:
+                        for remote in remotes:
+                            da = DeclarativeArtifact(
+                                artifact=artifact,
+                                url=urljoin(remote.url, relative_path),
+                                relative_path=relative_path,
+                                remote=remote,
+                                deferred_download=False,
+                            )
+                            d_artifacts.append(da)
                     else:
                         da = DeclarativeArtifact(
                             artifact=artifact,
                             url=NOT_USED,
-                            relative_path=image_relative_path,
-                            remote=None,
-                            deferred_download=False)
-                        d_artifacts.append(da)
-
-                # We do this last because we need the remote url which is only found in the LCE
-                # of the image files. There is no LCE for the .treeninfo file itself.
-                relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
-                treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
-                artifact = await self.create_artifact(treeinfo_path, None, None, downloaded=True)
-                if remotes:
-                    for remote in remotes:
-                        da = DeclarativeArtifact(
-                            artifact=artifact,
-                            url=urljoin(remote.url, relative_path),
                             relative_path=relative_path,
-                            remote=remote,
+                            remote=None,
                             deferred_download=False,
                         )
                         d_artifacts.append(da)
+                    dc = DeclarativeContent(content=pulp3content, d_artifacts=d_artifacts)
+                    dc.extra_data = future_relations
+                    await self.put(dc)
+                # not all content units have files, create DC without artifact
+                elif is_artifactless_type:
+                    # dc without artifact
+                    dc = DeclarativeContent(content=pulp3content)
+                    dc.extra_data = future_relations
+                    await self.put(dc)
                 else:
-                    da = DeclarativeArtifact(
-                        artifact=artifact,
-                        url=NOT_USED,
-                        relative_path=relative_path,
-                        remote=None,
-                        deferred_download=False,
+
+                    # create artifact for content that has file
+                    artifact = await self.create_artifact(
+                        pulp2content.pulp2_storage_path,
+                        pulp_2to3_detail_content.expected_digests,
+                        pulp_2to3_detail_content.expected_size,
+                        downloaded=pulp2content.downloaded
                     )
-                    d_artifacts.append(da)
-                dc = DeclarativeContent(content=pulp3content, d_artifacts=d_artifacts)
-                dc.extra_data = future_relations
-                await self.put(dc)
-            # not all content units have files, create DC without artifact
-            elif is_artifactless_type:
-                # dc without artifact
-                dc = DeclarativeContent(content=pulp3content)
-                dc.extra_data = future_relations
-                await self.put(dc)
-            else:
 
-                # create artifact for content that has file
-                artifact = await self.create_artifact(pulp2content.pulp2_storage_path,
-                                                      pulp_2to3_detail_content.expected_digests,
-                                                      pulp_2to3_detail_content.expected_size,
-                                                      downloaded=pulp2content.downloaded)
+                    if is_lazy_type and pulp2lazycatalog:
+                        # handle DA and RA creation for content that supports on_demand
+                        # Downloaded or on_demand content with LCEs.
+                        #
+                        # To create multiple remote artifacts, create multiple instances of
+                        # declarative content which will differ by url/remote in their
+                        # declarative artifacts
+                        for lce in pulp2lazycatalog:
+                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            deferred_download = not pulp2content.downloaded
+                            if not remote and deferred_download:
+                                _logger.warn(_(
+                                    'On_demand content cannot be migrated without a remote '
+                                    'pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
+                                )
+                                continue
 
-                if is_lazy_type and pulp2lazycatalog:
-                    # handle DA and RA creation for content that supports on_demand
-                    # Downloaded or on_demand content with LCEs.
-                    #
-                    # To create multiple remote artifacts, create multiple instances of declarative
-                    # content which will differ by url/remote in their declarative artifacts
-                    for lce in pulp2lazycatalog:
-                        remote = get_remote_by_importer_id(lce.pulp2_importer_id)
-                        deferred_download = not pulp2content.downloaded
-                        if not remote and deferred_download:
-                            _logger.warn(_('On_demand content cannot be migrated without a remote '
-                                           'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
-                            continue
-
-                        relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
+                            relative_path = (
+                                pulp_2to3_detail_content.relative_path_for_content_artifact
+                            )
+                            da = DeclarativeArtifact(
+                                artifact=artifact,
+                                url=lce.pulp2_url,
+                                relative_path=relative_path,
+                                remote=remote,
+                                deferred_download=deferred_download)
+                            lce.is_migrated = True
+                            dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
+                            dc.extra_data = future_relations
+                            await self.put(dc)
+                        future_relations.update({'lces': list(pulp2lazycatalog)})
+                    else:
                         da = DeclarativeArtifact(
                             artifact=artifact,
-                            url=lce.pulp2_url,
-                            relative_path=relative_path,
-                            remote=remote,
-                            deferred_download=deferred_download)
-                        lce.is_migrated = True
+                            url=NOT_USED,
+                            relative_path=(
+                                pulp_2to3_detail_content.relative_path_for_content_artifact
+                            ),
+                            remote=None,
+                            deferred_download=False)
                         dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
                         dc.extra_data = future_relations
                         await self.put(dc)
-                    future_relations.update({'lces': list(pulp2lazycatalog)})
-                else:
-                    da = DeclarativeArtifact(
-                        artifact=artifact,
-                        url=NOT_USED,
-                        relative_path=pulp_2to3_detail_content.relative_path_for_content_artifact,
-                        remote=None,
-                        deferred_download=False)
-                    dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
-                    dc.extra_data = future_relations
-                    await self.put(dc)
 
-            if pb:
-                pb.increment()
+                if pb:
+                    pb.increment()
 
-            if has_future and dc:
-                futures.append(dc)
-            resolve_futures = len(futures) >= batch_size or pb.done == pb.total
-            if resolve_futures:
-                for dc in futures:
-                    await dc.resolution()
-                futures.clear()
+                if has_future and dc:
+                    futures.append(dc)
+                resolve_futures = len(futures) >= batch_size or pb.done == pb.total
+                if resolve_futures:
+                    for dc in futures:
+                        await dc.resolution()
+                    futures.clear()
 
 
 class UpdateLCEs(Stage):
