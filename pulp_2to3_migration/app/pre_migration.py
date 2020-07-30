@@ -3,10 +3,7 @@ import logging
 from collections import namedtuple
 
 from django.db import transaction
-from django.db.models import (
-    Max,
-    Q,
-)
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from mongoengine.queryset.visitor import Q as mongo_Q
@@ -264,7 +261,7 @@ def pre_migrate_lazycatalog(content_type):
         save_batch = (i and not (i + 1) % batch_size or i == total_lce - 1)
         if save_batch:
             Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
-            pulp2lazycatalog = []
+            pulp2lazycatalog.clear()
 
 
 def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
