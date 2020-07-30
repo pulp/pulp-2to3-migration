@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Prefetch
 
 from pulpcore.app.models import storage
 from pulpcore.plugin.models import (
@@ -242,7 +243,12 @@ class ContentMigrationFirstStage(Stage):
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=pulp_2to3_detail_qs.count()
         ) as pb:
-            chunked_iterator = page_queryset(pulp_2to3_detail_qs.prefetch_related('pulp2content'))
+            chunked_iterator = page_queryset(
+                pulp_2to3_detail_qs.prefetch_related(
+                    Prefetch('pulp2content'),
+                    Prefetch('pulp2content__pulp3_content')
+                )
+            )
 
             for pulp_2to3_detail_content in chunked_iterator:
                 dc = None
