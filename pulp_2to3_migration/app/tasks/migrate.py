@@ -80,10 +80,11 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
         # TODO: optimizations.
         # It looks at each content at the moment. Potential optimizations:
+        #  - This is a big query, paginate?
         #  - Filter by repos from the plan
         #  - Query any but one record for a repo
-
-        for rec in RepositoryContentUnit.objects().only('repo_id', 'unit_type_id'):
+        for rec in RepositoryContentUnit.objects().\
+                only('repo_id', 'unit_type_id').as_pymongo().no_cache():
             repo_id = rec['repo_id']
             unit_type_id = rec['unit_type_id']
 

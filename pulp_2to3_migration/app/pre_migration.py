@@ -251,13 +251,13 @@ def pre_migrate_lazycatalog(content_type):
 
     mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)
     total_lce = mongo_lce_qs.count()
-    for i, lce in enumerate(mongo_lce_qs.batch_size(batch_size)):
-        item = Pulp2LazyCatalog(pulp2_importer_id=lce.importer_id,
-                                pulp2_unit_id=lce.unit_id,
-                                pulp2_content_type_id=lce.unit_type_id,
-                                pulp2_storage_path=lce.path,
-                                pulp2_url=lce.url,
-                                pulp2_revision=lce.revision,
+    for i, lce in enumerate(mongo_lce_qs.batch_size(batch_size).as_pymongo().no_cache()):
+        item = Pulp2LazyCatalog(pulp2_importer_id=lce['importer_id'],
+                                pulp2_unit_id=lce['unit_id'],
+                                pulp2_content_type_id=lce['unit_type_id'],
+                                pulp2_storage_path=lce['path'],
+                                pulp2_url=lce['url'],
+                                pulp2_revision=lce['revision'],
                                 is_migrated=False)
         pulp2lazycatalog.append(item)
 
@@ -537,10 +537,10 @@ def pre_migrate_repocontent(repo):
         return
 
     repocontent = []
-    for repocontent_data in mongo_repocontent_qs.only('unit_id',
-                                                      'unit_type_id'):
-        item = Pulp2RepoContent(pulp2_unit_id=repocontent_data.unit_id,
-                                pulp2_content_type_id=repocontent_data.unit_type_id,
+    for repocontent_data in mongo_repocontent_qs.\
+            only('unit_id', 'unit_type_id').as_pymongo().no_cache():
+        item = Pulp2RepoContent(pulp2_unit_id=repocontent_data['unit_id'],
+                                pulp2_content_type_id=repocontent_data['unit_type_id'],
                                 pulp2_repository=repo)
         repocontent.append(item)
 
