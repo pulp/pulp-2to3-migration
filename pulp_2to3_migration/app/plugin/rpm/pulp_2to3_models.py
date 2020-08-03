@@ -714,7 +714,7 @@ class Pulp2Distribution(Pulp2to3Content):
         for namespace in namespaces:
             treeinfo = PulpTreeInfo()
             try:
-                treeinfo.load(f=os.path.join(self.pulp2content.pulp2_storage_path, '.treeinfo'))
+                treeinfo.load(f=os.path.join(self.pulp2content.pulp2_storage_path, namespace))
             except FileNotFoundError:
                 continue
             self.filename = namespace
