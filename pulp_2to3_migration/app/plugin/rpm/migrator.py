@@ -230,7 +230,8 @@ class InterrelateContent(Stage):
         # in that case just skip the second occurrence of rpm and do not create the relation
         already_related = []
         for pkg in packages_list:
-            if pkg.nevra not in already_related:
+            nevra = pkg.nevra
+            if nevra not in already_related:
                 thru.append(ModulemdPackages(package_id=pkg.pk, modulemd_id=module_dc.content.pk))
-                already_related.append(pkg.nevra)
+                already_related.append(nevra)
         return thru

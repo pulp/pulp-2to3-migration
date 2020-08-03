@@ -116,9 +116,6 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         state=TASK_STATES.RUNNING)
     pulp2detail_pb.save()
     existing_count = 0
-    fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
-    if hasattr(content_model.pulp2, 'downloaded'):
-        fields.add('downloaded')
 
     if mutable_type:
         pulp2_content_ids = [
@@ -132,7 +129,11 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             pulp2mutatedcontent.extend(pulp2_content_ids)
         outdated.delete()
 
-    for i, record in enumerate(mongo_content_qs.only(*fields).no_cache().batch_size(batch_size)):
+    mongo_fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
+    if hasattr(content_model.pulp2, 'downloaded'):
+        mongo_fields.add('downloaded')
+    for i, record in enumerate(
+            mongo_content_qs.only(*mongo_fields).no_cache().batch_size(batch_size)):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
@@ -216,14 +217,8 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         # only when uploading errata last_unit_added is updated on all the repos that contain it
         mutated_content = Pulp2RepoContent.objects.filter(pulp2_unit_id__in=pulp2mutatedcontent)
         repo_to_update_ids = set(mutated_content.values_list('pulp2_repository_id', flat=True))
-        repos_to_update = []
-        for pulp2repo in Pulp2Repository.objects.filter(pk__in=repo_to_update_ids):
-            pulp2repo.is_migrated = False
-            repos_to_update.append(pulp2repo)
+        Pulp2Repository.objects.filter(pk__in=repo_to_update_ids).update(is_migrated=False)
 
-        Pulp2Repository.objects.bulk_update(objs=repos_to_update,
-                                            fields=['is_migrated'],
-                                            batch_size=1000)
     if lazy_type:
         pre_migrate_lazycatalog(content_type)
 
@@ -243,7 +238,7 @@ def pre_migrate_lazycatalog(content_type):
     Args:
         content_type: A content type for which LCE should be pre-migrated
     """
-    batch_size = 10000
+    batch_size = 5000
     pulp2lazycatalog = []
 
     mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)
