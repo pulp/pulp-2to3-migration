@@ -1,4 +1,4 @@
-pulpcore==3.4
+pulpcore>=3.4,<3.5
 mongoengine
 semantic_version
 jsonschema>=3.0
