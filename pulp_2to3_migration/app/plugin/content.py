@@ -249,15 +249,18 @@ class ContentMigrationFirstStage(Stage):
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=pulp_2to3_detail_qs.count()
         ) as pb:
+            prefetch_args = [
+                Prefetch('pulp2content'),
+                Prefetch('pulp2content__pulp3_content'),
+            ]
+            if content_model.set_pulp2_repo:
+                prefetch_args.append(Prefetch('pulp2content__pulp2_repo'))
             # Warning: It's dangerous to save records of the type of pulp_2to3_detail_qs
             # while using this iterator due to the need for globally-accurate ordering.
             # We're using the PK which is not an incrementing integer so that doesn't hold
             # true. However, at this point, all records have already been saved so we are safe.
             chunked_iterator = chunked_queryset_iterator(
-                pulp_2to3_detail_qs.prefetch_related(
-                    Prefetch('pulp2content'),
-                    Prefetch('pulp2content__pulp3_content')
-                ),
+                pulp_2to3_detail_qs.prefetch_related(*prefetch_args),
                 2000
             )
 
