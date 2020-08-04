@@ -222,7 +222,9 @@ class InterrelateContent(Stage):
                 is_modular=True)
         packages_list = []
         if pq:
-            packages_list = Package.objects.filter(pq).only('pk').iterator()
+            packages_list = Package.objects.filter(pq).only(
+                'pk', 'name', 'epoch', 'version', 'release', 'arch'
+            ).iterator()
 
         thru = []
         # keep track of rpm nevra for which we already created a relation with module.
