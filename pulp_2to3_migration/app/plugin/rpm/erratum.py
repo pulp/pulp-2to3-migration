@@ -55,6 +55,8 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
         # Return a pkglist with one empty collection (an empty pkglist is not allowed).
         return filtered_pkglist
 
+    repo_pkg_nevra = set(repo_pkg_nevra)
+    repo_module_nsvca = set(repo_module_nsvca)
     seen_non_modular_packages = set()
     seen_modules = set()
     for collection in pulp2erratum.pkglist:
