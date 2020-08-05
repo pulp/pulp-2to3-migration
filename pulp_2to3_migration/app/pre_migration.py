@@ -157,24 +157,25 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             # way to have unique records for those.
             content_relations = Pulp2RepoContent.objects.filter(
                 pulp2_unit_id=record.id,
-                pulp2_content_type_id=record._content_type_id
+                pulp2_content_type_id=record._content_type_id,
+                pulp2_repository__not_in_plan=False,
             ).select_related(
+                'pulp2_repository'
+            ).only(
                 'pulp2_repository'
             )
             for relation in content_relations.iterator():
-                pulp2_repo = relation.pulp2_repository
-                if not pulp2_repo.not_in_plan:
-                    item = Pulp2Content(pulp2_id=record.id,
-                                        pulp2_content_type_id=record._content_type_id,
-                                        pulp2_last_updated=record._last_updated,
-                                        pulp2_storage_path=record._storage_path,
-                                        downloaded=downloaded,
-                                        pulp2_repo=pulp2_repo)
-                    _logger.debug(
-                        'Add content item to the list to migrate: {item}'.format(item=item))
-                    pulp2content.append(item)
-                    pulp2content_pb.total += 1
-                    pulp2detail_pb.total += 1
+                item = Pulp2Content(pulp2_id=record.id,
+                                    pulp2_content_type_id=record._content_type_id,
+                                    pulp2_last_updated=record._last_updated,
+                                    pulp2_storage_path=record._storage_path,
+                                    downloaded=downloaded,
+                                    pulp2_repo=relation.pulp2_repository)
+                _logger.debug(
+                    'Add content item to the list to migrate: {item}'.format(item=item))
+                pulp2content.append(item)
+                pulp2content_pb.total += 1
+                pulp2detail_pb.total += 1
 
             # total needs to be adjusted, proper counting happened in the loop above,
             # so we subtract one because this content is also a part of initial 'total' counter.
