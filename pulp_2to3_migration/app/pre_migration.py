@@ -119,27 +119,26 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
 
     if mutable_type:
         pulp2_content_ids = [
-            c.id for c in mongo_content_qs.only('id').no_cache().batch_size(batch_size)
+            c['_id'] for c in mongo_content_qs.only('id').no_cache().as_pymongo()
         ]
         # This is a mutable content type. Query for the existing pulp2content.
         # If any was found, it means that the migrated content is older than the incoming.
         # Delete outdated migrated pulp2content and create a new pulp2content
         outdated = Pulp2Content.objects.filter(pulp2_id__in=pulp2_content_ids)
-        if outdated:
+        if outdated.exists():
             pulp2mutatedcontent.extend(pulp2_content_ids)
         outdated.delete()
 
     mongo_fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
     if hasattr(content_model.pulp2, 'downloaded'):
         mongo_fields.add('downloaded')
-    for i, record in enumerate(
-            mongo_content_qs.only(*mongo_fields).no_cache().batch_size(batch_size)):
+    for i, record in enumerate(mongo_content_qs.only(*mongo_fields).no_cache()):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
             migrated = Pulp2Content.objects.filter(pulp2_last_updated=last_updated,
                                                    pulp2_id=record.id)
-            if migrated:
+            if migrated.exists():
                 existing_count += 1
 
                 # it has to be updated here and not later, in case all items were migrated before
@@ -158,8 +157,11 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             # way to have unique records for those.
             content_relations = Pulp2RepoContent.objects.filter(
                 pulp2_unit_id=record.id,
-                pulp2_content_type_id=record._content_type_id)
-            for relation in content_relations:
+                pulp2_content_type_id=record._content_type_id
+            ).select_related(
+                'pulp2_repository'
+            )
+            for relation in content_relations.iterator():
                 pulp2_repo = relation.pulp2_repository
                 if not pulp2_repo.not_in_plan:
                     item = Pulp2Content(pulp2_id=record.id,
