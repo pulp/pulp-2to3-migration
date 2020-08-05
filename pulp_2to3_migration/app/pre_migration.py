@@ -144,9 +144,7 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
                 # it has to be updated here and not later, in case all items were migrated before
                 # and no new content will be saved.
                 pulp2content_pb.total -= 1
-                pulp2content_pb.save()
                 pulp2detail_pb.total -= 1
-                pulp2detail_pb.save()
                 continue
 
         downloaded = record.downloaded if hasattr(record, 'downloaded') else False
@@ -181,8 +179,6 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             # so we subtract one because this content is also a part of initial 'total' counter.
             pulp2content_pb.total -= 1
             pulp2detail_pb.total -= 1
-            pulp2content_pb.save()
-            pulp2detail_pb.save()
         else:
             item = Pulp2Content(pulp2_id=record.id,
                                 pulp2_content_type_id=record._content_type_id,
@@ -211,6 +207,9 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
 
             pulp2content.clear()
             existing_count = 0
+
+    pulp2content_pb.save()
+    pulp2detail_pb.save()
 
     if pulp2mutatedcontent:
         # when we flip the is_migrated flag to False, we base this decision on the last_unit_added
