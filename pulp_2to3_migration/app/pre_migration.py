@@ -219,7 +219,8 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         # in pulp2 sync and copy cases of updated errata are not covered
         # only when uploading errata last_unit_added is updated on all the repos that contain it
         mutated_content = Pulp2RepoContent.objects.filter(pulp2_unit_id__in=pulp2mutatedcontent)
-        repo_to_update_ids = set(mutated_content.values_list('pulp2_repository_id', flat=True))
+        repo_to_update_ids = mutated_content.values_list(
+            'pulp2_repository_id', flat=True).distinct()
         Pulp2Repository.objects.filter(pk__in=repo_to_update_ids).update(is_migrated=False)
 
     if lazy_type:

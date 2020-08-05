@@ -248,9 +248,15 @@ class Pulp2Erratum(Pulp2to3Content):
             pulp2_content_type_id='rpm'
         ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
 
-        pulp2rpms = Pulp2Rpm.objects.filter(pulp2content__pulp2_id__in=package_pulp2_ids)
+        pulp2rpms = Pulp2Rpm.objects.filter(
+            pulp2content__pulp2_id__in=package_pulp2_ids
+        ).values(
+            'name', 'epoch', 'version', 'release', 'arch'
+        )
         for pkg in pulp2rpms.iterator():
-            repo_pkg_nevra.append((pkg.name, pkg.epoch or '0', pkg.version, pkg.release, pkg.arch))
+            repo_pkg_nevra.append(
+                (pkg['name'], pkg.get('epoch', '0'), pkg['version'], pkg['release'], pkg['arch'])
+            )
 
         # gather info about available modules
         modulemd_pulp2_ids = Pulp2RepoContent.objects.filter(
@@ -258,10 +264,18 @@ class Pulp2Erratum(Pulp2to3Content):
             pulp2_content_type_id='modulemd'
         ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
 
-        pulp2modulemds = Pulp2Modulemd.objects.filter(pulp2content__pulp2_id__in=modulemd_pulp2_ids)
+        pulp2modulemds = Pulp2Modulemd.objects.filter(
+            pulp2content__pulp2_id__in=modulemd_pulp2_ids
+        ).values(
+            'name', 'stream', 'version', 'context', 'arch'
+        )
         for module in pulp2modulemds.iterator():
-            repo_module_nsvca.append((module.name, module.stream, module.version, module.context,
-                                      module.arch))
+            repo_module_nsvca.append(
+                (
+                    module['name'], module['stream'], module['version'],
+                    module['context'], module['arch']
+                )
+            )
 
         # data for only one repo is cached (it should be enough, because content is ordered by
         # a repo it belongs to)
@@ -489,12 +503,15 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_metadata_content_batch = pulp2_models.YumMetadataFile.objects.filter(id__in=pulp2_ids)
-        pulp2metadata_to_save = [cls(data_type=meta.data_type,
-                                     checksum=meta.checksum,
-                                     checksum_type=meta.checksum_type,
-                                     repo_id=meta.repo_id,
-                                     pulp2content=pulp2_id_obj_map[meta.id])
-                                 for meta in pulp2_metadata_content_batch]
+        pulp2metadata_to_save = [
+            cls(
+                data_type=meta.data_type,
+                checksum=meta.checksum,
+                checksum_type=meta.checksum_type,
+                repo_id=meta.repo_id,
+                pulp2content=pulp2_id_obj_map[meta.id]
+            ) for meta in pulp2_metadata_content_batch.iterator()
+        ]
         cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True)
 
     def create_pulp3_content(self):
