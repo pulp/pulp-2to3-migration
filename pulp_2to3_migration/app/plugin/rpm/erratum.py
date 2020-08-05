@@ -44,15 +44,19 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
                 pkg['arch'])
 
     filtered_pkglist = []
-    default_collection = {'name': 'default',
-                          'short': 'def',
-                          'packages': []}
+    default_collection = {
+        'name': 'default',
+        'short': 'def',
+        'packages': []
+    }
     filtered_pkglist.append(default_collection)
     if not repo_pkg_nevra:
         # If there are no packages in a repo, no pkglist will ever contain packages.
         # Return a pkglist with one empty collection (an empty pkglist is not allowed).
         return filtered_pkglist
 
+    repo_pkg_nevra = set(repo_pkg_nevra)
+    repo_module_nsvca = set(repo_module_nsvca)
     seen_non_modular_packages = set()
     seen_modules = set()
     for collection in pulp2erratum.pkglist:
@@ -64,10 +68,12 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
                 # already processed or not from the repo being migrated
                 continue
             seen_modules.add(nsvca)
-            current_collection = {'name': collection.get('name'),
-                                  'short': collection.get('short'),
-                                  'module': module,
-                                  'packages': []}
+            current_collection = {
+                'name': collection.get('name'),
+                'short': collection.get('short'),
+                'module': module,
+                'packages': []
+            }
             filtered_pkglist.append(current_collection)
         else:
             # the first and default collection collects the non-modular packages

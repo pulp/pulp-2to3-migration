@@ -222,7 +222,9 @@ class InterrelateContent(Stage):
                 is_modular=True)
         packages_list = []
         if pq:
-            packages_list = Package.objects.filter(pq).only('pk').iterator()
+            packages_list = Package.objects.filter(pq).only(
+                'pk', 'name', 'epoch', 'version', 'release', 'arch'
+            ).iterator()
 
         thru = []
         # keep track of rpm nevra for which we already created a relation with module.
@@ -230,7 +232,8 @@ class InterrelateContent(Stage):
         # in that case just skip the second occurrence of rpm and do not create the relation
         already_related = []
         for pkg in packages_list:
-            if pkg.nevra not in already_related:
+            nevra = pkg.nevra
+            if nevra not in already_related:
                 thru.append(ModulemdPackages(package_id=pkg.pk, modulemd_id=module_dc.content.pk))
-                already_related.append(pkg.nevra)
+                already_related.append(nevra)
         return thru

@@ -116,29 +116,29 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         state=TASK_STATES.RUNNING)
     pulp2detail_pb.save()
     existing_count = 0
-    fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
-    if hasattr(content_model.pulp2, 'downloaded'):
-        fields.add('downloaded')
 
     if mutable_type:
         pulp2_content_ids = [
-            c.id for c in mongo_content_qs.only('id').no_cache().batch_size(batch_size)
+            c['_id'] for c in mongo_content_qs.only('id').no_cache().as_pymongo()
         ]
         # This is a mutable content type. Query for the existing pulp2content.
         # If any was found, it means that the migrated content is older than the incoming.
         # Delete outdated migrated pulp2content and create a new pulp2content
         outdated = Pulp2Content.objects.filter(pulp2_id__in=pulp2_content_ids)
-        if outdated:
+        if outdated.exists():
             pulp2mutatedcontent.extend(pulp2_content_ids)
         outdated.delete()
 
-    for i, record in enumerate(mongo_content_qs.only(*fields).no_cache().batch_size(batch_size)):
+    mongo_fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
+    if hasattr(content_model.pulp2, 'downloaded'):
+        mongo_fields.add('downloaded')
+    for i, record in enumerate(mongo_content_qs.only(*mongo_fields).no_cache()):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
             migrated = Pulp2Content.objects.filter(pulp2_last_updated=last_updated,
                                                    pulp2_id=record.id)
-            if migrated:
+            if migrated.exists():
                 existing_count += 1
 
                 # it has to be updated here and not later, in case all items were migrated before
@@ -157,21 +157,25 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             # way to have unique records for those.
             content_relations = Pulp2RepoContent.objects.filter(
                 pulp2_unit_id=record.id,
-                pulp2_content_type_id=record._content_type_id)
-            for relation in content_relations:
-                pulp2_repo = relation.pulp2_repository
-                if not pulp2_repo.not_in_plan:
-                    item = Pulp2Content(pulp2_id=record.id,
-                                        pulp2_content_type_id=record._content_type_id,
-                                        pulp2_last_updated=record._last_updated,
-                                        pulp2_storage_path=record._storage_path,
-                                        downloaded=downloaded,
-                                        pulp2_repo=pulp2_repo)
-                    _logger.debug(
-                        'Add content item to the list to migrate: {item}'.format(item=item))
-                    pulp2content.append(item)
-                    pulp2content_pb.total += 1
-                    pulp2detail_pb.total += 1
+                pulp2_content_type_id=record._content_type_id,
+                pulp2_repository__not_in_plan=False,
+            ).select_related(
+                'pulp2_repository'
+            ).only(
+                'pulp2_repository'
+            )
+            for relation in content_relations.iterator():
+                item = Pulp2Content(pulp2_id=record.id,
+                                    pulp2_content_type_id=record._content_type_id,
+                                    pulp2_last_updated=record._last_updated,
+                                    pulp2_storage_path=record._storage_path,
+                                    downloaded=downloaded,
+                                    pulp2_repo=relation.pulp2_repository)
+                _logger.debug(
+                    'Add content item to the list to migrate: {item}'.format(item=item))
+                pulp2content.append(item)
+                pulp2content_pb.total += 1
+                pulp2detail_pb.total += 1
 
             # total needs to be adjusted, proper counting happened in the loop above,
             # so we subtract one because this content is also a part of initial 'total' counter.
@@ -215,15 +219,10 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         # in pulp2 sync and copy cases of updated errata are not covered
         # only when uploading errata last_unit_added is updated on all the repos that contain it
         mutated_content = Pulp2RepoContent.objects.filter(pulp2_unit_id__in=pulp2mutatedcontent)
-        repo_to_update_ids = set(mutated_content.values_list('pulp2_repository_id', flat=True))
-        repos_to_update = []
-        for pulp2repo in Pulp2Repository.objects.filter(pk__in=repo_to_update_ids):
-            pulp2repo.is_migrated = False
-            repos_to_update.append(pulp2repo)
+        repo_to_update_ids = mutated_content.values_list(
+            'pulp2_repository_id', flat=True).distinct()
+        Pulp2Repository.objects.filter(pk__in=repo_to_update_ids).update(is_migrated=False)
 
-        Pulp2Repository.objects.bulk_update(objs=repos_to_update,
-                                            fields=['is_migrated'],
-                                            batch_size=1000)
     if lazy_type:
         pre_migrate_lazycatalog(content_type)
 
@@ -243,7 +242,7 @@ def pre_migrate_lazycatalog(content_type):
     Args:
         content_type: A content type for which LCE should be pre-migrated
     """
-    batch_size = 10000
+    batch_size = 5000
     pulp2lazycatalog = []
 
     mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)

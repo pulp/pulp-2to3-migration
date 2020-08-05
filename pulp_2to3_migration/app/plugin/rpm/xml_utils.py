@@ -19,10 +19,13 @@ from django.template.defaulttags import TemplateTagNode
 
 ESCAPE_TEMPLATE_VARS_TAGS = {
     'primary': ('description', 'summary'),
-    'other': ('changelog',)}
+    'other': ('changelog',)
+}
 METADATA_TYPES = ('primary', 'other', 'filelists')
 
 XmlElement = namedtuple('xml_element', ['start', 'end'])
+TEMPLATETAG_MAP = dict((sym, name) for name, sym in TemplateTagNode.mapping.items())
+SYMBOLS_PATTERN = '(%s)' % '|'.join(TEMPLATETAG_MAP.keys())
 
 
 def _substitute_special_chars(template):
@@ -38,11 +41,9 @@ def _substitute_special_chars(template):
         str: string with syntax characters substituted
 
     """
-    templatetag_map = dict((sym, name) for name, sym in TemplateTagNode.mapping.items())
-    symbols_pattern = '(%s)' % '|'.join(templatetag_map.keys())
     return re.sub(
-        symbols_pattern,
-        lambda mobj: '{%% templatetag %s %%}' % templatetag_map[mobj.group(1)],
+        SYMBOLS_PATTERN,
+        lambda mobj: '{%% templatetag %s %%}' % TEMPLATETAG_MAP[mobj.group(1)],
         template
     )
 
