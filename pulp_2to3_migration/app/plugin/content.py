@@ -295,7 +295,6 @@ class ContentMigrationFirstStage(Stage):
                     d_artifacts = []
                     base_path = pulp2content.pulp2_storage_path
                     remotes = set()
-                    future_relations.update({'lces': []})
                     for image_relative_path in extra_info['download']['images']:
                         image_path = os.path.join(base_path, image_relative_path)
                         downloaded = os.path.exists(image_path)
@@ -319,8 +318,6 @@ class ContentMigrationFirstStage(Stage):
                                     remote=remote,
                                     deferred_download=not downloaded)
                                 d_artifacts.append(da)
-                                lce.is_migrated = True
-                                future_relations['lces'].append(lce)
                         else:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
@@ -329,6 +326,9 @@ class ContentMigrationFirstStage(Stage):
                                 remote=None,
                                 deferred_download=False)
                             d_artifacts.append(da)
+                    for lce in pulp2lazycatalog:
+                        lce.is_migrated = True
+                    future_relations.update({'lces': list(pulp2lazycatalog)})
 
                     # We do this last because we need the remote url which is only found in the LCE
                     # of the image files. There is no LCE for the .treeninfo file itself.
