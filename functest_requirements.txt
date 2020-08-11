@@ -1,2 +1,4 @@
+dynaconf
 mongoengine
+psycopg2
 semantic-version
