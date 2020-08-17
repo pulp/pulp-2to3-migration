@@ -68,8 +68,8 @@ class RepositoryContentUnit(Document):
     repo_id = StringField(required=True)
     unit_id = StringField(required=True)
     unit_type_id = StringField(required=True)
-    created = StringField(required=True)  # not used in the migration plugin
-    updated = StringField(required=True)  # not used in the migration plugin
+    created = StringField(required=True)
+    updated = StringField(required=True)
 
     # For backward compatibility
     _ns = StringField(default='repo_content_units')
