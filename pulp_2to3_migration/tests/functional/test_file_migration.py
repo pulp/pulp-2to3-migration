@@ -16,31 +16,15 @@ from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi
 )
-from pulp_2to3_migration.pulp2.base import (
-    Repository as Pulp2Repository,
-    RepositoryContentUnit
-)
-from pulp_2to3_migration.pulp2.connection import initialize
+
 from pulp_2to3_migration.tests.functional.util import monitor_task
 
 
-# Can't import ISO model due to PLUGIN_MIGRATORS needing Django app
-# from pulp_2to3_migration.app.plugin.iso.pulp2_models import ISO
-
-
-# Initialize MongoDB connection
-initialize()
-
-
-PULP_2_ISO_REPOSITORIES = [
-    repo for repo in Pulp2Repository.objects.all()
-    if repo.notes.get('_repo-type')[:-5] == 'iso'
-]
-
 PULP_2_ISO_FIXTURE_DATA = {
-    # {'file': 3, ...}
-    repo.repo_id: RepositoryContentUnit.objects.filter(repo_id=repo.repo_id).count()
-    for repo in PULP_2_ISO_REPOSITORIES
+    'file': 3,
+    'file2': 3,
+    'file-many': 250,
+    'file-large': 10
 }
 
 EMPTY_ISO_MIGRATION_PLAN = json.dumps({"plugins": [{"type": "iso"}]})
