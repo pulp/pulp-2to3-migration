@@ -1,6 +1,7 @@
 import logging
 
 from collections import namedtuple
+from datetime import datetime
 
 from django.db import transaction
 from django.db.models import Max, Q
@@ -64,10 +65,10 @@ def pre_migrate_all_content(plan):
             premigrate_hook = None
             if content_model.pulp2.TYPE_ID in plugin.migrator.premigrate_hook:
                 premigrate_hook = plugin.migrator.premigrate_hook[content_model.pulp2.TYPE_ID]
-            pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
+            pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_hook)
 
 
-def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook):
+def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_hook):
     """
     A coroutine to pre-migrate Pulp 2 content, including all details for on_demand content.
 
@@ -76,9 +77,10 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         mutable_type: Boolean that indicates whether the content type is mutable.
     """
     batch_size = 500
-    content_type = content_model.pulp2.TYPE_ID
     pulp2content = []
     pulp2mutatedcontent = []
+    content_type = content_model.pulp2.TYPE_ID
+    set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
@@ -86,19 +88,13 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
     _logger.debug('The latest migrated {type} content has {timestamp} timestamp.'.format(
         type=content_type,
         timestamp=last_updated))
-    set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
 
     query_args = {}
-
-    if not set_pulp2_repo:
-        # query only newly created/updated items
-        query_args["_last_updated__gte"] = last_updated
-
     if premigrate_hook:
         pulp2_content_ids = premigrate_hook()
         query_args["id__in"] = pulp2_content_ids
 
-    mongo_content_qs = content_model.pulp2.objects(**query_args)
+    mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated, **query_args)
     total_content = mongo_content_qs.count()
     _logger.debug('Total count for {type} content to migrate: {total}'.format(
         type=content_type,
@@ -164,12 +160,14 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
                 'pulp2_repository'
             )
             for relation in content_relations.iterator():
-                item = Pulp2Content(pulp2_id=record.id,
-                                    pulp2_content_type_id=record._content_type_id,
-                                    pulp2_last_updated=record._last_updated,
-                                    pulp2_storage_path=record._storage_path,
-                                    downloaded=downloaded,
-                                    pulp2_repo=relation.pulp2_repository)
+                item = Pulp2Content(
+                    pulp2_id=record.id,
+                    pulp2_content_type_id=record._content_type_id,
+                    pulp2_last_updated=record._last_updated,
+                    pulp2_storage_path=record._storage_path,
+                    downloaded=downloaded,
+                    pulp2_repo=relation.pulp2_repository
+                )
                 _logger.debug(
                     'Add content item to the list to migrate: {item}'.format(item=item))
                 pulp2content.append(item)
@@ -181,11 +179,13 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
             pulp2content_pb.total -= 1
             pulp2detail_pb.total -= 1
         else:
-            item = Pulp2Content(pulp2_id=record.id,
-                                pulp2_content_type_id=record._content_type_id,
-                                pulp2_last_updated=record._last_updated,
-                                pulp2_storage_path=record._storage_path,
-                                downloaded=downloaded)
+            item = Pulp2Content(
+                pulp2_id=record.id,
+                pulp2_content_type_id=record._content_type_id,
+                pulp2_last_updated=record._last_updated,
+                pulp2_storage_path=record._storage_path,
+                downloaded=downloaded
+            )
             _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
             pulp2content.append(item)
 
@@ -193,8 +193,9 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         # anything in the pulp2content to be saved
         save_batch = pulp2content and (len(pulp2content) >= batch_size or i == total_content - 1)
         if save_batch:
-            _logger.debug('Bulk save for generic content info, saved so far: {index}'.format(
-                index=i + 1))
+            _logger.debug(
+                'Bulk save for generic content info, saved so far: {index}'.format(index=i + 1)
+            )
             pulp2content_batch = Pulp2Content.objects.bulk_create(pulp2content,
                                                                   ignore_conflicts=True)
             content_saved = len(pulp2content_batch) - existing_count
@@ -208,6 +209,61 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
 
             pulp2content.clear()
             existing_count = 0
+
+    # If a content type needs to be associated per-repo, we need to make sure that the
+    # existing content hasn't been associated with a new repo since our last migration,
+    # and if so, we need to go back and create a Pulp2Content for these new relations.
+    if set_pulp2_repo and last_updated:
+        # last_updated is a unix timestamp that sometimes defaults to 0 (if there is no
+        # existing content). If there's no existing content we can just skip this entire
+        # process; otherwise we need to convert it to use in our Django query.
+        last_updated = datetime.utcfromtimestamp(last_updated)
+
+        # This content requires to set pulp 2 repo. E.g. for errata, because 1 pulp2
+        # content unit is converted into N pulp3 content units and repo_id is the only
+        # way to have unique records for those.
+        content_relations = Pulp2RepoContent.objects.filter(
+            pulp2_content_type_id=record._content_type_id,
+            pulp2_repository__not_in_plan=False,
+            pulp2_created__gte=last_updated
+        ).select_related(
+            'pulp2_repository'
+        ).only(
+            'pulp2_repository'
+        )
+
+        mongo_content_qs = content_model.pulp2.objects(
+            id__in=content_relations.values_list('pulp2_unit_id', flat=True))
+        pulp2_content_by_id = {
+            record.id: record for record in mongo_content_qs.only(*mongo_fields).no_cache()
+        }
+
+        for relation in content_relations:
+            record = pulp2_content_by_id[relation.pulp2_unit_id]
+            downloaded = record.downloaded if hasattr(record, 'downloaded') else False
+            item = Pulp2Content(
+                pulp2_id=record.id,
+                pulp2_content_type_id=record._content_type_id,
+                pulp2_last_updated=record._last_updated,
+                pulp2_storage_path=record._storage_path,
+                downloaded=downloaded,
+                pulp2_repo=relation.pulp2_repository
+            )
+            _logger.debug(
+                'Add content item to the list to migrate: {item}'.format(item=item))
+            pulp2content.append(item)
+            pulp2content_pb.total += 1
+            pulp2detail_pb.total += 1
+
+        pulp2content_batch = Pulp2Content.objects.bulk_create(pulp2content,
+                                                              ignore_conflicts=True)
+        pulp2content_pb.done += len(pulp2content_batch)
+        pulp2content_pb.save()
+
+        content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
+
+        pulp2detail_pb.done += len(pulp2content_batch)
+        pulp2detail_pb.save()
 
     pulp2content_pb.save()
     pulp2detail_pb.save()
@@ -528,11 +584,14 @@ def pre_migrate_repocontent(repo):
         return
 
     repocontent = []
-    for repocontent_data in mongo_repocontent_qs.\
-            only('unit_id', 'unit_type_id').as_pymongo().no_cache():
-        item = Pulp2RepoContent(pulp2_unit_id=repocontent_data['unit_id'],
-                                pulp2_content_type_id=repocontent_data['unit_type_id'],
-                                pulp2_repository=repo)
+    for repocontent_data in mongo_repocontent_qs.exclude('repo_id').as_pymongo().no_cache():
+        item = Pulp2RepoContent(
+            pulp2_unit_id=repocontent_data['unit_id'],
+            pulp2_content_type_id=repocontent_data['unit_type_id'],
+            pulp2_repository=repo,
+            pulp2_created=repocontent_data['created'],
+            pulp2_updated=repocontent_data['updated']
+        )
         repocontent.append(item)
 
     Pulp2RepoContent.objects.bulk_create(repocontent, batch_size=DEFAULT_BATCH_SIZE)
