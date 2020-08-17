@@ -80,6 +80,8 @@ class Pulp2RepoContent(BaseModel):
     """
     pulp2_unit_id = models.CharField(max_length=255)
     pulp2_content_type_id = models.CharField(max_length=255)
+    pulp2_created = models.DateTimeField(null=True)
+    pulp2_updated = models.DateTimeField(null=True)
 
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
 
