@@ -16,11 +16,15 @@ from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi
 )
-
 from pulp_2to3_migration.tests.functional.util import (
-    monitor_task,
-    teardown
+    get_psql_smash_cmd,
+    monitor_task
 )
+
+from pulp_smash import cli
+from pulp_smash import config as smash_config
+
+from .constants import TRUNCATE_TABLES_QUERY_BASH
 
 PULP_2_ISO_FIXTURE_DATA = {
     'file': 3,
@@ -94,6 +98,9 @@ DIFFERENT_IMPORTER_MIGRATION_PLAN = json.dumps({
 class TestMigrationPlan(unittest.TestCase):
     """Test the APIs for creating a Migration Plan."""
 
+    smash_cfg = smash_config.get_config()
+    smash_cli_client = cli.Client(smash_cfg)
+
     @classmethod
     def setUpClass(cls):
         """
@@ -120,7 +127,8 @@ class TestMigrationPlan(unittest.TestCase):
         """
         Clean up the database after each test
         """
-        teardown()
+        cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
+        self.smash_cli_client.run(cmd, sudo=True)
 
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})

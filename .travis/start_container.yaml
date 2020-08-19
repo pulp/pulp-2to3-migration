@@ -35,8 +35,6 @@
         auto_remove: true
         recreate: true
         privileged: false
-        exposed_ports:
-          - 5432
         networks:
           - name: pulp_ci_bridge
             aliases: "{{ item.name }}"
