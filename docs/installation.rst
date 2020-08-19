@@ -13,7 +13,7 @@ Pip Install
 -----------
 
 This document assumes that you have
-`installed pulpcore <https://docs.pulpproject.org/en/3.0/nightly/installation/instructions.html>`_
+`installed pulpcore <https://docs.pulpproject.org/installation/instructions.html>`_
 and any content plugins you need into the virtual environment ``pulpvenv``.
 
 Users should install from **either** PyPI or source.
