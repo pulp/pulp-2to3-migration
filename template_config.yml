@@ -4,10 +4,13 @@
 additional_plugins:
 - branch: 1.1
   name: pulp_file
+  pip_version_specifier: ~=1.1.0
 - branch: 1.4
   name: pulp_container
+  pip_version_specifier: ~=1.4.0
 - branch: 3.5
   name: pulp_rpm
+  pip_version_specifier: ~=3.5.0
 black: false
 check_commit_message: true
 cherry_pick_automation: true
