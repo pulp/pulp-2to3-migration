@@ -14,9 +14,3 @@ mongorestore --archive=pulp2filecontent.20191031.archive
 
 mongo pulp_database --eval 'db.createUser({user:"travis",pwd:"travis",roles:["readWrite"]});'
 
-# Otherwise, pulpcore will get installed as the stable release from PyPI
-# as a dep of pulp-2to3-migration.
-pip install $TRAVIS_BUILD_DIR/../pulpcore
-
-pip install .
-
