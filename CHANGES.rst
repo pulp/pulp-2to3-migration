@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.0 (2020-08-20)
+==================
+
+Bugfixes
+--------
+
+- Fix exceptions thrown by content migration not being bubbled up through the task.
+  `#6469 <https://pulp.plan.io/issues/6469>`_
+
+
+----
+
+
 0.2.0b6 (2020-07-24)
 ====================
 
