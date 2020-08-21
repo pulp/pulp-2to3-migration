@@ -8,7 +8,7 @@ to support migration from Pulp 2 to Pulp 3.
 Supported plugins:
  - Pulp 2 ISO can be migrated into Pulp 3 File.
  - Pulp 2 Docker can be migrated into Pulp 3 Container.
- - RPM plugin migration is planned and currently in development.
+ - Pulp 2 RPM can be migrated into Pulp 3 RPM.
 
 
 Table of Contents

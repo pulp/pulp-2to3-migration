@@ -4,7 +4,7 @@ Configuration
 Requirements
 ------------
 
-* /var/lib/pulp is shared from Pulp 2 machine
+* ``/var/lib/pulp`` is shared from Pulp 2 machine
 * access to Pulp 2 database
 
 
@@ -15,13 +15,14 @@ On Pulp 2 machine
 *****************
 
 1. Make sure MongoDB listens on the IP address accesible outside, it should be configured as
-one of the ``bindIP``s in ``/etc/mongod.conf``.
+one of the ``bindIP`` in ``/etc/mongod.conf``.
 
 2. Make sure ``/var/lib/pulp`` is on a shared filesystem.
 
 
 On Pulp 3 machine
 *****************
+
 1. Mount ``/var/lib/pulp`` to your Pulp 3 storage location. By default, it's ``/var/lib/pulp``.
 
 2. Configure your connection to MongoDB in your settings, ``/etc/pulp/settings.py``. You can use
