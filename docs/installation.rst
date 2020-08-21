@@ -38,13 +38,12 @@ From Source
    cd pulp-2to3-migration
    pip install -e .
 
-Make and Run Migrations
------------------------
+Run Migrations
+--------------
 
 .. code-block:: bash
 
    export DJANGO_SETTINGS_MODULE=pulpcore.app.settings
-   django-admin makemigrations pulp_2to3_migration
    django-admin migrate pulp_2to3_migration
 
 Run Services

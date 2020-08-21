@@ -31,7 +31,7 @@ All the commands should be run on Pulp 3 machine.
     }
 
 
-3. For listing the mapping for Pulp 2 to Pulp 3
+3. List the mapping for Pulp 2 and Pulp 3 repositories if needed.
 
 .. code:: bash
 
