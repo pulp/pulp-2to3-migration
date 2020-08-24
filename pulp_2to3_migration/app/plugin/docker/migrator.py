@@ -25,7 +25,6 @@ from pulp_container.app.models import (
     Tag,
 )
 
-from pulp_2to3_migration.app.constants import NOT_USED
 from pulp_2to3_migration.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,
@@ -35,7 +34,6 @@ from pulp_2to3_migration.app.plugin.api import (
 from pulpcore.plugin.stages import (
     ArtifactSaver,
     ContentSaver,
-    DeclarativeArtifact,
     ResolveContentFutures,
     Stage,
     QueryExistingArtifacts,
@@ -262,13 +260,4 @@ class DockerContentSaver(ContentSaver):
                 # We are relying on the order of the processed DC
                 # Manifests should have passed through ContentSaver stage already
                 man = Manifest.objects.filter(digest=related_man_id).first()
-                artifact = man._artifacts.get()
-                # add manifest's artifact
-                da = DeclarativeArtifact(
-                    artifact=artifact,
-                    url=NOT_USED,
-                    relative_path=dc.content.name,
-                    remote=NOT_USED,
-                    deferred_download=False)
-                dc.d_artifacts.append(da)
                 dc.content.tagged_manifest = man
