@@ -510,7 +510,7 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
                 checksum_type=meta.checksum_type,
                 repo_id=meta.repo_id,
                 pulp2content=pulp2_id_obj_map[meta.id]
-            ) for meta in pulp2_metadata_content_batch.iterator()
+            ) for meta in pulp2_metadata_content_batch.no_cache()
         ]
         cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True)
 
