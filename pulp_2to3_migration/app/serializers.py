@@ -137,7 +137,8 @@ class Pulp2ContentSerializer(ModelSerializer):
     pulp2_storage_path = serializers.CharField()
     downloaded = serializers.BooleanField(default=False)
     pulp3_content = DetailRelatedField(
-        required=False, allow_null=True, queryset=Pulp2Content.objects.all()
+        required=False, allow_null=True, queryset=Pulp2Content.objects.all(),
+        view_name_pattern=r"content(-.*/.*)?-detail",
     )
 
     pulp3_repository_version = serializers.SerializerMethodField(read_only=True)
