@@ -12,6 +12,8 @@ from django.core.files import File
 
 from pulpcore.plugin.models import PublishedMetadata
 
+from urllib.parse import urljoin
+
 
 class IsoImporter(Pulp2to3Importer):
     """
@@ -33,6 +35,11 @@ class IsoImporter(Pulp2to3Importer):
         """
         pulp2_config = pulp2importer.pulp2_config
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
+        # pulp3 remote requires url set to the manifest
+        # pulp2 iso importer is compatible only with repos that contain namely PULP_MANIFEST
+        url = base_config.get('url')
+        if url:
+            base_config['url'] = urljoin(url, 'PULP_MANIFEST')
         return FileRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
