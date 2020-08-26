@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.2.1 (2020-08-26)
+==================
+
+Bugfixes
+--------
+
+- Updated migration of file remote url to point to the Manifest.
+  `#7264 <https://pulp.plan.io/issues/7264>`_
+
+
+----
+
+
 0.2.0 (2020-08-20)
 ==================
 
