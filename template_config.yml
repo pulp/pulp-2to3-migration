@@ -4,10 +4,13 @@
 additional_plugins:
 - branch: master
   name: pulp_file
+  pip_version_specifier: ~=1.2.0
 - branch: master
   name: pulp_container
+  pip_version_specifier: ~=2.0.0
 - branch: master
   name: pulp_rpm
+  pip_version_specifier: ~=3.6.0
 black: false
 check_commit_message: true
 cherry_pick_automation: true
@@ -30,7 +33,7 @@ plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 pulp_settings: null
 pulpcore_branch: master
-pulpcore_pip_version_specifier: null
+pulpcore_pip_version_specifier: ~=3.6.0
 pydocstyle: false
 pypi_username: pulp
 redmine_project: null
@@ -46,5 +49,5 @@ travis_notifications:
     - chat.freenode.net#pulp-build
     on_failure: always
     on_success: change
-update_redmine: false
+update_redmine: true
 
