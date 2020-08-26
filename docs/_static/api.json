@@ -1,1 +1,945 @@
-{"swagger": "2.0", "info": {"title": "Pulp 3 API", "license": {"name": "GPLv2+"}, "logo": {"url": "https://pulp.plan.io/attachments/download/517478/pulp_logo_word_rectangle.svg"}, "version": "v3"}, "host": "localhost:24817", "schemes": ["http"], "basePath": "/", "consumes": ["application/json"], "produces": ["application/json"], "securityDefinitions": {"Basic": {"type": "basic"}}, "security": [{"Basic": []}], "paths": {"/pulp/api/v3/migration-plans/": {"get": {"operationId": "migration-plans_list", "summary": "List migration plans", "description": "MigrationPlan ViewSet.", "parameters": [{"name": "limit", "in": "query", "description": "Number of results to return per page.", "required": false, "type": "integer"}, {"name": "offset", "in": "query", "description": "The initial index from which to return the results.", "required": false, "type": "integer"}, {"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"required": ["count", "results"], "type": "object", "properties": {"count": {"type": "integer"}, "next": {"type": "string", "format": "uri", "x-nullable": true}, "previous": {"type": "string", "format": "uri", "x-nullable": true}, "results": {"type": "array", "items": {"$ref": "#/definitions/pulp_2to3_migration.MigrationPlan"}}}}}}, "tags": ["migration-plans"]}, "post": {"operationId": "migration-plans_create", "summary": "Create a migration plan", "description": "MigrationPlan ViewSet.", "parameters": [{"name": "data", "in": "body", "required": true, "schema": {"$ref": "#/definitions/pulp_2to3_migration.MigrationPlan"}}], "responses": {"201": {"description": "", "schema": {"$ref": "#/definitions/pulp_2to3_migration.MigrationPlan"}}}, "tags": ["migration-plans"]}, "parameters": []}, "{migration_plan_href}": {"get": {"operationId": "migration-plans_read", "summary": "Inspect a migration plan", "description": "MigrationPlan ViewSet.", "parameters": [{"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"$ref": "#/definitions/pulp_2to3_migration.MigrationPlan"}}}, "tags": ["migration-plans"]}, "delete": {"operationId": "migration-plans_delete", "summary": "Delete a migration plan", "description": "MigrationPlan ViewSet.", "parameters": [], "responses": {"204": {"description": ""}}, "tags": ["migration-plans"]}, "parameters": [{"name": "migration_plan_href", "in": "path", "description": "URI of Migration Plan. e.g.: /pulp/api/v3/migration-plans/1/", "required": true, "type": "string"}]}, "{migration_plan_href}run/": {"post": {"operationId": "migration-plans_run", "summary": "Run migration plan", "description": "Trigger an asynchronous task to run a migration from Pulp 2.", "parameters": [{"name": "data", "in": "body", "required": true, "schema": {"$ref": "#/definitions/MigrationPlanRun"}}], "responses": {"202": {"description": "", "schema": {"$ref": "#/definitions/AsyncOperationResponse"}}}, "tags": ["migration-plans"]}, "parameters": [{"name": "migration_plan_href", "in": "path", "description": "URI of Migration Plan. e.g.: /pulp/api/v3/migration-plans/1/", "required": true, "type": "string"}]}, "/pulp/api/v3/pulp2content/": {"get": {"operationId": "pulp2content_list", "summary": "List pulp2 contents", "description": "ViewSet for Pulp2Content model.", "parameters": [{"name": "pulp2_id", "in": "query", "description": "", "required": false, "type": "string"}, {"name": "pulp2_id__in", "in": "query", "description": "Filter results where pulp2_id is in a comma-separated list of values", "required": false, "type": "string"}, {"name": "pulp2_content_type_id", "in": "query", "description": "", "required": false, "type": "string"}, {"name": "pulp2_content_type_id__in", "in": "query", "description": "Filter results where pulp2_content_type_id is in a comma-separated list of values", "required": false, "type": "string"}, {"name": "pulp2_last_updated__lt", "in": "query", "description": "Filter results where pulp2_last_updated is less than value", "required": false, "type": "number"}, {"name": "pulp2_last_updated__lte", "in": "query", "description": "Filter results where pulp2_last_updated is less than or equal to value", "required": false, "type": "number"}, {"name": "pulp2_last_updated__gt", "in": "query", "description": "Filter results where pulp2_last_updated is greater than value", "required": false, "type": "number"}, {"name": "pulp2_last_updated__gte", "in": "query", "description": "Filter results where pulp2_last_updated is greater than or equal to value", "required": false, "type": "number"}, {"name": "pulp2_last_updated__range", "in": "query", "description": "Filter results where pulp2_last_updated is between two comma separated values", "required": false, "type": "number"}, {"name": "pulp3_content", "in": "query", "description": "Foreign Key referenced by HREF", "required": false, "type": "string"}, {"name": "pulp2_last_updated", "in": "query", "description": "ISO 8601 formatted dates are supported", "required": false, "type": "string"}, {"name": "limit", "in": "query", "description": "Number of results to return per page.", "required": false, "type": "integer"}, {"name": "offset", "in": "query", "description": "The initial index from which to return the results.", "required": false, "type": "integer"}, {"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"required": ["count", "results"], "type": "object", "properties": {"count": {"type": "integer"}, "next": {"type": "string", "format": "uri", "x-nullable": true}, "previous": {"type": "string", "format": "uri", "x-nullable": true}, "results": {"type": "array", "items": {"$ref": "#/definitions/pulp_2to3_migration.Pulp2Content"}}}}}}, "tags": ["pulp2content"]}, "parameters": []}, "{pulp2_content_href}": {"get": {"operationId": "pulp2content_read", "summary": "Inspect a pulp2 content", "description": "ViewSet for Pulp2Content model.", "parameters": [{"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"$ref": "#/definitions/pulp_2to3_migration.Pulp2Content"}}}, "tags": ["pulp2content"]}, "parameters": [{"name": "pulp2_content_href", "in": "path", "description": "URI of Pulp2 Content. e.g.: /pulp/api/v3/pulp2content/1/", "required": true, "type": "string"}]}, "/pulp/api/v3/pulp2repositories/": {"get": {"operationId": "pulp2repositories_list", "summary": "List pulp2 repositorys", "description": "ViewSet for Pulp2Repositories model.", "parameters": [{"name": "pulp2_repo_id", "in": "query", "description": "", "required": false, "type": "string"}, {"name": "pulp2_repo_id__in", "in": "query", "description": "Filter results where pulp2_repo_id is in a comma-separated list of values", "required": false, "type": "string"}, {"name": "is_migrated", "in": "query", "description": "", "required": false, "type": "string"}, {"name": "not_in_plan", "in": "query", "description": "", "required": false, "type": "string"}, {"name": "limit", "in": "query", "description": "Number of results to return per page.", "required": false, "type": "integer"}, {"name": "offset", "in": "query", "description": "The initial index from which to return the results.", "required": false, "type": "integer"}, {"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"required": ["count", "results"], "type": "object", "properties": {"count": {"type": "integer"}, "next": {"type": "string", "format": "uri", "x-nullable": true}, "previous": {"type": "string", "format": "uri", "x-nullable": true}, "results": {"type": "array", "items": {"$ref": "#/definitions/pulp_2to3_migration.Pulp2Repository"}}}}}}, "tags": ["pulp2repositories"]}, "parameters": []}, "{pulp2_repository_href}": {"get": {"operationId": "pulp2repositories_read", "summary": "Inspect a pulp2 repository", "description": "ViewSet for Pulp2Repositories model.", "parameters": [{"name": "fields", "in": "query", "description": "A list of fields to include in the response.", "required": false, "type": "string"}, {"name": "exclude_fields", "in": "query", "description": "A list of fields to exclude from the response.", "required": false, "type": "string"}], "responses": {"200": {"description": "", "schema": {"$ref": "#/definitions/pulp_2to3_migration.Pulp2Repository"}}}, "tags": ["pulp2repositories"]}, "parameters": [{"name": "pulp2_repository_href", "in": "path", "description": "URI of Pulp2 Repository. e.g.: /pulp/api/v3/pulp2repositories/1/", "required": true, "type": "string"}]}}, "definitions": {"pulp_2to3_migration.MigrationPlan": {"required": ["plan"], "type": "object", "properties": {"pulp_href": {"title": "Pulp href", "type": "string", "format": "uri", "readOnly": true}, "pulp_created": {"title": "Pulp created", "description": "Timestamp of creation.", "type": "string", "format": "date-time", "readOnly": true}, "plan": {"title": "Plan", "description": "Migration Plan in JSON format", "type": "object"}}}, "MigrationPlanRun": {"type": "object", "properties": {"validate": {"title": "Validate", "description": "If ``True``, migration cannot happen without successful validation of the Migration Plan", "type": "boolean", "default": false}, "dry_run": {"title": "Dry run", "description": "If ``True``, performs validation of a Migration Plan only, no migration is run.", "type": "boolean", "default": false}}}, "AsyncOperationResponse": {"required": ["task"], "type": "object", "properties": {"task": {"title": "Task", "description": "The href of the task.", "type": "string", "format": "uri"}}}, "pulp_2to3_migration.Pulp2Content": {"required": ["pulp2_id", "pulp2_content_type_id", "pulp2_last_updated", "pulp2_storage_path"], "type": "object", "properties": {"pulp_href": {"title": "Pulp href", "type": "string", "format": "uri", "readOnly": true}, "pulp_created": {"title": "Pulp created", "description": "Timestamp of creation.", "type": "string", "format": "date-time", "readOnly": true}, "pulp2_id": {"title": "Pulp2 id", "type": "string", "maxLength": 255, "minLength": 1}, "pulp2_content_type_id": {"title": "Pulp2 content type id", "type": "string", "maxLength": 255, "minLength": 1}, "pulp2_last_updated": {"title": "Pulp2 last updated", "type": "integer"}, "pulp2_storage_path": {"title": "Pulp2 storage path", "type": "string", "minLength": 1}, "downloaded": {"title": "Downloaded", "type": "boolean", "default": false}, "pulp3_content": {"title": "Pulp3 content", "type": "string", "format": "uri", "x-nullable": true}}}, "pulp_2to3_migration.Pulp2Repository": {"required": ["pulp2_object_id", "pulp2_repo_id", "pulp2_repo_type"], "type": "object", "properties": {"pulp_href": {"title": "Pulp href", "type": "string", "format": "uri", "readOnly": true}, "pulp_created": {"title": "Pulp created", "description": "Timestamp of creation.", "type": "string", "format": "date-time", "readOnly": true}, "pulp2_object_id": {"title": "Pulp2 object id", "type": "string", "maxLength": 255, "minLength": 1}, "pulp2_repo_id": {"title": "Pulp2 repo id", "type": "string", "minLength": 1}, "pulp2_repo_type": {"title": "Pulp2 repo type", "type": "string", "minLength": 1}, "is_migrated": {"title": "Is migrated", "type": "boolean", "default": false}, "not_in_plan": {"title": "Not in plan", "type": "boolean", "default": false}, "pulp3_repository_version": {"title": "Pulp3 repository version", "description": "RepositoryVersion to be served", "type": "string", "format": "uri", "x-nullable": true}, "pulp3_remote_href": {"title": "Pulp3 remote href", "description": "\nGet pulp3_remote_href from pulp2repo\n", "type": "string", "readOnly": true, "minLength": 1}, "pulp3_publication_href": {"title": "Pulp3 publication href", "description": "\nGet pulp3_publication_href from pulp3_repository_version\n", "type": "string", "readOnly": true, "minLength": 1}, "pulp3_distribution_hrefs": {"description": "\nGet pulp3_distribution_hrefs from pulp3_repository_version\n", "type": "array", "items": {"type": "string", "minLength": 1}, "readOnly": true}, "pulp3_repository_href": {"title": "Pulp3 repository href", "description": "\nGet pulp3_repository_href from pulp2repo\n", "type": "string", "readOnly": true, "minLength": 1}}}}, "tags": [{"name": "migration-plans", "x-displayName": "Migration-Plans"}, {"name": "pulp2content", "x-displayName": "Pulp2Content"}, {"name": "pulp2repositories", "x-displayName": "Pulp2Repositories"}]}
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Pulp 3 API",
+        "version": "v3",
+        "description": "Fetch, Upload, Organize, and Distribute Software Packages",
+        "contact": {
+            "name": "Pulp Team",
+            "email": "pulp-list@redhat.com",
+            "url": "https://pulpproject.org"
+        },
+        "license": {
+            "name": "GPLv2+",
+            "url": "https://raw.githubusercontent.com/pulp/pulpcore/master/LICENSE"
+        },
+        "x-logo": {
+            "url": "https://pulp.plan.io/attachments/download/517478/pulp_logo_word_rectangle.svg"
+        }
+    },
+    "paths": {
+        "/pulp/api/v3/migration-plans/": {
+            "get": {
+                "operationId": "migration_plans_list",
+                "description": "MigrationPlan ViewSet.",
+                "summary": "List migration plans",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "next": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "previous": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlanResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "migration_plans_create",
+                "description": "MigrationPlan ViewSet.",
+                "summary": "Create a migration plan",
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlanResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "{pulp_2to3_migration_migration_plan_href}": {
+            "get": {
+                "operationId": "migration_plans_read",
+                "description": "MigrationPlan ViewSet.",
+                "summary": "Inspect a migration plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_migration_plan_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlanResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "migration_plans_delete",
+                "description": "MigrationPlan ViewSet.",
+                "summary": "Delete a migration plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_migration_plan_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "{pulp_2to3_migration_migration_plan_href}run/": {
+            "post": {
+                "operationId": "migration_plans_run",
+                "description": "Trigger an asynchronous task to run a migration from Pulp 2.",
+                "summary": "Run migration plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_migration_plan_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MigrationPlanRun"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MigrationPlanRun"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MigrationPlanRun"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AsyncOperationResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/pulp/api/v3/pulp2content/": {
+            "get": {
+                "operationId": "pulp2content_list",
+                "description": "ViewSet for Pulp2Content model.",
+                "summary": "List pulp2 contents",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_content_type_id",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_content_type_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_content_type_id__in",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_content_type_id__in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_id",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_id__in",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_id__in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated__gt",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated__gt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated__gte",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated__gte",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated__lt",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated__lt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated__lte",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated__lte",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_last_updated__range",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_last_updated__range",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp3_content",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp3_content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Pulp2Content"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "next": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "previous": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2ContentResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "{pulp_2to3_migration_pulp2_content_href}": {
+            "get": {
+                "operationId": "pulp2content_read",
+                "description": "ViewSet for Pulp2Content model.",
+                "summary": "Inspect a pulp2 content",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_pulp2_content_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Pulp2Content"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2ContentResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/pulp/api/v3/pulp2repositories/": {
+            "get": {
+                "operationId": "pulp2repositories_list",
+                "description": "ViewSet for Pulp2Repositories model.",
+                "summary": "List pulp2 repositorys",
+                "parameters": [
+                    {
+                        "name": "is_migrated",
+                        "required": false,
+                        "in": "query",
+                        "description": "is_migrated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "not_in_plan",
+                        "required": false,
+                        "in": "query",
+                        "description": "not_in_plan",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "offset",
+                        "required": false,
+                        "in": "query",
+                        "description": "The initial index from which to return the results.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "Which field to use when ordering the results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_repo_id",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_repo_id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "pulp2_repo_id__in",
+                        "required": false,
+                        "in": "query",
+                        "description": "pulp2_repo_id__in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Pulp2Repositories"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "next": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "previous": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "results": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2RepositoryResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "{pulp_2to3_migration_pulp2_repository_href}": {
+            "get": {
+                "operationId": "pulp2repositories_read",
+                "description": "ViewSet for Pulp2Repositories model.",
+                "summary": "Inspect a pulp2 repository",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_pulp2_repository_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to include in the response."
+                    },
+                    {
+                        "in": "query",
+                        "name": "exclude_fields",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "A list of fields to exclude from the response."
+                    }
+                ],
+                "tags": [
+                    "Pulp2Repositories"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2RepositoryResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AsyncOperationResponse": {
+                "type": "object",
+                "description": "Serializer for asynchronous operations.",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The href of the task."
+                    }
+                },
+                "required": [
+                    "task"
+                ]
+            },
+            "MigrationPlanRun": {
+                "type": "object",
+                "description": "A serializer for running a migration plan.",
+                "properties": {
+                    "validate": {
+                        "type": "boolean",
+                        "writeOnly": true,
+                        "default": false,
+                        "description": "If ``True``, migration cannot happen without successful validation of the Migration Plan"
+                    },
+                    "dry_run": {
+                        "type": "boolean",
+                        "writeOnly": true,
+                        "default": false,
+                        "description": "If ``True``, performs validation of a Migration Plan only, no migration is run."
+                    }
+                }
+            },
+            "pulp_2to3_migration.MigrationPlan": {
+                "type": "object",
+                "description": "Serializer for migration plan model.",
+                "properties": {
+                    "plan": {
+                        "type": "object",
+                        "description": "Migration Plan in JSON format"
+                    }
+                },
+                "required": [
+                    "plan"
+                ]
+            },
+            "pulp_2to3_migration.MigrationPlanResponse": {
+                "type": "object",
+                "description": "Serializer for migration plan model.",
+                "properties": {
+                    "pulp_href": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "pulp_created": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "description": "Timestamp of creation."
+                    },
+                    "plan": {
+                        "type": "object",
+                        "description": "Migration Plan in JSON format"
+                    }
+                },
+                "required": [
+                    "plan"
+                ]
+            },
+            "pulp_2to3_migration.Pulp2ContentResponse": {
+                "type": "object",
+                "description": "A serializer for the Pulp2Content model",
+                "properties": {
+                    "pulp_href": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "pulp_created": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "description": "Timestamp of creation."
+                    },
+                    "pulp2_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "pulp2_content_type_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "pulp2_last_updated": {
+                        "type": "integer"
+                    },
+                    "pulp2_storage_path": {
+                        "type": "string"
+                    },
+                    "downloaded": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "pulp3_content": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "pulp3_repository_version": {
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "pulp2_content_type_id",
+                    "pulp2_id",
+                    "pulp2_last_updated",
+                    "pulp2_storage_path"
+                ]
+            },
+            "pulp_2to3_migration.Pulp2RepositoryResponse": {
+                "type": "object",
+                "description": "A serializer for the Pulp2Repositories",
+                "properties": {
+                    "pulp_href": {
+                        "type": "string",
+                        "format": "uri",
+                        "readOnly": true
+                    },
+                    "pulp_created": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "description": "Timestamp of creation."
+                    },
+                    "pulp2_object_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "pulp2_repo_id": {
+                        "type": "string"
+                    },
+                    "pulp2_repo_type": {
+                        "type": "string"
+                    },
+                    "is_migrated": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "not_in_plan": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "pulp3_repository_version": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "description": "RepositoryVersion to be served"
+                    },
+                    "pulp3_remote_href": {
+                        "readOnly": true
+                    },
+                    "pulp3_publication_href": {
+                        "readOnly": true
+                    },
+                    "pulp3_distribution_hrefs": {
+                        "readOnly": true
+                    },
+                    "pulp3_repository_href": {
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "pulp2_object_id",
+                    "pulp2_repo_id",
+                    "pulp2_repo_type"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "basicAuth": {
+                "type": "http",
+                "scheme": "basic"
+            },
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "Session"
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:24817/"
+        }
+    ]
+}

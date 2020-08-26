@@ -1,6 +1,12 @@
 Workflow
 ========
 
+A recommended scenario:
+ 1. Pulp 2 is running, Pulp 3 is running (but the plugins which need to be migrated are not used, they don't have any data in Pulp 3).
+ 2. Run migration as many times as you need. No need to shut down Pulp 2. For large setups content migration can take a long time. Serve your clients from Pulp 2.
+ 3. When you are ready to switch to Pulp 3: run migration, then stop Pulp 2 services (so no new data is coming in), run migration for the last time (it should not take long).
+ 4. Serve your clients from Pulp3.
+
 All the commands should be run on Pulp 3 machine.
 
 1. Create a :doc:`Migration Plan <../migration_plan>`
@@ -20,7 +26,6 @@ All the commands should be run on Pulp 3 machine.
 
 2. Use the ``pulp_href`` of the created Migration Plan to run the migration
 
-
 .. code:: bash
 
     $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/
@@ -30,6 +35,8 @@ All the commands should be run on Pulp 3 machine.
         "task": "/pulp/api/v3/tasks/55db2086-cf2e-438f-b5b7-cd0dbb7c8cf4/"
     }
 
+.. note::
+    It is possible to re-run migraiton as many times as needed (if the Pulp 3 plugin which is being migrated is not used).
 
 3. List the mapping for Pulp 2 and Pulp 3 repositories if needed.
 
