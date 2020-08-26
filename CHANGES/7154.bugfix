@@ -1,1 +1,0 @@
-Fixed cause of view_name warnings during (re)start of Pulp services.

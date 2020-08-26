@@ -13,6 +13,40 @@ Changelog
 
 .. towncrier release notes start
 
+0.3.0 (2020-08-26)
+==================
+
+Features
+--------
+
+- Added GroupProgressReport tracking during the migration.
+  `#6769 <https://pulp.plan.io/issues/6769>`_
+- Make the migration plugin compatible with pulp_container 2.0
+  `#7365 <https://pulp.plan.io/issues/7365>`_
+
+
+Bugfixes
+--------
+
+- Significantly improved performance of partial migrations (when some content / repos has been migrated already).
+  `#6111 <https://pulp.plan.io/issues/6111>`_
+- Fixed migration of a distribution tree if it has a treeinfo and not .treeinfo
+  `#6951 <https://pulp.plan.io/issues/6951>`_
+- Fixed cause of view_name warnings during (re)start of Pulp services.
+  `#7154 <https://pulp.plan.io/issues/7154>`_
+- Marked all Pulp2LCEs as migrated for distribution tree migration.
+  `#7260 <https://pulp.plan.io/issues/7260>`_
+
+
+Misc
+----
+
+- `#6963 <https://pulp.plan.io/issues/6963>`_
+
+
+----
+
+
 0.2.1 (2020-08-26)
 ==================
 

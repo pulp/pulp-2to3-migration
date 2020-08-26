@@ -1,5 +1,5 @@
 django-cursor-pagination
-pulpcore>=3.4
+pulpcore>=3.6
 mongoengine
 semantic_version
 jsonschema>=3.0
