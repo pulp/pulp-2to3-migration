@@ -49,5 +49,5 @@ travis_notifications:
     - chat.freenode.net#pulp-build
     on_failure: always
     on_success: change
-update_redmine: false
+update_redmine: true
 
