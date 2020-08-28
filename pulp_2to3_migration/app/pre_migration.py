@@ -425,13 +425,8 @@ def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
             if importer.pulp2_config.get('feed') != importer_data.config.get('feed'):
                 importer.pulp3_remote.delete()
                 importer.pulp3_remote = None
-                # find LCEs
-                pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
-                    pulp2_importer_id=importer.pulp2_object_id)
-                for lce in pulp2lazycatalog:
-                    lce.is_migrated = False
-                Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lazycatalog,
-                                                     fields=['is_migrated'])
+                # do not flip is_migrated to False for LCE for at least once migrated importer
+
             importer.pulp2_last_updated = last_updated
             importer.pulp2_config = importer_data.config
             importer.is_migrated = False
