@@ -71,15 +71,15 @@ image:
   tag: "${TAG}"
 plugins:
   - name: pulpcore
-    source: pulpcore~=3.6.0
+    source: pulpcore
   - name: pulp-2to3-migration
     source: ./pulp-2to3-migration
   - name: pulp_file
-    source: pulp_file~=1.2.0
+    source: pulp_file
   - name: pulp_container
-    source: pulp_container~=2.0.0
+    source: pulp_container
   - name: pulp_rpm
-    source: pulp_rpm~=3.6.0
+    source: pulp_rpm
 services:
   - name: pulp
     image: "pulp:${TAG}"

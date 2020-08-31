@@ -4,13 +4,10 @@
 additional_plugins:
 - branch: master
   name: pulp_file
-  pip_version_specifier: ~=1.2.0
 - branch: master
   name: pulp_container
-  pip_version_specifier: ~=2.0.0
 - branch: master
   name: pulp_rpm
-  pip_version_specifier: ~=3.6.0
 black: false
 check_commit_message: true
 cherry_pick_automation: true
@@ -33,11 +30,11 @@ plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 pulp_settings: null
 pulpcore_branch: master
-pulpcore_pip_version_specifier: ~=3.6.0
+pulpcore_pip_version_specifier: null
 pydocstyle: false
 pypi_username: pulp
 redmine_project: null
-stable_branch: '0.2'
+stable_branch: '0.3'
 test_bindings: false
 test_performance: false
 test_s3: false
