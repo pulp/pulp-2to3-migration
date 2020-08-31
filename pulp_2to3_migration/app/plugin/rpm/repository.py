@@ -100,9 +100,10 @@ class RpmDistributor(Pulp2to3Distributor):
 
         """
         new_checksum_type = pulp2distributor.pulp2_config.get('checksum_type')
-        current_checksum_type = pulp2distributor.pulp3_publication.metadata_checksum_type
+        current_checksum_type = pulp2distributor.pulp3_publication.cast().metadata_checksum_type
 
-        if new_checksum_type != current_checksum_type:
+        is_default_checksum_type = new_checksum_type is None and current_checksum_type == 'sha256'
+        if new_checksum_type != current_checksum_type and not is_default_checksum_type:
             return True
 
         return False
