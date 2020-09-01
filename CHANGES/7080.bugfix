@@ -1,0 +1,1 @@
+Fixed a distribution migration case when a repository in Pulp 2 has been recreated.
