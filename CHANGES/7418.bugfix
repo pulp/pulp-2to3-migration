@@ -1,0 +1,1 @@
+Fixed re-migration issue when pulp 2 importer changed a feed.
