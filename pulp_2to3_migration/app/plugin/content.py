@@ -283,6 +283,8 @@ class ContentMigrationFirstStage(Stage):
                     # find already created pulp3 content
                     pulp3content = pulp2content.pulp3_content
                     extra_info = None
+                    if is_multi_artifact:
+                        extra_info = pulp_2to3_detail_content.get_treeinfo_serialized()
 
                 else:
                     # create pulp3 content and assign relations if present

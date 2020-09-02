@@ -723,9 +723,13 @@ class Pulp2Distribution(Pulp2to3Content):
             for distribution in pulp2_distribution_content_batch]
         cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True)
 
-    def create_pulp3_content(self):
+    def get_treeinfo_serialized(self):
         """
         Create a Pulp 3 Distribution content for saving later in a bulk operation.
+
+        Returns:
+            dict: a serialized treeinfo data
+
         """
         namespaces = [".treeinfo", "treeinfo"]
         for namespace in namespaces:
@@ -749,8 +753,20 @@ class Pulp2Distribution(Pulp2to3Content):
             treeinfo_serialized['variants'] = variants
             # Reset build_timestamp so Pulp will fetch all the addons during the next sync
             treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
-            return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
-                    treeinfo_serialized)
+            return treeinfo_serialized
+
+    def create_pulp3_content(self):
+        """
+        Create a Pulp 3 Distribution content for saving later in a bulk operation.
+
+        Returns:
+            (DistributionTree, dict): an in-memory DistributionTree content and serialized
+                                      treeinfo data
+
+        """
+        treeinfo_serialized = self.get_treeinfo_serialized()
+        return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
+                treeinfo_serialized)
 
 
 class Pulp2PackageLangpacks(Pulp2to3Content):
