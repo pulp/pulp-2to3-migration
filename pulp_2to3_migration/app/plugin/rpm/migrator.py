@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from collections import OrderedDict
 
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 from pulp_2to3_migration.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,
@@ -191,7 +192,7 @@ class InterrelateContent(Stage):
                 ModulemdPackages = Modulemd.packages.through
                 ModulemdPackages.objects.bulk_create(objs=modulemd_packages_batch,
                                                      ignore_conflicts=True,
-                                                     batch_size=1000)
+                                                     batch_size=DEFAULT_BATCH_SIZE)
 
             for dc in batch:
                 await self.put(dc)

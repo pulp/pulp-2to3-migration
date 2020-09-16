@@ -25,6 +25,7 @@ from pulp_container.app.models import (
     Tag,
 )
 
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 from pulp_2to3_migration.app.plugin.api import (
     ContentMigrationFirstStage,
     DeclarativeContentMigration,
@@ -157,14 +158,14 @@ class InterrelateContent(Stage):
 
                 ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
                                                          ignore_conflicts=True,
-                                                         batch_size=1000)
+                                                         batch_size=DEFAULT_BATCH_SIZE)
                 BlobManifest.objects.bulk_create(objs=blob_manifest_batch,
                                                  ignore_conflicts=True,
-                                                 batch_size=1000)
+                                                 batch_size=DEFAULT_BATCH_SIZE)
 
                 Manifest.objects.bulk_update(objs=manifest_batch,
                                              fields=['config_blob'],
-                                             batch_size=1000)
+                                             batch_size=DEFAULT_BATCH_SIZE)
             for dc in batch:
                 await self.put(dc)
 

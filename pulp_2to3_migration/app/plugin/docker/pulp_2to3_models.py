@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
 from pulp_2to3_migration.app.models import Pulp2to3Content
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 
 from pulp_container.constants import MEDIA_TYPE
 from pulp_container.app.models import Blob, Manifest, Tag
@@ -55,7 +56,8 @@ class Pulp2Blob(Pulp2to3Content):
                                        media_type=MEDIA_TYPE.REGULAR_BLOB,
                                        pulp2content=pulp2_id_obj_map[blob.id])
                              for blob in pulp2_blob_content_batch]
-        cls.objects.bulk_create(pulp2blob_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2blob_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -135,7 +137,8 @@ class Pulp2Manifest(Pulp2to3Content):
                               blobs=_get_blobs(m.fs_layers),
                               pulp2content=pulp2_id_obj_map[m.id])
             )
-        cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -199,7 +202,8 @@ class Pulp2ManifestList(Pulp2to3Content):
                                             listed_manifests=[man.digest for man in m.manifests],
                                             pulp2content=pulp2_id_obj_map[m.id])
                           for m in pulp2_m_content_batch]
-        cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2m_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -249,7 +253,8 @@ class Pulp2Tag(Pulp2to3Content):
                                      repo_id=tag.repo_id,
                                      pulp2content=pulp2_id_obj_map[tag.id])
                             for tag in pulp2_tag_content_batch]
-        cls.objects.bulk_create(pulp2tag_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2tag_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """

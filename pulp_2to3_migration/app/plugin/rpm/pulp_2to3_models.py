@@ -8,6 +8,7 @@ import createrepo_c as cr
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 from pulp_2to3_migration.app.models import (
     Pulp2to3Content,
     Pulp2RepoContent
@@ -51,10 +52,7 @@ from .erratum import (
     get_package_checksum,
     get_pulp2_filtered_collections
 )
-from .xml_utils import (
-    decompress_repodata,
-    get_cr_obj,
-)
+from .xml_utils import get_cr_obj
 
 SRPM_UNIT_FIELDS = set([
     'name',
@@ -86,7 +84,9 @@ class Pulp2RpmBase(Pulp2to3Content):
     checksum = models.TextField()
     checksumtype = models.TextField()
 
-    repodata = JSONField(dict)
+    primary_template_gz = models.BinaryField(null=True)
+    filelists_template_gz = models.BinaryField(null=True)
+    other_template_gz = models.BinaryField(null=True)
     is_modular = models.BooleanField(default=False)
     size = models.BigIntegerField()
     filename = models.TextField()
@@ -124,8 +124,6 @@ class Pulp2RpmBase(Pulp2to3Content):
             *cls.unit_fields)
         pulp2rpm_to_save = []
         for rpm in pulp2_content_batch:
-            rpm['repodata'] = decompress_repodata(rpm['repodata'])
-
             pulp2rpm_to_save.append(
                 cls(name=rpm['name'],
                     epoch=rpm['epoch'],
@@ -134,13 +132,16 @@ class Pulp2RpmBase(Pulp2to3Content):
                     arch=rpm['arch'],
                     checksum=rpm['checksum'],
                     checksumtype=rpm['checksumtype'],
-                    repodata=rpm['repodata'],
+                    primary_template_gz=rpm['repodata']['primary'],
+                    filelists_template_gz=rpm['repodata']['filelists'],
+                    other_template_gz=rpm['repodata']['other'],
                     is_modular=rpm.get('is_modular', False),
                     size=rpm['size'],
                     filename=rpm['filename'],
                     pulp2content=pulp2_id_obj_map[rpm['_id']])
             )
-        cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -365,7 +366,8 @@ class Pulp2Erratum(Pulp2to3Content):
                         solution=erratum.solution,
                         summary=erratum.summary,
                         pulp2content=pulp2content))
-        cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def get_collections(self):
         """
@@ -512,7 +514,8 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
                 pulp2content=pulp2_id_obj_map[meta.id]
             ) for meta in pulp2_metadata_content_batch.no_cache()
         ]
-        cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -589,7 +592,8 @@ class Pulp2Modulemd(Pulp2to3Content):
                 checksum=md.checksum,
                 pulp2content=pulp2_id_obj_map[md.id])
             for md in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2modules_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2modules_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -664,7 +668,8 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
                 repo_id=defaults.repo_id,
                 pulp2content=pulp2_id_obj_map[defaults.id])
             for defaults in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -722,7 +727,8 @@ class Pulp2Distribution(Pulp2to3Content):
                 arch=distribution.arch,
                 pulp2content=pulp2_id_obj_map[distribution.id])
             for distribution in pulp2_distribution_content_batch]
-        cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def get_treeinfo_serialized(self):
         """
@@ -801,7 +807,8 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
                 matches=p.matches,
                 pulp2content=pulp2_id_obj_map[p.id])
             for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2langpacks_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2langpacks_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -869,7 +876,8 @@ class Pulp2PackageGroup(Pulp2to3Content):
                 name_by_lang=p.translated_name,
                 pulp2content=pulp2_id_obj_map[p.id])
             for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -929,7 +937,8 @@ class Pulp2PackageCategory(Pulp2to3Content):
                 name_by_lang=p.translated_name,
                 pulp2content=pulp2_id_obj_map[p.id])
             for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -987,7 +996,8 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
                 name_by_lang=p.translated_name,
                 pulp2content=pulp2_id_obj_map[p.id])
             for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2envs_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2envs_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """

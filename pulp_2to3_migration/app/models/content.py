@@ -76,7 +76,8 @@ class Pulp2to3Content(BaseModel):
         >>>                              size=iso.size,
         >>>                              pulp2content=pulp2_map[iso.id])
         >>>                     for iso in pulp2_iso_content_batch]
-        >>> cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
+        >>> cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True,
+        >>>                         batch_size=DEFAULT_BATCH_SIZE)
         """
         raise NotImplementedError()
 
