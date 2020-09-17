@@ -520,7 +520,8 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
         """
         return (RepoMetadataFile(data_type=self.data_type,
                                  checksum=self.checksum,
-                                 checksum_type=self.checksum_type), None)
+                                 checksum_type=self.checksum_type,
+                                 relative_path=self.relative_path_for_content_artifact), None,)
 
 
 class Pulp2Modulemd(Pulp2to3Content):
