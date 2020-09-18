@@ -115,8 +115,6 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     }
     future_types = {
         'rpm': Pulp2Rpm,
-        'package_group': Pulp2PackageGroup,
-        'package_category': Pulp2PackageCategory,
     }
     artifactless_types = {
         'erratum': Pulp2Erratum,
