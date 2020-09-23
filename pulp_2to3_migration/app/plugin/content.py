@@ -271,7 +271,9 @@ class ContentMigrationFirstStage(Stage):
                 if is_lazy_type:
                     # get all Lazy Catalog Entries (LCEs) for this content
                     pulp2lazycatalog = Pulp2LazyCatalog.objects.filter(
-                        pulp2_unit_id=pulp2content.pulp2_id, is_migrated=False)
+                        pulp2_unit_id=pulp2content.pulp2_id,
+                        is_migrated=False,
+                    )
 
                 if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
                     _logger.warn(_('On_demand content cannot be migrated without an entry in the '
@@ -310,8 +312,14 @@ class ContentMigrationFirstStage(Stage):
 
                         lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
                         if lces:
+                            remote_declarative_artifacts = []
+
                             for lce in lces:
                                 remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+
+                                if not remote and not downloaded:
+                                    continue
+
                                 remotes.add(remote)
                                 da = DeclarativeArtifact(
                                     artifact=artifact,
@@ -319,7 +327,16 @@ class ContentMigrationFirstStage(Stage):
                                     relative_path=image_relative_path,
                                     remote=remote,
                                     deferred_download=not downloaded)
-                                d_artifacts.append(da)
+                                remote_declarative_artifacts.append(da)
+
+                            if not remote_declarative_artifacts:
+                                _logger.warn(_(
+                                    'On_demand content cannot be migrated without a remote '
+                                    'pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
+                                )
+                                continue
+
+                            d_artifacts.extend(remote_declarative_artifacts)
                         else:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
