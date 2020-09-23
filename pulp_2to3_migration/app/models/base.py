@@ -117,8 +117,8 @@ class _InternalMigrationPlan:
         self.missing_repositories = list(expected - present)
 
         distributors = Distributor.objects(
-            distributor_id__in=self.all_repositories_distributors_to_migrate).only('distributor_id')
-        present = set(distributor.distributor_id for distributor in distributors)
+            repo_id__in=self.all_repositories_distributors_to_migrate).only('repo_id')
+        present = set(distributor.repo_id for distributor in distributors)
         expected = set(self.all_repositories_distributors_to_migrate)
 
         self.repositories_missing_distributors = list(expected - present)
