@@ -160,12 +160,14 @@ def render_metadata(pkg, md_type):
     if md_type not in METADATA_TYPES:
         return
 
-    xml_template = pkg.repodata[md_type]
     if md_type == 'primary':
+        xml_template = decompress_repodata(pkg.primary_template_gz)
         return render_primary(xml_template, pkg.checksum, pkg.checksumtype)
     elif md_type == 'other':
+        xml_template = decompress_repodata(pkg.other_template_gz)
         return render_other(xml_template, pkg.checksum)
     elif md_type == 'filelists':
+        xml_template = decompress_repodata(pkg.filelists_template_gz)
         return render_filelists(xml_template, pkg.checksum)
 
 
@@ -237,14 +239,9 @@ def decompress_repodata(compressed_repodata):
     """
     Decompress repodata.
     Args:
-        compressed_repodata(dict): compressed repodata with the primary/filelists/other as a key
+        compressed_repodata: binary data
     Returns:
-        dict: decompressed repodata with the primary/filelists/other as a key
+        str: decompressed repodata
 
     """
-
-    decompressed_repodata = {}
-    for name, gzipped_data in compressed_repodata.items():
-        decompressed_repodata[name] = gzip.zlib.decompress(
-            bytearray(gzipped_data)).decode()
-    return decompressed_repodata
+    return gzip.zlib.decompress(compressed_repodata.tobytes()).decode()

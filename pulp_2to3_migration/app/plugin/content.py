@@ -31,7 +31,10 @@ from pulpcore.plugin.stages import (
     Stage,
 )
 
-from pulp_2to3_migration.app.constants import NOT_USED
+from pulp_2to3_migration.app.constants import (
+    DEFAULT_BATCH_SIZE,
+    NOT_USED,
+)
 from pulp_2to3_migration.app.models import (
     Pulp2Importer,
     Pulp2LazyCatalog,
@@ -221,7 +224,6 @@ class ContentMigrationFirstStage(Stage):
             return pulp2importer.pulp3_remote
 
         futures = []
-        batch_size = 1000
         is_lazy_type = content_type in self.migrator.lazy_types
         is_artifactless_type = content_type in self.migrator.artifactless_types
         has_future = content_type in self.migrator.future_types
@@ -445,7 +447,7 @@ class ContentMigrationFirstStage(Stage):
 
                 if has_future and dc:
                     futures.append(dc)
-                resolve_futures = len(futures) >= batch_size or pb.done == pb.total
+                resolve_futures = len(futures) >= DEFAULT_BATCH_SIZE or pb.done == pb.total
                 if resolve_futures:
                     for dc in futures:
                         await dc.resolution()
@@ -471,7 +473,7 @@ class UpdateLCEs(Stage):
 
                 Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lces_batch,
                                                      fields=['is_migrated'],
-                                                     batch_size=1000)
+                                                     batch_size=DEFAULT_BATCH_SIZE)
 
             for d_content in batch:
                 await self.put(d_content)
@@ -501,7 +503,7 @@ class RelatePulp2to3Content(Stage):
 
                 pulp2content.__class__.objects.bulk_update(objs=pulp2content_batch,
                                                            fields=['pulp3_content'],
-                                                           batch_size=1000)
+                                                           batch_size=DEFAULT_BATCH_SIZE)
 
             for d_content in batch:
                 await self.put(d_content)

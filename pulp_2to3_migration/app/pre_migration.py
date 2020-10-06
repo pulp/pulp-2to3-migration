@@ -14,6 +14,7 @@ from pulpcore.plugin.models import (
     Publication,
     ProgressReport,
 )
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
     Pulp2Distributor,
@@ -74,7 +75,7 @@ def pre_migrate_content(content_model, mutable_type, lazy_type, premigrate_hook)
         content_model: Models for content which is being migrated.
         mutable_type: Boolean that indicates whether the content type is mutable.
     """
-    batch_size = 1000
+    batch_size = 500
     content_type = content_model.pulp2.TYPE_ID
     pulp2content = []
     pulp2mutatedcontent = []
@@ -534,7 +535,7 @@ def pre_migrate_repocontent(repo):
                                 pulp2_repository=repo)
         repocontent.append(item)
 
-    Pulp2RepoContent.objects.bulk_create(repocontent)
+    Pulp2RepoContent.objects.bulk_create(repocontent, batch_size=DEFAULT_BATCH_SIZE)
 
 
 def mark_removed_resources(plan, type_to_repo_ids):
@@ -573,7 +574,7 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         Pulp2Repository.objects.bulk_update(objs=removed_repos,
                                             fields=['not_in_plan'],
-                                            batch_size=1000)
+                                            batch_size=DEFAULT_BATCH_SIZE)
 
         # Mark importers
         mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
@@ -591,7 +592,7 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         Pulp2Importer.objects.bulk_update(objs=removed_imps,
                                           fields=['not_in_plan'],
-                                          batch_size=1000)
+                                          batch_size=DEFAULT_BATCH_SIZE)
 
         # Mark distributors
         mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
@@ -609,7 +610,7 @@ def mark_removed_resources(plan, type_to_repo_ids):
 
         Pulp2Distributor.objects.bulk_update(objs=removed_dists,
                                              fields=['not_in_plan'],
-                                             batch_size=1000)
+                                             batch_size=DEFAULT_BATCH_SIZE)
 
 
 def delete_old_resources(plan):

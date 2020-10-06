@@ -1,5 +1,6 @@
 from django.db import models
 
+from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
 from pulp_2to3_migration.app.models import Pulp2to3Content
 
 from pulp_file.app.models import FileContent
@@ -55,7 +56,8 @@ class Pulp2ISO(Pulp2to3Content):
                                      size=iso.size,
                                      pulp2content=pulp2_id_obj_map[iso.id])
                             for iso in pulp2_iso_content_batch]
-        cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True)
+        cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True,
+                                batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
