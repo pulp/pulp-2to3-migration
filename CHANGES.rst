@@ -13,6 +13,35 @@ Changelog
 
 .. towncrier release notes start
 
+0.4.0 (2020-10-07)
+==================
+
+Bugfixes
+--------
+
+- Fixed a distribution migration case when a repository in Pulp 2 has been recreated.
+  `#7080 <https://pulp.plan.io/issues/7080>`_
+- Stopped logging warnings if at least one LCE per content migrated.
+  `#7193 <https://pulp.plan.io/issues/7193>`_
+- Fixed metadata checksum type configuration re-migration.
+  `#7417 <https://pulp.plan.io/issues/7417>`_
+- Fixed re-migration issue when pulp 2 importer changed a feed.
+  `#7418 <https://pulp.plan.io/issues/7418>`_
+- Fixed validation of the distributor missing resources in the migration plan.
+  `#7488 <https://pulp.plan.io/issues/7488>`_
+- Fix custom metadata migration when the same metadata is present under different paths in different repositories.
+  `#7489 <https://pulp.plan.io/issues/7489>`_
+- Fixed high memory usage when migrating large amounts of content (300,000+).
+  `#7490 <https://pulp.plan.io/issues/7490>`_
+- Removed comps content types from future_types.
+  `#7518 <https://pulp.plan.io/issues/7518>`_
+- Fixed migration of lazy multi-artifact content not present in a repository in the plan.
+  `#7562 <https://pulp.plan.io/issues/7562>`_
+
+
+----
+
+
 0.3.0 (2020-08-26)
 ==================
 
