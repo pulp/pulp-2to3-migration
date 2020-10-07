@@ -1,3 +1,3 @@
-__version__ = "0.4.0"
+__version__ = "0.5.0.dev"
 
 default_app_config = 'pulp_2to3_migration.app.Pulp2To3MigrationPluginAppConfig'
