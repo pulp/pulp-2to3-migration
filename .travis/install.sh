@@ -48,19 +48,19 @@ fi
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@1.3
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@2.1
 fi
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.7
 fi
 if [ -n "$TRAVIS_TAG" ]; then
   # Install the plugin only and use published PyPI packages for the rest
@@ -71,15 +71,15 @@ image:
   tag: "${TAG}"
 plugins:
   - name: pulpcore
-    source: pulpcore
+    source: pulpcore~=3.7.0
   - name: pulp-2to3-migration
     source: ./pulp-2to3-migration
   - name: pulp_file
-    source: pulp_file
+    source: pulp_file~=1.3.0
   - name: pulp_container
-    source: pulp_container
+    source: pulp_container~=2.1.0
   - name: pulp_rpm
-    source: pulp_rpm
+    source: pulp_rpm~=3.7.0
 services:
   - name: pulp
     image: "pulp:${TAG}"
