@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.4.1 (2020-10-09)
+==================
+
+Bugfixes
+--------
+
+- Fix the bindings for publication and distribution hrefs fields on pulp2repositories API.
+  `#7679 <https://pulp.plan.io/issues/7679>`_
+
+
+----
+
+
 0.4.0 (2020-10-07)
 ==================
 
