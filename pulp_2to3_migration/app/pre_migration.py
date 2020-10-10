@@ -604,9 +604,11 @@ def pre_migrate_repocontent(repo):
     Pulp2RepoContent.objects.bulk_create(repocontent, batch_size=DEFAULT_BATCH_SIZE)
 
 
-def mark_removed_resources(plan, type_to_repo_ids):
+def handle_outdated_resources(plan, type_to_repo_ids):
     """
-    Marks repositories, importers which are no longer present in Pulp2.
+    Marks repositories, importers, distributors which are no longer present in Pulp2.
+
+    Delete Publications and Distributions which are no longer present in Pulp2.
 
     Args:
         plan(MigrationPlan): A Migration Plan
@@ -628,37 +630,24 @@ def mark_removed_resources(plan, type_to_repo_ids):
             str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
 
         premigrated_repos = Pulp2Repository.objects.filter(pulp2_repo_type=plugin_plan.type)
-        premigrated_repo_object_ids = set(premigrated_repos.values_list('pulp2_object_id',
-                                                                        flat=True))
+        premigrated_repo_object_ids = set(
+            premigrated_repos.values_list('pulp2_object_id', flat=True))
         removed_repo_object_ids = premigrated_repo_object_ids - mongo_repo_object_ids
 
-        removed_repos = []
-        for pulp2repo in Pulp2Repository.objects.filter(
-                pulp2_object_id__in=removed_repo_object_ids):
-            pulp2repo.not_in_plan = True
-            removed_repos.append(pulp2repo)
-
-        Pulp2Repository.objects.bulk_update(objs=removed_repos,
-                                            fields=['not_in_plan'],
-                                            batch_size=DEFAULT_BATCH_SIZE)
+        Pulp2Repository.objects.filter(
+            pulp2_object_id__in=removed_repo_object_ids).update(not_in_plan=True)
 
         # Mark importers
-        mongo_imp_object_ids = set(str(i.id) for i in Importer.objects.only('id'))
+        mongo_imp_object_ids = set(
+            str(i.id) for i in Importer.objects.only('id'))
         imp_types = plugin_plan.migrator.importer_migrators.keys()
         premigrated_imps = Pulp2Importer.objects.filter(pulp2_type_id__in=imp_types)
-        premigrated_imp_object_ids = set(premigrated_imps.values_list('pulp2_object_id',
-                                                                      flat=True))
+        premigrated_imp_object_ids = set(
+            premigrated_imps.values_list('pulp2_object_id', flat=True))
         removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
 
-        removed_imps = []
-        for pulp2importer in Pulp2Importer.objects.filter(
-                pulp2_object_id__in=removed_imp_object_ids):
-            pulp2importer.not_in_plan = True
-            removed_imps.append(pulp2importer)
-
-        Pulp2Importer.objects.bulk_update(objs=removed_imps,
-                                          fields=['not_in_plan'],
-                                          batch_size=DEFAULT_BATCH_SIZE)
+        Pulp2Importer.objects.filter(
+            pulp2_object_id__in=removed_imp_object_ids).update(not_in_plan=True)
 
         # Mark distributors
         mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
@@ -668,58 +657,47 @@ def mark_removed_resources(plan, type_to_repo_ids):
                                                                         flat=True))
         removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
 
-        removed_dists = []
-        for pulp2dist in Pulp2Distributor.objects.filter(
-                pulp2_object_id__in=removed_dist_object_ids):
-            pulp2dist.not_in_plan = True
-            removed_dists.append(pulp2dist)
+        Pulp2Distributor.objects.filter(
+            pulp2_object_id__in=removed_dist_object_ids).update(not_in_plan=True)
 
-        Pulp2Distributor.objects.bulk_update(objs=removed_dists,
-                                             fields=['not_in_plan'],
-                                             batch_size=DEFAULT_BATCH_SIZE)
+    # Delete old Publications/Distributions which are no longer present in Pulp2.
 
+    # It's critical to remove Distributions to avoid base_path overlap.
+    # It make the migration logic easier if we remove old Publications as well.
 
-def delete_old_resources(plan):
-    """
-    Delete old Publications/Distributions which are no longer present in Pulp2.
+    # Delete criteria:
+    #     - pulp2distributor is no longer in plan
+    #     - pulp2repository content changed (repo.is_migrated=False) or it is no longer in plan
 
-    It's critical to remove Distributions to avoid base_path overlap.
-    It make the migration logic easier if we remove old Publications as well.
-
-    Delete criteria:
-        - pulp2distributor is no longer in plan
-        - pulp2repository content changed (repo.is_migrated=False) or it is no longer in plan
-
-    Args:
-        plan(MigrationPlan): A Migration Plan
-
-    """
     repos_with_old_distributions_qs = Pulp2Repository.objects.filter(
-        Q(is_migrated=False) | Q(not_in_plan=True))
+        Q(is_migrated=False) | Q(not_in_plan=True)
+    )
 
     old_dist_query = Q(pulp3_distribution__isnull=False) | Q(pulp3_publication__isnull=False)
     old_dist_query &= Q(pulp2_repository__in=repos_with_old_distributions_qs) | Q(not_in_plan=True)
 
     with transaction.atomic():
         pulp2distributors_with_old_distributions_qs = Pulp2Distributor.objects.filter(
-            old_dist_query)
-        pubs_to_delete = set()
-        dists_to_delete = []
-        for pulp2distributor in pulp2distributors_with_old_distributions_qs:
-            if pulp2distributor.is_migrated:
-                pulp2distributor.is_migrated = False
-                pulp2distributor.save()
-            if pulp2distributor.pulp3_publication:
-                # check if publication is shared by multiple distributions
-                # on the corresponding distributor flip the flag to false so the affected
-                # distribution will be updated with the new publication
-                pulp2dists = pulp2distributor.pulp3_publication.pulp2distributor_set.all()
-                for dist in pulp2dists:
-                    if dist.is_migrated:
-                        dist.is_migrated = False
-                        dist.save()
-                pubs_to_delete.add(pulp2distributor.pulp3_publication.pk)
-            if pulp2distributor.pulp3_distribution:
-                dists_to_delete.append(pulp2distributor.pulp3_distribution.pk)
-        Publication.objects.filter(pk__in=pubs_to_delete).delete()
-        BaseDistribution.objects.filter(pk__in=dists_to_delete).delete()
+            old_dist_query
+        )
+
+        pulp2distributors_with_old_distributions_qs.update(
+            is_migrated=False
+        )
+
+        # If publication is shared by multiple distributions, on the corresponding distributors
+        # flip the flag to false so the affected distributions will be updated with the new
+        # publication
+        Pulp2Distributor.objects.filter(
+            pulp3_publication__in=Publication.objects.filter(
+                pulp2distributor__in=pulp2distributors_with_old_distributions_qs
+            )
+        ).update(is_migrated=False)
+
+        # Delete outdated publications
+        Publication.objects.filter(
+            pulp2distributor__in=pulp2distributors_with_old_distributions_qs).delete()
+
+        # Delete outdated distributions
+        BaseDistribution.objects.filter(
+            pulp2distributor__in=pulp2distributors_with_old_distributions_qs).delete()

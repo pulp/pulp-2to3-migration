@@ -10,8 +10,7 @@ from pulpcore.plugin.models import (
 )
 
 from pulp_2to3_migration.app.pre_migration import (
-    delete_old_resources,
-    mark_removed_resources,
+    handle_outdated_resources,
     pre_migrate_all_content,
     pre_migrate_all_without_content,
 )
@@ -134,8 +133,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
 
     pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type)
     pre_migrate_all_content(plan)
-    mark_removed_resources(plan, type_to_repo_ids)
-    delete_old_resources(plan)
+    handle_outdated_resources(plan, type_to_repo_ids)
     migrate_repositories(plan)
     migrate_importers(plan)
     migrate_content(plan)
