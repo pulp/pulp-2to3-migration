@@ -309,8 +309,7 @@ def pre_migrate_lazycatalog(content_type):
     pulp2lazycatalog = []
 
     mongo_lce_qs = LazyCatalogEntry.objects(unit_type_id=content_type)
-    total_lce = mongo_lce_qs.count()
-    for i, lce in enumerate(mongo_lce_qs.batch_size(batch_size).as_pymongo().no_cache()):
+    for lce in mongo_lce_qs.batch_size(batch_size).as_pymongo().no_cache():
         item = Pulp2LazyCatalog(pulp2_importer_id=lce['importer_id'],
                                 pulp2_unit_id=lce['unit_id'],
                                 pulp2_content_type_id=lce['unit_type_id'],
@@ -320,10 +319,11 @@ def pre_migrate_lazycatalog(content_type):
                                 is_migrated=False)
         pulp2lazycatalog.append(item)
 
-        save_batch = (i and not (i + 1) % batch_size or i == total_lce - 1)
-        if save_batch:
+        if len(pulp2lazycatalog) > batch_size:
             Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
             pulp2lazycatalog.clear()
+    else:
+        Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
 
 
 def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):

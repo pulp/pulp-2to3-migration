@@ -1,4 +1,3 @@
-django-cursor-pagination
 pulpcore>=3.6
 mongoengine
 semantic_version
