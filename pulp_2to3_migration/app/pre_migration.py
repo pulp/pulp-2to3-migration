@@ -382,8 +382,6 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
                     if not repos or repos and distributors_repos:
                         pre_migrate_distributor(
                             repo_id, distributors_repos, distributor_migrators, repo)
-                    if repo:
-                        pre_migrate_repocontent(repo)
                 pb.increment()
 
 
@@ -417,13 +415,17 @@ def pre_migrate_repo(record, repo_id_to_type):
         # if it was marked as such because it was not present in the migration plan
         repo.not_in_plan = False
         # check if there were any changes since last time
-        if last_unit_added != repo.pulp2_last_unit_added or \
-           last_unit_removed != repo.pulp2_last_unit_removed:
+        is_changed = (last_unit_added != repo.pulp2_last_unit_added
+                      or last_unit_removed != repo.pulp2_last_unit_removed)
+        if is_changed:
             repo.pulp2_last_unit_added = last_unit_added
             repo.last_unit_removed = last_unit_removed
             repo.pulp2_description = record.description
             repo.is_migrated = False
         repo.save()
+
+    if created or is_changed:
+        pre_migrate_repocontent(repo)
 
     return repo
 
