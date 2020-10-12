@@ -7,11 +7,10 @@ from urllib.parse import urljoin
 
 from gettext import gettext as _
 
-from cursor_pagination import CursorPaginator
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 
 from pulpcore.app.models import storage
 from pulpcore.plugin.models import (
@@ -87,30 +86,6 @@ class DeclarativeContentMigration:
         stages.append(EndStage())
         pipeline = create_pipeline(stages)
         await pipeline
-
-
-def chunked_queryset_iterator(queryset, size, *, ordering=('pk',)):
-    """
-    Yield items from a queryset, but break it up into pages behind the scenes.
-
-    Primarily a workaround for the fact that .iterator() and .prefetch_related() are incompatible.
-
-    Code from: https://blog.labdigital.nl/working-with-huge-data-sets-in-django-169453bca049
-
-    Caveat:
-        The ordering must uniquely identify the object, and be in the same order (ASC/DESC).
-    """
-    pager = CursorPaginator(queryset, ordering)
-    after = None
-    while True:
-        page = pager.page(after=after, first=size)
-        if page:
-            yield from page.items
-        else:
-            return
-        if not page.has_next:
-            break        # take last item, next page starts after this.
-        after = pager.cursor(instance=page[-1])
 
 
 class ContentMigrationFirstStage(Stage):
@@ -251,22 +226,16 @@ class ContentMigrationFirstStage(Stage):
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=pulp_2to3_detail_qs.count()
         ) as pb:
-            prefetch_args = [
-                Prefetch('pulp2content'),
-                Prefetch('pulp2content__pulp3_content'),
+            select_extra = [
+                'pulp2content',
+                'pulp2content__pulp3_content',
             ]
-            if content_model.set_pulp2_repo:
-                prefetch_args.append(Prefetch('pulp2content__pulp2_repo'))
-            # Warning: It's dangerous to save records of the type of pulp_2to3_detail_qs
-            # while using this iterator due to the need for globally-accurate ordering.
-            # We're using the PK which is not an incrementing integer so that doesn't hold
-            # true. However, at this point, all records have already been saved so we are safe.
-            chunked_iterator = chunked_queryset_iterator(
-                pulp_2to3_detail_qs.prefetch_related(*prefetch_args),
-                2000
-            )
 
-            for pulp_2to3_detail_content in chunked_iterator:
+            if content_model.set_pulp2_repo:
+                select_extra.append('pulp2content__pulp2_repo')
+
+            pulp_2to3_detail_qs = pulp_2to3_detail_qs.select_related(*select_extra)
+            for pulp_2to3_detail_content in pulp_2to3_detail_qs.iterator():
                 dc = None
                 pulp2content = pulp_2to3_detail_content.pulp2content
                 # only content that supports on_demand download can have entries in LCE
@@ -277,11 +246,12 @@ class ContentMigrationFirstStage(Stage):
                         is_migrated=False,
                     )
 
-                if is_lazy_type and not pulp2content.downloaded and not pulp2lazycatalog:
-                    _logger.warn(_('On_demand content cannot be migrated without an entry in the '
-                                   'lazy catalog, pulp2 unit_id: '
-                                   '{}'.format(pulp2content.pulp2_id)))
-                    continue
+                    if not pulp2content.downloaded and not pulp2lazycatalog:
+                        _logger.warn(_(
+                            'On_demand content cannot be migrated without an entry in the '
+                            'lazy catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
+                        )
+                        continue
 
                 if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
                     # find already created pulp3 content
@@ -289,10 +259,10 @@ class ContentMigrationFirstStage(Stage):
                     extra_info = None
                     if is_multi_artifact:
                         extra_info = pulp_2to3_detail_content.get_treeinfo_serialized()
-
                 else:
                     # create pulp3 content and assign relations if present
                     pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
+
                 future_relations = {'pulp2content': pulp2content}
                 if extra_info:
                     future_relations.update(extra_info)
