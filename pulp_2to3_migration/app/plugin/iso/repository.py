@@ -5,12 +5,7 @@ from pulp_2to3_migration.app.plugin.api import (
 )
 
 from pulp_file.app.models import FileRemote, FilePublication, FileDistribution
-from pulp_file.manifest import Manifest
-from pulp_file.app.tasks.publishing import populate
-
-from django.core.files import File
-
-from pulpcore.plugin.models import PublishedMetadata
+from pulp_file.app.tasks.publishing import publish
 
 from urllib.parse import urljoin
 
@@ -69,12 +64,8 @@ class IsoDistributor(Pulp2to3Distributor):
         publication = repo_version.publication_set.first()
         if not publication:
             # create publication
-            with FilePublication.create(repo_version, pass_through=True) as publication:
-                manifest = Manifest('PULP_MANIFEST')
-                manifest.write(populate(publication))
-                PublishedMetadata.create_from_file(
-                    file=File(open(manifest.relative_path, "rb")), publication=publication
-                )
+            publish('PULP_MANIFEST', repo_version.pk)
+            publication = repo_version.publication_set.first()
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
