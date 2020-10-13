@@ -1,3 +1,10 @@
+include COMMITMENT
+include COPYRIGHT
+include CHANGES.rst
 include LICENSE
-include requirements.txt
+include functest_requirements.txt
+include func_test_settings.py
 include pyproject.toml
+include requirements.txt
+include test_requirements.txt
+include unittest_requirements.txt

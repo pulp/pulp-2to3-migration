@@ -10,6 +10,7 @@ additional_plugins:
   name: pulp_rpm
 black: false
 check_commit_message: true
+check_manifest: true
 cherry_pick_automation: true
 coverage: false
 deploy_client_to_pypi: true
@@ -28,9 +29,11 @@ plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
+publish_docs_to_pulpprojectdotorg: false
 pulp_settings: null
 pulpcore_branch: master
 pulpcore_pip_version_specifier: null
+pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
 redmine_project: null
