@@ -13,6 +13,26 @@ Changelog
 
 .. towncrier release notes start
 
+0.5.0 (2020-10-13)
+==================
+
+Bugfixes
+--------
+
+- Publications and Distributions are re-created on migration re-run for repos that contain mutable content,
+  and pre-migrated mutable content is no longer deleted and recreated every time.
+  `#7280 <https://pulp.plan.io/issues/7280>`_
+- Fixed a bug where PULP_MANIFEST was being created outside of the worker's working directory.
+  `#7693 <https://pulp.plan.io/issues/7693>`_
+- Sped up repository pre-migration by skipping the repository content relations pre-migration when nothing changed in a repository.
+  `#7694 <https://pulp.plan.io/issues/7694>`_
+- Made content migration significantly faster on low-spec machines w/ HDD backed database storage.
+  `#7699 <https://pulp.plan.io/issues/7699>`_
+
+
+----
+
+
 0.4.1 (2020-10-09)
 ==================
 

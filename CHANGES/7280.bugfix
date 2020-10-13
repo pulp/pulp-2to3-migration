@@ -1,2 +1,0 @@
-Publications and Distributions are re-created on migration re-run for repos that contain mutable content,
-and pre-migrated mutable content is no longer deleted and recreated every time.
