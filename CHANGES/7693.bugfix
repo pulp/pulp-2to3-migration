@@ -1,1 +1,0 @@
-Fixed a bug where PULP_MANIFEST was being created outside of the worker's working directory.
