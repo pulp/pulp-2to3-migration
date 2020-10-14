@@ -319,7 +319,7 @@ def pre_migrate_lazycatalog(content_type):
                                 is_migrated=False)
         pulp2lazycatalog.append(item)
 
-        if len(pulp2lazycatalog) > batch_size:
+        if len(pulp2lazycatalog) >= batch_size:
             Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
             pulp2lazycatalog.clear()
     else:
