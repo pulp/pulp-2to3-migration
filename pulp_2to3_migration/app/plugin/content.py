@@ -218,7 +218,7 @@ class ContentMigrationFirstStage(Stage):
 
         # order by pulp2_repo if it's set
         if content_model.set_pulp2_repo:
-            pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by('repo_id', 'pk')
+            pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by('repo_id')
 
         with ProgressReport(
             message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
@@ -235,7 +235,7 @@ class ContentMigrationFirstStage(Stage):
                 select_extra.append('pulp2content__pulp2_repo')
 
             pulp_2to3_detail_qs = pulp_2to3_detail_qs.select_related(*select_extra)
-            for pulp_2to3_detail_content in pulp_2to3_detail_qs.iterator():
+            for pulp_2to3_detail_content in pulp_2to3_detail_qs.iterator(chunk_size=800):
                 dc = None
                 pulp2content = pulp_2to3_detail_content.pulp2content
                 # only content that supports on_demand download can have entries in LCE
