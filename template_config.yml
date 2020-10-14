@@ -37,7 +37,7 @@ pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
 redmine_project: null
-stable_branch: '0.4'
+stable_branch: '0.5'
 test_bindings: false
 test_performance: false
 test_s3: false
