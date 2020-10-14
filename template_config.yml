@@ -2,12 +2,15 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-- branch: master
+- branch: 1.3
   name: pulp_file
-- branch: master
+  pip_version_specifier: ~=1.3.0
+- branch: 2.1
   name: pulp_container
-- branch: master
+  pip_version_specifier: ~=2.1.0
+- branch: 3.7
   name: pulp_rpm
+  pip_version_specifier: ~=3.7.0
 black: false
 check_commit_message: true
 check_manifest: true
@@ -31,8 +34,8 @@ plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 publish_docs_to_pulpprojectdotorg: false
 pulp_settings: null
-pulpcore_branch: master
-pulpcore_pip_version_specifier: null
+pulpcore_branch: 3.7 
+pulpcore_pip_version_specifier: ~=3.7.0
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp

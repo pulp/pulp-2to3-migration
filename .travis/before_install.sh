@@ -79,7 +79,7 @@ sed -i -e 's/localhost:24817/pulp/g' generate.sh
 sed -i -e 's/:24817/pulp/g' generate.sh
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch master
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.7
 
 cd pulpcore
 if [ -n "$PULPCORE_PR_NUMBER" ]; then
@@ -109,7 +109,7 @@ if [ -z "$TRAVIS_TAG" ]; then
 fi
 
 
-git clone --depth=1 https://github.com/pulp/pulp_file.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_file.git --branch 1.3
 if [ -n "$PULP_FILE_PR_NUMBER" ]; then
   cd pulp_file
   git fetch --depth=1 origin pull/$PULP_FILE_PR_NUMBER/head:$PULP_FILE_PR_NUMBER
@@ -117,7 +117,7 @@ if [ -n "$PULP_FILE_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_container.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_container.git --branch 2.1
 if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd pulp_container
   git fetch --depth=1 origin pull/$PULP_CONTAINER_PR_NUMBER/head:$PULP_CONTAINER_PR_NUMBER
@@ -125,7 +125,7 @@ if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch 3.7
 if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd pulp_rpm
   git fetch --depth=1 origin pull/$PULP_RPM_PR_NUMBER/head:$PULP_RPM_PR_NUMBER
