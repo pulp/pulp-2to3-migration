@@ -185,9 +185,7 @@ def get_cr_obj(pkg):
     primary_xml = render_metadata(pkg, 'primary')
     other_xml = render_metadata(pkg, 'other')
     filelists_xml = render_metadata(pkg, 'filelists')
-
-    cr_obj = parse_repodata(primary_xml, other_xml, filelists_xml)
-    return cr_obj
+    return parse_repodata(primary_xml, filelists_xml, other_xml)
 
 
 def parse_repodata(primary_xml, filelists_xml, other_xml):
@@ -200,7 +198,7 @@ def parse_repodata(primary_xml, filelists_xml, other_xml):
     Returns:
         dict: createrepo_c package objects with the pkgId as a key
     """
-    packages = {}
+    package = None
 
     def pkgcb(pkg):
         """
@@ -208,7 +206,8 @@ def parse_repodata(primary_xml, filelists_xml, other_xml):
         Args:
             pkg(preaterepo_c.Package): a parsed metadata for a package
         """
-        packages[pkg.pkgId] = pkg
+        nonlocal package
+        package = pkg
 
     def newpkgcb(pkgId, name, arch):
         """
@@ -226,13 +225,13 @@ def parse_repodata(primary_xml, filelists_xml, other_xml):
             createrepo_c.Package: a package which parsed data should be added to.
             If None is returned, further parsing of a package will be skipped.
         """
-        return packages.get(pkgId, None)
+        return package
 
     # TODO: handle parsing errors/warnings, warningcb callback can be used below
     cr.xml_parse_primary_snippet(primary_xml, pkgcb=pkgcb, do_files=False)
     cr.xml_parse_filelists_snippet(filelists_xml, newpkgcb=newpkgcb)
     cr.xml_parse_other_snippet(other_xml, newpkgcb=newpkgcb)
-    return list(packages.values())[0]
+    return package
 
 
 def decompress_repodata(compressed_repodata):
