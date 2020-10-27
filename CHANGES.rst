@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.5.1 (2020-10-27)
+==================
+
+Bugfixes
+--------
+
+- Fixed a bug where RPM content metadata is not properly migrated to Pulp 3.
+  `#7625 <https://pulp.plan.io/issues/7625>`_
+
+
+----
+
+
 0.5.0 (2020-10-13)
 ==================
 
