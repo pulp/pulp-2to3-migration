@@ -150,7 +150,9 @@ class Pulp2RpmBase(Pulp2to3Content):
         cr_package = get_cr_obj(self)
         pkg_dict = Package.createrepo_to_dict(cr_package)
         pkg_dict['is_modular'] = self.is_modular
-        return (Package(**pkg_dict), None)
+        package = Package(**pkg_dict)
+        pkg_dict.clear()
+        return (package, None)
 
 
 class Pulp2Rpm(Pulp2RpmBase):
