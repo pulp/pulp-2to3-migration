@@ -62,6 +62,11 @@ class Pulp2Repository(BaseModel):
                                          on_delete=models.SET_NULL,
                                          null=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['pulp2_repo_type']),
+        ]
+
 
 class Pulp2RepoContent(BaseModel):
     """
@@ -87,6 +92,9 @@ class Pulp2RepoContent(BaseModel):
 
     class Meta:
         unique_together = ('pulp2_repository', 'pulp2_unit_id')
+        indexes = [
+            models.Index(fields=['pulp2_content_type_id']),
+        ]
 
 
 class Pulp2Importer(BaseModel):
@@ -117,6 +125,11 @@ class Pulp2Importer(BaseModel):
 
     pulp2_repository = models.OneToOneField(Pulp2Repository, on_delete=models.CASCADE, null=True)
     pulp3_remote = models.OneToOneField(Remote, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['pulp2_type_id']),
+        ]
 
 
 class Pulp2Distributor(BaseModel):
@@ -163,3 +176,6 @@ class Pulp2Distributor(BaseModel):
 
     class Meta:
         unique_together = ('pulp2_repository', 'pulp2_id')
+        indexes = [
+            models.Index(fields=['pulp2_type_id']),
+        ]
