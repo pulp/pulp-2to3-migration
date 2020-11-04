@@ -29,7 +29,36 @@ from .serializers import (
     Pulp2ContentSerializer,
     Pulp2RepositoriesSerializer,
 )
-from .tasks.migrate import migrate_from_pulp2
+from .tasks import (
+    migrate_from_pulp2,
+    reset_pulp3_data,
+)
+
+
+def is_migration_plan_running():
+    """
+    Identify if any migration related task is running, including its child tasks.
+
+    Returns:
+         bool: True, if any related to the migration plan tasks are running; False, otherwise.
+
+    """
+    qs = Task.objects.filter(state__in=['waiting', 'running'],
+                             reserved_resources_record__resource='pulp_2to3_migration')
+    if qs:
+        return True
+
+    groups_with_running_tasks = Task.objects.filter(
+        state__in=['waiting', 'running'],
+        task_group__isnull=False).values_list('task_group_id', flat=True)
+    groups_with_migration_tasks = Task.objects.filter(
+        task_group__isnull=False,
+        reserved_resources_record__resource='pulp_2to3_migration').values_list(
+        'task_group_id', flat=True)
+    if groups_with_running_tasks.intersection(groups_with_migration_tasks):
+        return True
+
+    return False
 
 
 class MigrationPlanViewSet(NamedModelViewSet,
@@ -61,20 +90,8 @@ class MigrationPlanViewSet(NamedModelViewSet,
         validate = serializer.validated_data.get('validate', False)
         dry_run = serializer.validated_data.get('dry_run', False)
 
-        # find running/waiting migration plugin tasks
-        qs = Task.objects.filter(state__in=['waiting', 'running'],
-                                 reserved_resources_record__resource='pulp_2to3_migration')
-        if qs:
-            raise ValidationError(_("Only one migration plan can run at a time"))
-        groups_with_running_tasks = Task.objects.filter(
-            state__in=['waiting', 'running'],
-            task_group__isnull=False).values_list('task_group_id', flat=True)
-        groups_with_migration_tasks = Task.objects.filter(
-            task_group__isnull=False,
-            reserved_resources_record__resource='pulp_2to3_migration').values_list(
-            'task_group_id', flat=True)
-        if groups_with_running_tasks.intersection(groups_with_migration_tasks):
-            raise ValidationError(_("Only one migration plan can run at a time"))
+        if is_migration_plan_running():
+            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
 
         result = enqueue_with_reservation(
             migrate_from_pulp2,
@@ -83,6 +100,29 @@ class MigrationPlanViewSet(NamedModelViewSet,
                 'migration_plan_pk': migration_plan.pk,
                 'validate': validate,
                 'dry_run': dry_run
+            }
+        )
+        return OperationPostponedResponse(result, request)
+
+    @extend_schema(
+        summary="Reset Pulp 3 data for plugins specified in the migration plan",
+        description="Trigger an asynchronous task to remove data from Pulp 3 related to the "
+                    "plugins specified in the migration plan.",
+        responses={202: AsyncOperationResponseSerializer}
+    )
+    @action(detail=True, methods=('post',))
+    def reset(self, request, pk):
+        """Reset Pulp 3 data for plugins specified in the migration plan."""
+        migration_plan = self.get_object()
+
+        if is_migration_plan_running():
+            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
+
+        result = enqueue_with_reservation(
+            reset_pulp3_data,
+            [PULP_2TO3_MIGRATION_RESOURCE],
+            kwargs={
+                'migration_plan_pk': migration_plan.pk,
             }
         )
         return OperationPostponedResponse(result, request)

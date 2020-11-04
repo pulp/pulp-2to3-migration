@@ -1,5 +1,8 @@
-Workflow
-========
+Workflows
+=========
+
+Run a migration task
+--------------------
 
 A recommended scenario:
  1. Pulp 2 is running, Pulp 3 is running (but the plugins which need to be migrated are not used, they don't have any data in Pulp 3).
@@ -24,7 +27,8 @@ All the commands should be run on Pulp 3 machine.
     }
 
 
-2. Use the ``pulp_href`` of the created Migration Plan to run the migration
+2. Use the ``pulp_href`` of the created Migration Plan and its ``run/`` endpoint to run the
+migration.
 
 .. code:: bash
 
@@ -36,7 +40,8 @@ All the commands should be run on Pulp 3 machine.
     }
 
 .. note::
-    It is possible to re-run migraiton as many times as needed (if the Pulp 3 plugin which is being migrated is not used).
+    It is possible to re-run migration as many times as needed (if the Pulp 3 plugin which is
+    being migrated is not used).
 
 3. List the mapping for Pulp 2 and Pulp 3 repositories if needed.
 
@@ -63,4 +68,63 @@ All the commands should be run on Pulp 3 machine.
                 "pulp_href": "/pulp/api/v3/pulp2repositories/92c6d1c8-718b-4ea9-8a23-b2386849c2c5/"
             }
         ]
+    }
+
+
+Reset migrated Pulp 3 data
+--------------------------
+
+.. note::
+    Nothing will be reset or modified in any way in Pulp 2.
+    Everything is removed for the specified plugins in Pulp 3, all data, migrated or not.
+
+.. note::
+    Migrated artifacts are untouched. If you are sure you want to remove them, please run the
+    orphan cleanup task in Pulp 3.
+
+There are cases, when one needs to run a migration from scratch (by default, it's always
+incremental). E.g. some issue happened during the pulp2to3 migration which you are not able to
+recover from.
+
+All the commands should be run on Pulp 3 machine.
+
+
+1. Create a :doc:`Migration Plan <../migration_plan>` for the set of plugins you would like to
+reset.
+
+.. code:: bash
+
+    $ http POST :24817/pulp/api/v3/migration-plans/ plan='{"plugins": [{"type": "iso"}]}'
+
+    HTTP/1.1 201 Created
+    {
+        "pulp_created": "2019-07-23T08:18:12.927007Z",
+        "pulp_href": "/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/",
+        "plan": "{ "plugins": [{"type": "iso"}]}"
+    }
+
+2. Use the ``pulp_href`` of the created Migration Plan and its ``reset/`` endpoint to reset Pulp 3
+data.
+.. code:: bash
+
+    $ # reset Pulp 3 data to be able to migrate Pulp 2 ISO plugin from scratch
+    $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/reset/
+
+    HTTP/1.1 202 Accepted
+    {
+        "task": "/pulp/api/v3/tasks/55db2086-cf2e-438f-b5b7-cd0dbb7c8cf4/"
+    }
+
+.. note::
+    Because this task removes data selectively, only for the plugins specified in the migration
+    plan, it can take some time (~30 mins for a large system).
+
+3. Now you can run your migration and it won't be an incremental run.
+.. code:: bash
+
+    $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/
+
+    HTTP/1.1 202 Accepted
+    {
+        "task": "/pulp/api/v3/tasks/65db2086-cf2e-438f-b5b7-cd0dbb7c8cf5/"
     }

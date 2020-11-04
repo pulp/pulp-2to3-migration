@@ -36,6 +36,9 @@ class Pulp2Content(BaseModel):
 
     class Meta:
         unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo')
+        indexes = [
+            models.Index(fields=['pulp2_content_type_id']),
+        ]
 
 
 class Pulp2to3Content(BaseModel):
