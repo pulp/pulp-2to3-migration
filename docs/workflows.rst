@@ -44,6 +44,7 @@ migration. Optionally, skip corrupted or missing Pulp 2 content by specifying th
     It is possible to re-run migration as many times as needed (if the Pulp 3 plugin which is
     being migrated is not used).
 
+
 3. List the mapping for Pulp 2 and Pulp 3 repositories if needed.
 
 .. code:: bash

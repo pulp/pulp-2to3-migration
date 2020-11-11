@@ -276,6 +276,9 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
                     dist_migrator, progress_dist, dist,
                     migrated_repo.pulp3_repository_version
                 )
+                # add distirbutors specified in the complex plan
+                # these can be native and not native distributors
+                migrated_repo.pulp2_dists.add(dist)
 
 
 def create_repoversions_publications_distributions(plan, parallel=True):

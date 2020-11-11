@@ -59,8 +59,10 @@ class IsoDistributor(Pulp2to3Distributor):
                            is an existing one
         """
 
+        # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo_version = pulp2distributor.pulp2_repository.pulp3_repository_version
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
+            repo_version = repo[0].pulp3_repository_version
         publication = repo_version.publication_set.first()
         if not publication:
             # create publication
