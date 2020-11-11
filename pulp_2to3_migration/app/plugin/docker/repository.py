@@ -48,8 +48,10 @@ class DockerDistributor(Pulp2to3Distributor):
             created(bool): True if Distribution has just been created;
                            False if Distribution is an existing one
         """
+        # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo_version = pulp2distributor.pulp2_repository.pulp3_repository_version
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
+            repo_version = repo[0].pulp3_repository_version
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
         base_config['base_path'] = pulp2_config.get(

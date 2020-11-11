@@ -236,30 +236,8 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         """
         Get pulp3_distribution_hrefs from pulp3_repository_version
         """
-        dist_list = []
-        rv = obj.pulp3_repository_version
-        if not rv:
-            return dist_list
-        result_qs = rv.publication_set.all()
-        if result_qs:
-            # repo_version  has publication, therefore is a PublicationDistribution
-            for publication in result_qs:
-                distribution_type = f'{publication.pulp_type.replace(".", "_")}distribution'
-                plugin_distribution = getattr(publication, distribution_type)
-                dist_list.extend(plugin_distribution.all())
-        else:
-            # empty result_qs means that repo_version does not need publication,
-            # or repo_version was not published/distributed
-            pulp_type = rv.repository.pulp_type
-            distribution_type = f'{pulp_type.replace(".", "_")}distribution'
-            if hasattr(rv, distribution_type):
-                # repo_version is distributed directly trough RepositoryDistribution
-                plugin_distribution = getattr(rv, distribution_type)
-                dist_list = plugin_distribution.all()
-            else:
-                # repo_version was not published/distributed
-                return dist_list
-        return [get_pulp_href(dist) for dist in dist_list]
+        pulp2dists = obj.pulp2_dists.filter(not_in_plan=False, is_migrated=True)
+        return [get_pulp_href(dist.pulp3_distribution) for dist in pulp2dists]
 
     class Meta:
         fields = ModelSerializer.Meta.fields + (

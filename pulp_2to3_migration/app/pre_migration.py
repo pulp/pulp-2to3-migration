@@ -535,9 +535,14 @@ def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=N
                       'pulp2_type_id': dist_data.distributor_type_id,
                       'pulp2_last_updated': last_updated,
                       'pulp2_config': dist_data.config,
-                      'pulp2_repository': repo,
                       'pulp2_repo_id': repo_id,
                       'is_migrated': False})
+
+        # this is the case for the simple plan
+        # add native distributor to the repo
+        # this will go away with the simple-complex plan conversion work
+        if not distributors and repo:
+            repo.pulp2_dists.add(distributor)
 
         if not created:
             # if it was marked as such because it was not present in the migration plan
@@ -675,7 +680,7 @@ def handle_outdated_resources(plan, type_to_repo_ids):
     )
 
     old_dist_query = Q(pulp3_distribution__isnull=False) | Q(pulp3_publication__isnull=False)
-    old_dist_query &= Q(pulp2_repository__in=repos_with_old_distributions_qs) | Q(not_in_plan=True)
+    old_dist_query &= Q(pulp2_repos__in=repos_with_old_distributions_qs) | Q(not_in_plan=True)
 
     with transaction.atomic():
         pulp2distributors_with_old_distributions_qs = Pulp2Distributor.objects.filter(

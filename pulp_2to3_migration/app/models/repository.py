@@ -137,6 +137,7 @@ class Pulp2Distributor(BaseModel):
     Information about Pulp 2 distributor.
 
     Fields:
+        pulp2_object_id (models.CharField): Object id of a distributor in Pulp 2
         pulp2_id (models.TextField): Id of distributor in Pulp 2
         pulp2_type_id (models.CharField): Id of distributor type in Pulp 2
         pulp2_config (JSONField): Pulp 2 distributor config in JSON format
@@ -147,7 +148,7 @@ class Pulp2Distributor(BaseModel):
         not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
 
     Relations:
-        pulp2_repository (models.ForeignKey): Pulp 2 repository this distributor belongs to
+        pulp2_repos (models.ManyToManyField): Pulp 2 repository that is getting distributed
         pulp3_publication (models.ForeignKey): Pulp 3 publication this distributor was
             migrated to
         pulp3_distribution (models.OneToOneField): Pulp 3 distribution this distributor was
@@ -163,7 +164,7 @@ class Pulp2Distributor(BaseModel):
     not_in_plan = models.BooleanField(default=False)
 
     # each pulp2 repository can have multiple distributors
-    pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE, null=True)
+    pulp2_repos = models.ManyToManyField(Pulp2Repository, related_name='pulp2_dists')
 
     # the same publication/repo version can be published by multiple distributors
     pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
@@ -175,7 +176,7 @@ class Pulp2Distributor(BaseModel):
                                               null=True)
 
     class Meta:
-        unique_together = ('pulp2_repository', 'pulp2_id')
+        unique_together = ('pulp2_object_id',)
         indexes = [
             models.Index(fields=['pulp2_type_id']),
         ]
