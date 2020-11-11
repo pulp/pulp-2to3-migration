@@ -587,10 +587,6 @@ def pre_migrate_repocontent(repo):
 
     mongo_repocontent_q = mongo_Q(repo_id=repo.pulp2_repo_id)
     mongo_repocontent_qs = RepositoryContentUnit.objects(mongo_repocontent_q)
-    if not mongo_repocontent_qs:
-        # Either the repo no longer exists in Pulp 2,
-        # or the repo is empty.
-        return
 
     repocontent = []
     for repocontent_data in mongo_repocontent_qs.exclude('repo_id').as_pymongo().no_cache():
@@ -602,6 +598,10 @@ def pre_migrate_repocontent(repo):
             pulp2_updated=repocontent_data['updated']
         )
         repocontent.append(item)
+
+    if not repocontent:
+        # Either the repo no longer exists in Pulp 2, or the repo is empty.
+        return
 
     Pulp2RepoContent.objects.bulk_create(repocontent, batch_size=DEFAULT_BATCH_SIZE)
 
