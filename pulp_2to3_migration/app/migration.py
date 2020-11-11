@@ -33,13 +33,17 @@ def migrate_content(plan):
     with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
         for plugin in plan.get_plugin_plans():
-            plugin.migrator.migrate_content_to_pulp3()
-
             # only used for progress bar counters
             content_types = plugin.migrator.content_models.keys()
-            pulp2content_qs = Pulp2Content.objects.filter(pulp2_content_type_id__in=content_types,
-                                                          pulp3_content=None)
-            pb.total += pulp2content_qs.count()
+            num_to_migrate = Pulp2Content.objects.filter(
+                pulp2_content_type_id__in=content_types,
+                pulp3_content=None
+            ).count()
+
+            # migrate
+            plugin.migrator.migrate_content_to_pulp3()
+
+            pb.total += num_to_migrate
             pb.done = pb.total
             pb.save()
 

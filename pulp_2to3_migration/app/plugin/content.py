@@ -322,7 +322,7 @@ class ContentMigrationFirstStage(Stage):
                     future_relations.update({'lces': list(pulp2lazycatalog)})
 
                     # We do this last because we need the remote url which is only found in the LCE
-                    # of the image files. There is no LCE for the .treeninfo file itself.
+                    # of the image files. There is no LCE for the .treeinfo file itself.
                     relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
                     treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
                     artifact = await self.create_artifact(
