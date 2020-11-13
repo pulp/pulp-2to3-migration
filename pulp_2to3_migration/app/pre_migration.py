@@ -617,50 +617,49 @@ def handle_outdated_resources(plan, type_to_repo_ids):
         type_to_repo_ids(dict): A mapping from a pulp 2 repo type to a list of pulp 2 repo_ids
     """
     for plugin_plan in plan.get_plugin_plans():
-        repos = plugin_plan.get_repositories()
+        inplan_repos = plugin_plan.get_repositories()
 
         # filter by repo type
         repos_to_consider = type_to_repo_ids[plugin_plan.type]
 
         # in case only certain repositories are specified in the migration plan
-        if repos:
-            repos_to_consider = set(repos).intersection(repos_to_consider)
+        if inplan_repos:
+            repos_to_consider = set(inplan_repos).intersection(repos_to_consider)
 
         mongo_repo_q = mongo_Q(repo_id__in=repos_to_consider)
+        mongo_repo_obj_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
 
-        mongo_repo_object_ids = set(
-            str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
+        repo_type_q = Q(pulp2_repo_type=plugin_plan.type)
+        inplan_repo_q = Q(pulp2_object_id__in=mongo_repo_obj_ids)
+        Pulp2Repository.objects.filter(repo_type_q).exclude(inplan_repo_q).update(not_in_plan=True)
 
-        premigrated_repos = Pulp2Repository.objects.filter(pulp2_repo_type=plugin_plan.type)
-        premigrated_repo_object_ids = set(
-            premigrated_repos.values_list('pulp2_object_id', flat=True))
-        removed_repo_object_ids = premigrated_repo_object_ids - mongo_repo_object_ids
-
-        Pulp2Repository.objects.filter(
-            pulp2_object_id__in=removed_repo_object_ids).update(not_in_plan=True)
-
-        # Mark importers
-        mongo_imp_object_ids = set(
-            str(i.id) for i in Importer.objects.only('id'))
+        # Mark removed or excluded importers
+        inplan_imp_repos = plugin_plan.get_importers_repos()
+        if inplan_imp_repos:
+            mongo_imp_q = mongo_Q(repo_id__in=inplan_imp_repos)
+        else:
+            # simple migration plan case, all importers are migrated
+            mongo_imp_q = mongo_Q()
+        mongo_imp_obj_ids = set(str(i.id) for i in Importer.objects(mongo_imp_q).only('id'))
         imp_types = plugin_plan.migrator.importer_migrators.keys()
-        premigrated_imps = Pulp2Importer.objects.filter(pulp2_type_id__in=imp_types)
-        premigrated_imp_object_ids = set(
-            premigrated_imps.values_list('pulp2_object_id', flat=True))
-        removed_imp_object_ids = premigrated_imp_object_ids - mongo_imp_object_ids
 
-        Pulp2Importer.objects.filter(
-            pulp2_object_id__in=removed_imp_object_ids).update(not_in_plan=True)
+        imp_type_q = Q(pulp2_type_id__in=imp_types)
+        inplan_imp_q = Q(pulp2_object_id__in=mongo_imp_obj_ids)
+        Pulp2Importer.objects.filter(imp_type_q).exclude(inplan_imp_q).update(not_in_plan=True)
 
-        # Mark distributors
-        mongo_dist_object_ids = set(str(i.id) for i in Distributor.objects.only('id'))
+        # Mark removed or excluded distributors
+        inplan_dist_repos = plugin_plan.get_distributors_repos()
+        if inplan_dist_repos:
+            mongo_dist_q = mongo_Q(repo_id__in=inplan_dist_repos)
+        else:
+            # simple migration plan case, all distributors are migrated
+            mongo_dist_q = mongo_Q()
+        mongo_dist_obj_ids = set(str(i.id) for i in Distributor.objects(mongo_dist_q).only('id'))
         dist_types = plugin_plan.migrator.distributor_migrators.keys()
-        premigrated_dists = Pulp2Distributor.objects.filter(pulp2_type_id__in=dist_types)
-        premigrated_dist_object_ids = set(premigrated_dists.values_list('pulp2_object_id',
-                                                                        flat=True))
-        removed_dist_object_ids = premigrated_dist_object_ids - mongo_dist_object_ids
 
-        Pulp2Distributor.objects.filter(
-            pulp2_object_id__in=removed_dist_object_ids).update(not_in_plan=True)
+        dist_type_q = Q(pulp2_type_id__in=dist_types)
+        inplan_dist_q = Q(pulp2_object_id__in=mongo_dist_obj_ids)
+        Pulp2Distributor.objects.filter(dist_type_q).exclude(inplan_dist_q).update(not_in_plan=True)
 
     # Delete old Publications/Distributions which are no longer present in Pulp2.
 
