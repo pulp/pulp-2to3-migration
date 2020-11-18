@@ -18,32 +18,7 @@ pip install -r functest_requirements.txt
 
 cd .travis
 
-# Although the tag name is not used outside of this script, we might use it
-# later. And it is nice to have a friendly identifier for it.
-# So we use the branch preferably, but need to replace the "/" with the valid
-# character "_" .
-#
-# Note that there are lots of other valid git branch name special characters
-# that are invalid in image tag names. To try to convert them, this would be a
-# starting point:
-# https://stackoverflow.com/a/50687120
-#
-# If we are on a tag
-if [ -n "$TRAVIS_TAG" ]; then
-  TAG=$(echo $TRAVIS_TAG | tr / _)
-# If we are on a PR
-elif [ -n "$TRAVIS_PULL_REQUEST_BRANCH" ]; then
-  TAG=$(echo $TRAVIS_PULL_REQUEST_BRANCH | tr / _)
-# For push builds and hopefully cron builds
-elif [ -n "$TRAVIS_BRANCH" ]; then
-  TAG=$(echo $TRAVIS_BRANCH | tr / _)
-  if [ "${TAG}" = "master" ]; then
-    TAG=latest
-  fi
-else
-  # Fallback
-  TAG=$(git rev-parse --abbrev-ref HEAD | tr / _)
-fi
+TAG=ci_build
 
 if [ -e $TRAVIS_BUILD_DIR/../pulp_file ]; then
   PULP_FILE=./pulp_file
@@ -62,6 +37,17 @@ if [ -e $TRAVIS_BUILD_DIR/../pulp_rpm ]; then
 else
   PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
 fi
+
+if [ -e $TRAVIS_BUILD_DIR/../pulp_deb ]; then
+  PULP_DEB=./pulp_deb
+else
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@master
+fi
+if [[ "$TEST" == "plugin-from-pypi" ]]; then
+  PLUGIN_NAME=pulp-2to3-migration
+else
+  PLUGIN_NAME=./pulp-2to3-migration
+fi
 if [ -n "$TRAVIS_TAG" ]; then
   # Install the plugin only and use published PyPI packages for the rest
   # Quoting ${TAG} ensures Ansible casts the tag as a string.
@@ -73,13 +59,15 @@ plugins:
   - name: pulpcore
     source: pulpcore
   - name: pulp-2to3-migration
-    source: ./pulp-2to3-migration
+    source:  "${PLUGIN_NAME}"
   - name: pulp_file
     source: pulp_file
   - name: pulp_container
     source: pulp_container
   - name: pulp_rpm
     source: pulp_rpm
+  - name: pulp_deb
+    source: pulp_deb
 services:
   - name: pulp
     image: "pulp:${TAG}"
@@ -92,16 +80,18 @@ image:
   name: pulp
   tag: "${TAG}"
 plugins:
-  - name: pulpcore
-    source: ./pulpcore
   - name: pulp-2to3-migration
-    source: ./pulp-2to3-migration
+    source: "${PLUGIN_NAME}"
   - name: pulp_file
     source: $PULP_FILE
   - name: pulp_container
     source: $PULP_CONTAINER
   - name: pulp_rpm
     source: $PULP_RPM
+  - name: pulp_deb
+    source: $PULP_DEB
+  - name: pulpcore
+    source: ./pulpcore
 services:
   - name: pulp
     image: "pulp:${TAG}"

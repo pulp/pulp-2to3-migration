@@ -33,6 +33,11 @@ if [ "$TEST" = "docs" ]; then
   exit
 fi
 
+if [[ "$TEST" == "plugin-from-pypi" ]]; then
+  COMPONENT_VERSION=$(http https://pypi.org/pypi/pulp-2to3-migration/json | jq -r '.info.version')
+  git checkout ${COMPONENT_VERSION} -- pulp-2to3-migration/tests/
+fi
+
 cd ../pulp-openapi-generator
 
 ./generate.sh pulpcore python
@@ -45,6 +50,8 @@ pip install ./pulp_file-client
 pip install ./pulp_container-client
 ./generate.sh pulp_rpm python
 pip install ./pulp_rpm-client
+./generate.sh pulp_deb python
+pip install ./pulp_deb-client
 cd $TRAVIS_BUILD_DIR
 
 if [ "$TEST" = 'bindings' ]; then
