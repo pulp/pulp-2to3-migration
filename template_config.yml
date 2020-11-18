@@ -8,6 +8,8 @@ additional_plugins:
   name: pulp_container
 - branch: master
   name: pulp_rpm
+- branch: master
+  name: pulp_deb
 black: false
 check_commit_message: true
 check_manifest: true
@@ -40,6 +42,7 @@ redmine_project: null
 stable_branch: '0.5'
 test_bindings: false
 test_performance: false
+test_released_plugin_with_next_pulpcore_release: false
 test_s3: false
 travis_addtl_services:
 - mongodb
