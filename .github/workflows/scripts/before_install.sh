@@ -42,6 +42,7 @@ then
   export PULP_FILE_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_file\/pull\/(\d+)' | awk -F'/' '{print $7}')
   export PULP_CONTAINER_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_container\/pull\/(\d+)' | awk -F'/' '{print $7}')
   export PULP_RPM_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_rpm\/pull\/(\d+)' | awk -F'/' '{print $7}')
+  export PULP_DEB_PR_NUMBER=$(echo $COMMIT_MSG | grep -oP 'Required\ PR:\ https\:\/\/github\.com\/pulp\/pulp_deb\/pull\/(\d+)' | awk -F'/' '{print $7}')
   echo $COMMIT_MSG | sed -n -e 's/.*CI Base Image:\s*\([-_/[:alnum:]]*:[-_[:alnum:]]*\).*/ci_base: "\1"/p' >> .ci/ansible/vars/main.yaml
 else
   export PULPCORE_PR_NUMBER=
@@ -50,6 +51,7 @@ else
   export PULP_FILE_PR_NUMBER=
   export PULP_CONTAINER_PR_NUMBER=
   export PULP_RPM_PR_NUMBER=
+  export PULP_DEB_PR_NUMBER=
   export CI_BASE_IMAGE=
 fi
 
@@ -119,6 +121,14 @@ if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd pulp_rpm
   git fetch --depth=1 origin pull/$PULP_RPM_PR_NUMBER/head:$PULP_RPM_PR_NUMBER
   git checkout $PULP_RPM_PR_NUMBER
+  cd ..
+fi
+
+git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch master
+if [ -n "$PULP_DEB_PR_NUMBER" ]; then
+  cd pulp_deb
+  git fetch --depth=1 origin pull/$PULP_DEB_PR_NUMBER/head:$PULP_DEB_PR_NUMBER
+  git checkout $PULP_DEB_PR_NUMBER
   cd ..
 fi
 

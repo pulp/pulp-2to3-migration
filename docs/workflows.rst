@@ -105,6 +105,7 @@ reset.
 
 2. Use the ``pulp_href`` of the created Migration Plan and its ``reset/`` endpoint to reset Pulp 3
 data.
+
 .. code:: bash
 
     $ # reset Pulp 3 data to be able to migrate Pulp 2 ISO plugin from scratch
@@ -120,6 +121,7 @@ data.
     plan, it can take some time (~30 mins for a large system).
 
 3. Now you can run your migration and it won't be an incremental run.
+
 .. code:: bash
 
     $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/
