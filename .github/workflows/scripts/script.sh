@@ -50,6 +50,8 @@ pip install ./pulp_file-client
 pip install ./pulp_container-client
 ./generate.sh pulp_rpm python
 pip install ./pulp_rpm-client
+./generate.sh pulp_deb python
+pip install ./pulp_deb-client
 cd $GITHUB_WORKSPACE
 
 if [ "$TEST" = 'bindings' ]; then

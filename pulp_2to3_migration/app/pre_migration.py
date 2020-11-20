@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from mongoengine.queryset.visitor import Q as mongo_Q
 
-from pulpcore.constants import TASK_STATES
+from pulpcore.plugin.constants import TASK_STATES
 from pulpcore.plugin.models import (
     BaseDistribution,
     Publication,

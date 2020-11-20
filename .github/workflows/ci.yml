@@ -44,8 +44,7 @@ jobs:
       - name: Check manifest
         run: check-manifest
 
-      - name: Check for pulpcore imports outside of pulpcore.plugin
-        run: sh .ci/scripts/check_pulpcore_imports.sh
+      
 
   pulp:
     runs-on: ubuntu-latest

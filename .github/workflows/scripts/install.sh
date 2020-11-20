@@ -37,6 +37,12 @@ if [ -e $GITHUB_WORKSPACE/../pulp_rpm ]; then
 else
   PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
 fi
+
+if [ -e $GITHUB_WORKSPACE/../pulp_deb ]; then
+  PULP_DEB=./pulp_deb
+else
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@master
+fi
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
 else
@@ -60,6 +66,8 @@ plugins:
     source: pulp_container
   - name: pulp_rpm
     source: pulp_rpm
+  - name: pulp_deb
+    source: pulp_deb
 services:
   - name: pulp
     image: "pulp:${TAG}"
@@ -80,6 +88,8 @@ plugins:
     source: $PULP_CONTAINER
   - name: pulp_rpm
     source: $PULP_RPM
+  - name: pulp_deb
+    source: $PULP_DEB
   - name: pulpcore
     source: ./pulpcore
 services:
