@@ -36,7 +36,7 @@ class Pulp2to3PluginMigrator:
     multi_artifact_types = {}
 
     @classmethod
-    def migrate_to_pulp3(cls):
+    def migrate_content_to_pulp3(cls, skip_corrupted=False):
         """
         Migrate all pre-migrated plugin content to Pulp 3.
 
@@ -45,5 +45,10 @@ class Pulp2to3PluginMigrator:
         >>> first_stage = ContentMigrationFirstStage(cls)
         >>> dm = DeclarativeContentMigration(first_stage=first_stage)
         >>> dm.create()
+
+        Args:
+            skip_corrupted (bool): If True, corrupted content is skipped during migration,
+                                   no task failure.
+
         """
         raise NotImplementedError()

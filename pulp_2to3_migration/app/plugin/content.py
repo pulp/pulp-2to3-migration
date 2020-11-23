@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from pulpcore.app.models import storage
+from pulpcore.plugin.exceptions import DigestValidationError, SizeValidationError
 from pulpcore.plugin.models import (
     Artifact,
     ProgressReport,
@@ -38,6 +39,7 @@ from pulp_2to3_migration.app.models import (
     Pulp2Importer,
     Pulp2LazyCatalog,
 )
+from pulp_2to3_migration.exceptions import ArtifactValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -96,13 +98,14 @@ class ContentMigrationFirstStage(Stage):
     being migrated.
     """
 
-    def __init__(self, migrator):
+    def __init__(self, migrator, skip_corrupted=False):
         """
         Args:
             migrator: A plugin migrator to be used
         """
         super().__init__()
         self.migrator = migrator
+        self.skip_corrupted = skip_corrupted
 
     async def create_artifact(self, pulp2_storage_path, expected_digests={}, expected_size=None,
                               downloaded=True):
@@ -120,9 +123,19 @@ class ContentMigrationFirstStage(Stage):
             artifact.size = expected_size
             return artifact
 
-        artifact = Artifact.init_and_validate(pulp2_storage_path,
-                                              expected_digests=expected_digests,
-                                              expected_size=expected_size)
+        try:
+            artifact = Artifact.init_and_validate(pulp2_storage_path,
+                                                  expected_digests=expected_digests,
+                                                  expected_size=expected_size)
+        except (DigestValidationError, FileNotFoundError, SizeValidationError):
+            if self.skip_corrupted:
+                _logger.warn(f'The content located in {pulp2_storage_path} is missing or '
+                             f'corrupted. It was skipped during Pulp 2to3 migration.')
+                return
+            raise ArtifactValidationError(f'The content located in {pulp2_storage_path} is '
+                                          f'missing or corrupted. Repair it in pulp2 and re-run '
+                                          f'the migration. Alternatively, run migration with '
+                                          f'skip_corrupted=True.')
 
         pulp3_storage_relative_path = storage.get_artifact_path(artifact.sha256)
         pulp3_storage_path = os.path.join(settings.MEDIA_ROOT, pulp3_storage_relative_path)
@@ -279,6 +292,8 @@ class ContentMigrationFirstStage(Stage):
                                                                   None,
                                                                   None,
                                                                   downloaded=downloaded)
+                            if artifact is None:
+                                continue
                         else:
                             artifact = Artifact()
 
@@ -327,6 +342,8 @@ class ContentMigrationFirstStage(Stage):
                     treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
                     artifact = await self.create_artifact(
                         treeinfo_path, None, None, downloaded=True)
+                    if artifact is None:
+                        continue
                     if remotes:
                         for remote in remotes:
                             da = DeclarativeArtifact(
@@ -364,6 +381,8 @@ class ContentMigrationFirstStage(Stage):
                         pulp_2to3_detail_content.expected_size,
                         downloaded=pulp2content.downloaded
                     )
+                    if artifact is None:
+                        continue
 
                     if is_lazy_type and pulp2lazycatalog:
                         # handle DA and RA creation for content that supports on_demand

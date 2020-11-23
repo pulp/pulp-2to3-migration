@@ -28,3 +28,20 @@ class PlanValidationError(Exception):
     e.g. Repository specified does not exist.
     """
     pass
+
+
+class ArtifactValidationError(PulpException):
+    """
+    Exception for the issues with artifact creation during migration.
+
+    """
+    def __init__(self, msg):
+        """
+        :param msg: error message specifying what exactly is out of place
+        :type msg: str
+        """
+        super().__init__("PLP_2TO3_0003")
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg

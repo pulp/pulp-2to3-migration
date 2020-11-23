@@ -30,7 +30,7 @@ from pulp_2to3_migration.pulp2.base import RepositoryContentUnit
 _logger = logging.getLogger(__name__)
 
 
-def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
+def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False, skip_corrupted=False):
     """
     Main task to migrate from Pulp 2 to Pulp 3.
 
@@ -40,6 +40,8 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
         migration_plan_pk (str): The migration plan PK.
         validate (bool): If True, don't migrate unless validation is successful.
         dry_run (bool): If True, nothing is migrated, only validation happens.
+        skip_corrupted (bool): If True, corrupted content is skipped during migration,
+                               no task failure.
     """
 
     def get_repo_types(plan):
@@ -136,7 +138,7 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False):
     handle_outdated_resources(plan, type_to_repo_ids)
     migrate_repositories(plan)
     migrate_importers(plan)
-    migrate_content(plan)
+    migrate_content(plan, skip_corrupted=skip_corrupted)
     create_repoversions_publications_distributions(plan)
 
     task_group.finish()

@@ -89,6 +89,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
         serializer.is_valid(raise_exception=True)
         validate = serializer.validated_data.get('validate', False)
         dry_run = serializer.validated_data.get('dry_run', False)
+        skip_corrupted = serializer.validated_data.get('skip_corrupted', False)
 
         if is_migration_plan_running():
             raise ValidationError(_("Only one migration plan can run or be reset at a time"))
@@ -99,7 +100,8 @@ class MigrationPlanViewSet(NamedModelViewSet,
             kwargs={
                 'migration_plan_pk': migration_plan.pk,
                 'validate': validate,
-                'dry_run': dry_run
+                'dry_run': dry_run,
+                'skip_corrupted': skip_corrupted
             }
         )
         return OperationPostponedResponse(result, request)
