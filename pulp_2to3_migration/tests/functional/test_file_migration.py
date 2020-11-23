@@ -18,7 +18,8 @@ from pulpcore.client.pulp_2to3_migration import (
 )
 from pulp_2to3_migration.tests.functional.util import (
     get_psql_smash_cmd,
-    monitor_task
+    monitor_task,
+    set_pulp2_snapshot
 )
 
 from pulp_smash import cli
@@ -122,6 +123,8 @@ class TestMigrationPlan(unittest.TestCase):
         cls.file_content_api = ContentFilesApi(file_client)
         cls.tasks_api = TasksApi(core_client)
         cls.migration_plans_api = MigrationPlansApi(migration_client)
+
+        set_pulp2_snapshot()
 
     def tearDown(self):
         """
