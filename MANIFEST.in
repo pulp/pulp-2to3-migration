@@ -4,6 +4,7 @@ include CHANGES.rst
 include LICENSE
 include functest_requirements.txt
 include func_test_settings.py
+include pulp_2to3_migration/tests/functional/scripts/set_pulp2.sh
 include pyproject.toml
 include requirements.txt
 include test_requirements.txt
