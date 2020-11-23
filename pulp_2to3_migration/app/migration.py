@@ -22,12 +22,15 @@ from pulp_2to3_migration.app.models import (
 _logger = logging.getLogger(__name__)
 
 
-def migrate_content(plan):
+def migrate_content(plan, skip_corrupted=False):
     """
     A coroutine to initiate content migration for each plugin.
 
     Args:
          plan (MigrationPlan): Migration Plan to use
+         skip_corrupted (bool): If True, corrupted content is skipped during migration,
+                                no task failure.
+
     """
     progress_data = dict(message='Migrating content to Pulp 3', code='migrating.content', total=0)
     with ProgressReport(**progress_data) as pb:
@@ -41,7 +44,7 @@ def migrate_content(plan):
             ).count()
 
             # migrate
-            plugin.migrator.migrate_content_to_pulp3()
+            plugin.migrator.migrate_content_to_pulp3(skip_corrupted=skip_corrupted)
 
             pb.total += num_to_migrate
             pb.done = pb.total

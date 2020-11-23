@@ -84,27 +84,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer",
-                                            "example": 123
-                                        },
-                                        "next": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "previous": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "results": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlanResponse"
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/Paginatedpulp_2to3_migration.MigrationPlanResponseList"
                                 }
                             }
                         },
@@ -148,7 +128,7 @@
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -244,6 +224,66 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "{pulp_2to3_migration_migration_plan_href}reset/": {
+            "post": {
+                "operationId": "migration_plans_reset",
+                "description": "Trigger an asynchronous task to remove data from Pulp 3 related to the plugins specified in the migration plan.",
+                "summary": "Reset Pulp 3 data for plugins specified in the migration plan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "pulp_2to3_migration_migration_plan_href",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Migration-Plans"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlan"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AsyncOperationResponse"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -473,27 +513,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer",
-                                            "example": 123
-                                        },
-                                        "next": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "previous": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "results": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2ContentResponse"
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/Paginatedpulp_2to3_migration.Pulp2ContentResponseList"
                                 }
                             }
                         },
@@ -660,27 +680,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "count": {
-                                            "type": "integer",
-                                            "example": 123
-                                        },
-                                        "next": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "previous": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "results": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2RepositoryResponse"
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/Paginatedpulp_2to3_migration.Pulp2RepositoryResponseList"
                                 }
                             }
                         },
@@ -770,13 +770,100 @@
                         "type": "boolean",
                         "writeOnly": true,
                         "default": false,
-                        "description": "If ``True``, migration cannot happen without successful validation of the Migration Plan"
+                        "description": "If ``True``, migration cannot happen without successful validation of the Migration Plan."
                     },
                     "dry_run": {
                         "type": "boolean",
                         "writeOnly": true,
                         "default": false,
                         "description": "If ``True``, performs validation of a Migration Plan only, no migration is run."
+                    },
+                    "skip_corrupted": {
+                        "type": "boolean",
+                        "writeOnly": true,
+                        "default": false,
+                        "description": "If ``True``, skips corrupted or missing Pulp 2 content without causing a task failure. If you need this content, run a sync task in Pulp 3 for a repo of interest to bring any missing content back. Alternatively, repair it in Pulp 2and re-run the migration task."
+                    }
+                }
+            },
+            "Paginatedpulp_2to3_migration.MigrationPlanResponseList": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/pulp_2to3_migration.MigrationPlanResponse"
+                        }
+                    }
+                }
+            },
+            "Paginatedpulp_2to3_migration.Pulp2ContentResponseList": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2ContentResponse"
+                        }
+                    }
+                }
+            },
+            "Paginatedpulp_2to3_migration.Pulp2RepositoryResponseList": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/pulp_2to3_migration.Pulp2RepositoryResponse"
+                        }
                     }
                 }
             },
@@ -856,6 +943,7 @@
                         "nullable": true
                     },
                     "pulp3_repository_version": {
+                        "type": "string",
                         "readOnly": true
                     }
                 },
@@ -906,15 +994,22 @@
                         "description": "RepositoryVersion to be served"
                     },
                     "pulp3_remote_href": {
+                        "type": "string",
                         "readOnly": true
                     },
                     "pulp3_publication_href": {
+                        "type": "string",
                         "readOnly": true
                     },
                     "pulp3_distribution_hrefs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
                         "readOnly": true
                     },
                     "pulp3_repository_href": {
+                        "type": "string",
                         "readOnly": true
                     }
                 },

@@ -110,7 +110,7 @@ class MigrationPlanRunSerializer(serializers.Serializer):
     """
     validate = serializers.BooleanField(
         help_text=_('If ``True``, migration cannot happen without successful validation '
-                    'of the Migration Plan'),
+                    'of the Migration Plan.'),
         required=False,
         default=False,
         write_only=True
@@ -118,6 +118,15 @@ class MigrationPlanRunSerializer(serializers.Serializer):
     dry_run = serializers.BooleanField(
         help_text=_('If ``True``, performs validation of a Migration Plan only, no migration is '
                     'run.'),
+        required=False,
+        default=False,
+        write_only=True
+    )
+    skip_corrupted = serializers.BooleanField(
+        help_text=_('If ``True``, skips corrupted or missing Pulp 2 content without causing a task '
+                    'failure. If you need this content, run a sync task in Pulp 3 for a repo of '
+                    'interest to bring any missing content back. Alternatively, repair it in Pulp 2'
+                    'and re-run the migration task.'),
         required=False,
         default=False,
         write_only=True

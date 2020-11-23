@@ -28,7 +28,8 @@ All the commands should be run on Pulp 3 machine.
 
 
 2. Use the ``pulp_href`` of the created Migration Plan and its ``run/`` endpoint to run the
-migration.
+migration. Optionally, skip corrupted or missing Pulp 2 content by specifying the
+``skip_corrupted=True`` parameter. For more details on migration options, check the `REST API docs <../restapi.html#operation/migration_plans_run>`_.
 
 .. code:: bash
 

@@ -53,11 +53,16 @@ class DebMigrator(Pulp2to3PluginMigrator):
     }
 
     @classmethod
-    def migrate_content_to_pulp3(cls):
+    def migrate_content_to_pulp3(cls, skip_corrupted=False):
         """
         Migrate pre-migrated Pulp 2 Debian content.
+
+        Args:
+            skip_corrupted (bool): If True, corrupted content is skipped during migration,
+                                   no task failure.
+
         """
-        first_stage = ContentMigrationFirstStage(cls)
+        first_stage = ContentMigrationFirstStage(cls, skip_corrupted=skip_corrupted)
         dm = DebDeclarativeContentMigration(first_stage=first_stage)
 
         loop = asyncio.get_event_loop()
