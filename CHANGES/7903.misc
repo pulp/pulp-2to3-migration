@@ -1,0 +1,1 @@
+Introduced the `set_pulp2_snapshot` util to specify which snapshot needs to be rolled out for a test or test class.
