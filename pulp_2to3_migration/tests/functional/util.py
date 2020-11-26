@@ -1,3 +1,4 @@
+# import os
 import subprocess
 
 from time import sleep
@@ -71,22 +72,43 @@ def set_pulp2_snapshot(name='20191031'):
     # pattern = re.compile(r'seeds: (.*?):')
     # mongodb_host = pattern.findall(pulp2_mongodb_conf)[0]
 
-    cmd = ('git', 'clone', 'https://github.com/pulp/pulp-2to3-migration-test-fixtures')
-    smash_cli_client.run(cmd, sudo=True)
-    cmd = ('mv', f'pulp-2to3-migration-test-fixtures/{name}/var/lib/pulp/content',
-           '/var/lib/pulp/content')
-    smash_cli_client.run(cmd, sudo=True)
-    cmd = ('mv', f'pulp-2to3-migration-test-fixtures/{name}/var/lib/pulp/published',
-           '/var/lib/pulp/published')
+    pulp2_fs_setup_script_path = '/tmp/set_pulp2_fs.sh'
+    # if not os.path.isfile(pulp2_fs_setup_script_path):
+    #     basepath = os.path.dirname(os.path.realpath(__file__))
+    #     pulp2_fs_setup_script_path = os.path.join(basepath, '/scripts/set_pulp2_fs.sh')
+    cmd = ('bash', pulp2_fs_setup_script_path, name)
     smash_cli_client.run(cmd, sudo=True)
 
-    cmd = ('pwd')
-    subprocess.run(cmd)
     cmd = ('wget', f'https://github.com/pulp/pulp-2to3-migration-test-fixtures/raw/master'
                    f'/{name}/pulp2filecontent.{name}.archive')
-    subprocess.run(cmd)
-    cmd = ('mongorestore', '--archive', f'pulp2filecontent.{name}.archive')
-    subprocess.run(cmd)
+
+    completed_process = subprocess.run(
+        cmd, env={}, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    if completed_process.returncode != 0:
+        raise RuntimeError(str(completed_process.stderr))
+
+    # it is required to have '=' after the named parameter
+    cmd = ('mongorestore', f'--archive=pulp2filecontent.{name}.archive')
+
     # mongo_cmd = 'db.createUser({user:"travis",pwd:"travis",roles:["readWrite"]});'
     # cmd = ('mongo', '--host', mongodb_host , 'pulp_database', mongo_cmd)
     # smash_cli_client.run(cmd, sudo=True)
+
+    completed_process = subprocess.run(
+        cmd, env={}, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    if completed_process.returncode != 0:
+        raise RuntimeError(str(completed_process.stderr))
+
+    cmd = ('mongo', 'pulp_database', '--eval', '\'db.createUser({user:"ci_cd",pwd:"ci_cd", '
+                                               'roles:["readWrite"]});\'')
+
+    completed_process = subprocess.run(
+        cmd, env={}, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    if completed_process.returncode != 0:
+        raise RuntimeError(str(completed_process.stderr))
