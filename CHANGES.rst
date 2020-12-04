@@ -13,6 +13,36 @@ Changelog
 
 .. towncrier release notes start
 
+0.6.0 (2020-12-04)
+==================
+
+Features
+--------
+
+- Added an option to skip corrupted or missing Pulp 2 content.
+  `#7538 <https://pulp.plan.io/issues/7538>`_
+- Added a reset/ endpoint to be able to run migration from scratch.
+  `#7714 <https://pulp.plan.io/issues/7714>`_
+- Added support to migrate Debian packages (tech preview).
+  `#7863 <https://pulp.plan.io/issues/7863>`_
+
+
+Bugfixes
+--------
+
+- Fixed distribution serialization.
+  `#7809 <https://pulp.plan.io/issues/7809>`_
+
+
+Misc
+----
+
+- `#7823 <https://pulp.plan.io/issues/7823>`_
+
+
+----
+
+
 0.5.1 (2020-10-27)
 ==================
 
