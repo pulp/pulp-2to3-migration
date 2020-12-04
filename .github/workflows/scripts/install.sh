@@ -7,9 +7,20 @@
 #
 # For more info visit https://github.com/pulp/plugin_template
 
+# make sure this script runs at the repo root
+cd "$(dirname "$(realpath -e "$0")")"/../../..
+REPO_ROOT="$PWD"
+
 set -euv
 
-if [ "$TEST" = "docs" ]; then
+if [ "${GITHUB_REF##refs/tags/}" = "${GITHUB_REF}" ]
+then
+  TAG_BUILD=0
+else
+  TAG_BUILD=1
+fi
+
+if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r ../pulpcore/doc_requirements.txt
   pip install -r doc_requirements.txt
 fi
@@ -20,25 +31,25 @@ cd .ci/ansible/
 
 TAG=ci_build
 
-if [ -e $GITHUB_WORKSPACE/../pulp_file ]; then
+if [ -e $REPO_ROOT/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
   PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
 fi
 
-if [ -e $GITHUB_WORKSPACE/../pulp_container ]; then
+if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
   PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
 fi
 
-if [ -e $GITHUB_WORKSPACE/../pulp_rpm ]; then
+if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
   PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
 fi
 
-if [ -e $GITHUB_WORKSPACE/../pulp_deb ]; then
+if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
   PULP_DEB=git+https://github.com/pulp/pulp_deb.git@master
@@ -48,7 +59,7 @@ if [[ "$TEST" == "plugin-from-pypi" ]]; then
 else
   PLUGIN_NAME=./pulp-2to3-migration
 fi
-if [ -n "${GITHUB_REF##*/}" ]; then
+if [ "${TAG_BUILD}" = "1" ]; then
   # Install the plugin only and use published PyPI packages for the rest
   # Quoting ${TAG} ensures Ansible casts the tag as a string.
   cat >> vars/main.yaml << VARSYAML
