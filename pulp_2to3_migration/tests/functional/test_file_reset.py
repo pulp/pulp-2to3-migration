@@ -17,13 +17,11 @@ from pulpcore.client.pulp_2to3_migration import (
     Pulp2ContentApi,
     Pulp2RepositoriesApi,
 )
-from pulp_2to3_migration.tests.functional.util import (
-    get_psql_smash_cmd,
-    monitor_task
-)
+from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd
 
 from pulp_smash import cli
 from pulp_smash import config as smash_config
+from pulp_smash.pulp3.bindings import monitor_task
 
 from .constants import TRUNCATE_TABLES_QUERY_BASH
 
@@ -75,14 +73,12 @@ class TestMigrationPlanReset(unittest.TestCase):
     def _run_migration(self, migration_plan):
         """Run a migration task and wait for it to be complete."""
         mp_run_response = self.migration_plans_api.run(migration_plan.pulp_href, {})
-        task = monitor_task(self.tasks_api, mp_run_response.task)
-        self.assertEqual(task.state, "completed")
+        monitor_task(mp_run_response.task)
 
     def _reset_pulp3_data(self, migration_plan):
         """Run a reset task and wait for it to be complete."""
         mp_run_response = self.migration_plans_api.reset(migration_plan.pulp_href, {})
-        task = monitor_task(self.tasks_api, mp_run_response.task)
-        self.assertEqual(task.state, "completed")
+        monitor_task(mp_run_response.task)
 
     def test_reset_file_plugin(self):
         """Test that Pulp 3 data and pre-migration data is removed for a specified plugin."""
