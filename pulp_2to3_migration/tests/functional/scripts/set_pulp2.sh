@@ -10,4 +10,4 @@ cp -r pulp-2to3-migration-test-fixtures/${ARCHIVE_NAME}/var/lib/pulp/content /va
 cp -r pulp-2to3-migration-test-fixtures/${ARCHIVE_NAME}/var/lib/pulp/published /var/lib/pulp/
 
 mongo --host ${MONGO_HOST} pulp_database --eval 'db.dropDatabase();'
-mongorestore --host ${MONGO_HOST} --archive=pulp-2to3-migration-test-fixtures/${ARCHIVE_NAME}/pulp2filecontent.${ARCHIVE_NAME}.archive --drop
+mongorestore --host ${MONGO_HOST} --archive=pulp-2to3-migration-test-fixtures/${ARCHIVE_NAME}/mongodb.${ARCHIVE_NAME}.archive --drop

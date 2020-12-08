@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 
 from pulpcore.client.pulpcore import (
@@ -124,7 +125,7 @@ class TestMigrationPlan(unittest.TestCase):
         cls.tasks_api = TasksApi(core_client)
         cls.migration_plans_api = MigrationPlansApi(migration_client)
 
-        set_pulp2_snapshot(name='20191031')
+        set_pulp2_snapshot(name='file_base_4repos')
 
     def tearDown(self):
         """
@@ -132,6 +133,7 @@ class TestMigrationPlan(unittest.TestCase):
         """
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         self.smash_cli_client.run(cmd, sudo=True)
+        time.sleep(0.5)
 
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})
