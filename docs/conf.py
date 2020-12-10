@@ -32,9 +32,9 @@ author = 'Pulp Team'
 
 
 # The short X.Y version
-version = pulp_2to3_migration.__version__
+version = "0.7.0.dev"
 # The full version, including alpha/beta/rc tags
-release = pulp_2to3_migration.__version__
+release = "0.7.0.dev"
 
 
 # -- General configuration ---------------------------------------------------
