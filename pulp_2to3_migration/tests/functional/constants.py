@@ -1,3 +1,9 @@
+BINDINGS_CONFIGURATION = {
+    'username': 'admin',
+    'password': 'password',
+    'host': 'http://pulp',
+}
+
 TABLES_TO_KEEP = (
     # django's sqlclear or sqlflush excludes this table when cleaning up the db
     'django_migrations',
@@ -25,3 +31,6 @@ DO $$
   END
 $$;
 """  # noqa
+
+FILE_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file/PULP_MANIFEST'
+FILE_MANY_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file-many/PULP_MANIFEST'
