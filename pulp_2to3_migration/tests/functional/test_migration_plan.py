@@ -1,17 +1,8 @@
 import json
 import unittest
 
-from pulpcore.client.pulpcore import (
-    ApiClient as CoreApiClient,
-    Configuration,
-    TasksApi
-)
-from pulpcore.client.pulp_file import (
-    ApiClient as FileApiClient,
-    ContentFilesApi,
-    RepositoriesFileApi,
-    RepositoriesFileVersionsApi
-)
+from pulpcore.client.pulpcore import Configuration
+
 from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi
@@ -25,7 +16,7 @@ from pulp_smash import config as smash_config
 from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group, PulpTaskError
 
 from .common_plans import FILE_SIMPLE_PLAN, FILE_COMPLEX_PLAN
-from .constants import TRUNCATE_TABLES_QUERY_BASH
+from .constants import BINDINGS_CONFIGURATION, TRUNCATE_TABLES_QUERY_BASH
 
 
 EXTRA_COMMA_PLAN = '{"plugins": [{"type": "iso"},]}'
@@ -65,21 +56,10 @@ class TestMigrationPlan(unittest.TestCase):
         """
         Create all the client instances needed to communicate with Pulp.
         """
-        configuration = Configuration()
-        configuration.username = 'admin'
-        configuration.password = 'password'
-        configuration.host = 'http://pulp'
-        configuration.safe_chars_for_path_param = '/'
-
-        core_client = CoreApiClient(configuration)
-        file_client = FileApiClient(configuration)
+        configuration = Configuration(**BINDINGS_CONFIGURATION)
         migration_client = MigrationApiClient(configuration)
 
-        # Create api clients for all resource types
-        cls.file_repo_api = RepositoriesFileApi(file_client)
-        cls.file_repo_versions_api = RepositoriesFileVersionsApi(file_client)
-        cls.file_content_api = ContentFilesApi(file_client)
-        cls.tasks_api = TasksApi(core_client)
+        # Create api clients for the resource types we need
         cls.migration_plans_api = MigrationPlansApi(migration_client)
 
         set_pulp2_snapshot(name='file_base_4repos')
