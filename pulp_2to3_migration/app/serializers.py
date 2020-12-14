@@ -166,10 +166,14 @@ class Pulp2ContentSerializer(ModelSerializer):
     def to_representation(self, instance):
         """
         Do not serialize pulp3_repository_version if it is null.
+        pulp3_repository_version is set only for content which can migrate from one pulp2_content
+        unit into multiple pulp3_content units.
+        Serializing pulp3_repository_version when it is not set can mislead users that migrated
+        content doesn't belong to any pulp3_repository_version.
         """
         result = super(Pulp2ContentSerializer, self).to_representation(instance)
         if not result.get('pulp3_repository_version'):
-            del result['pulp3_repository_version']
+            result.pop('pulp3_repository_version', None)
         return result
 
     class Meta:
