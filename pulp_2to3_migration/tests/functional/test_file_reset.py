@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 
 from pulpcore.client.pulpcore import (
@@ -21,7 +22,7 @@ from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd
 
 from pulp_smash import cli
 from pulp_smash import config as smash_config
-from pulp_smash.pulp3.bindings import monitor_task
+from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
 
 from .constants import TRUNCATE_TABLES_QUERY_BASH
 
@@ -69,11 +70,13 @@ class TestMigrationPlanReset(unittest.TestCase):
         """
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         self.smash_cli_client.run(cmd, sudo=True)
+        time.sleep(0.5)
 
     def _run_migration(self, migration_plan):
         """Run a migration task and wait for it to be complete."""
         mp_run_response = self.migration_plans_api.run(migration_plan.pulp_href, {})
-        monitor_task(mp_run_response.task)
+        task = monitor_task(mp_run_response.task)
+        monitor_task_group(task.task_group)
 
     def _reset_pulp3_data(self, migration_plan):
         """Run a reset task and wait for it to be complete."""

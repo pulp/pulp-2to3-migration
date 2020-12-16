@@ -24,7 +24,7 @@ from pulp_2to3_migration.tests.functional.util import (
 
 from pulp_smash import cli
 from pulp_smash import config as smash_config
-from pulp_smash.pulp3.bindings import monitor_task
+from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
 
 from .constants import TRUNCATE_TABLES_QUERY_BASH
 
@@ -138,7 +138,9 @@ class TestMigrationPlan(unittest.TestCase):
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})
         mp_run_response = self.migration_plans_api.run(mp.pulp_href, {})
-        monitor_task(mp_run_response.task)
+        task = monitor_task(mp_run_response.task)
+        monitor_task_group(task.task_group)
+
         for repo_id in repos:
             pulp3repos = self.file_repo_api.list(name=repo_id)
             # Assert that there is a result
