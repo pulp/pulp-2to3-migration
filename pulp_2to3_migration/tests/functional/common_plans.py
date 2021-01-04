@@ -54,3 +54,5 @@ FILE_COMPLEX_PLAN = json.dumps({
 })
 
 FILE_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "iso"}]})
+
+RPM_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "rpm"}]})
