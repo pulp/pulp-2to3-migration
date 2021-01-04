@@ -142,6 +142,42 @@ DISTRIBUTOR_NO_REPO_PLAN = json.dumps({
     }]
 })
 
+NO_ON_DEMAND_IMPORTER_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file-many",
+                "pulp2_importer_repository_id": "file",  # policy: immediate
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file-many",  # content count: iso - 250
+                        "pulp2_distributor_repository_ids": ["file-many"]
+                    }
+                ]
+            }
+        ]
+    }]
+})
+
+NO_IMMEDIATE_IMPORTER_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file",
+                "pulp2_importer_repository_id": "file-many",  # policy: on_demand
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file",  # content count: iso - 3
+                        "pulp2_distributor_repository_ids": ["file"]
+                    }
+                ]
+            }
+        ]
+    }]
+})
+
 CONTENT_COUNT = {
     'file': 3,
     'file2': 3,
@@ -345,3 +381,21 @@ class TestMigrationBehaviour(unittest.TestCase):
         self.assertEqual(pulp3_pub.repository_version, pulp2repository.pulp3_repository_version)
         self.assertEqual(pulp3_pub.distributions[0], pulp3_dist.pulp_href)
         self.assertEqual(pulp3_dist.base_path, 'file-many')
+
+    def test_no_on_demand_importer(self):
+        """Test that if there is no importer for on_demand content, such content is not migrated."""
+        self._load_and_run(NO_ON_DEMAND_IMPORTER_PLAN)
+        pulp3_repo = self.file_repo_api.list().results[0]
+        repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)
+
+        self.assertEqual(self.file_repo_versions_api.list(pulp3_repo.pulp_href).count, 1)
+        self.assertEqual(repo_content.count, 0)
+
+    def test_no_immediate_importer(self):
+        """Test that if there is no importer for downloaded content, such content is migrated."""
+        self._load_and_run(NO_IMMEDIATE_IMPORTER_PLAN)
+        pulp3_repo = self.file_repo_api.list().results[0]
+        repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)
+
+        self.assertEqual(self.file_repo_versions_api.list(pulp3_repo.pulp_href).count, 2)
+        self.assertEqual(repo_content.count, 3)
