@@ -34,3 +34,4 @@ $$;
 
 FILE_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file/PULP_MANIFEST'
 FILE_MANY_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file-many/PULP_MANIFEST'
+FIXTURES_BASE_URL = 'https://fixtures.pulpproject.org/'

@@ -26,7 +26,7 @@ from pulp_smash import cli
 from pulp_smash import config as smash_config
 from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
 
-from .constants import TRUNCATE_TABLES_QUERY_BASH
+from .constants import BINDINGS_CONFIGURATION, TRUNCATE_TABLES_QUERY_BASH
 
 PULP_2_ISO_FIXTURE_DATA = {
     'file': 3,
@@ -108,11 +108,7 @@ class TestMigrationPlan(unittest.TestCase):
         """
         Create all the client instances needed to communicate with Pulp.
         """
-        configuration = Configuration()
-        configuration.username = 'admin'
-        configuration.password = 'password'
-        configuration.host = 'http://pulp'
-        configuration.safe_chars_for_path_param = '/'
+        configuration = Configuration(**BINDINGS_CONFIGURATION)
 
         core_client = CoreApiClient(configuration)
         file_client = FileApiClient(configuration)
