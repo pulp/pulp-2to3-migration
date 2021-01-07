@@ -1,11 +1,7 @@
 import time
 import unittest
 
-from pulpcore.client.pulpcore import (
-    ApiClient as CoreApiClient,
-    Configuration,
-    TasksApi
-)
+from pulpcore.client.pulpcore import Configuration
 from pulpcore.client.pulp_file import (
     ApiClient as FileApiClient,
     ContentFilesApi,
@@ -17,7 +13,7 @@ from pulpcore.client.pulp_2to3_migration import (
     Pulp2ContentApi,
     Pulp2RepositoriesApi,
 )
-from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd
+from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
 from pulpcore.client.pulp_2to3_migration.exceptions import ApiException
 
 from pulp_smash import cli
@@ -25,7 +21,7 @@ from pulp_smash import config as smash_config
 from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
 
 from .common_plans import FILE_SIMPLE_PLAN, RPM_SIMPLE_PLAN
-from .constants import TRUNCATE_TABLES_QUERY_BASH
+from .constants import BINDINGS_CONFIGURATION, TRUNCATE_TABLES_QUERY_BASH
 
 PULP_2_ISO_FIXTURE_DATA = {
     'repositories': 4,
@@ -44,23 +40,19 @@ class TestMigrationPlanReset(unittest.TestCase):
         """
         Create all the client instances needed to communicate with Pulp.
         """
-        configuration = Configuration()
-        configuration.username = 'admin'
-        configuration.password = 'password'
-        configuration.host = 'http://pulp'
-        configuration.safe_chars_for_path_param = '/'
+        configuration = Configuration(**BINDINGS_CONFIGURATION)
 
-        core_client = CoreApiClient(configuration)
         file_client = FileApiClient(configuration)
         migration_client = MigrationApiClient(configuration)
 
         # Create api clients for all resource types
         cls.file_repo_api = RepositoriesFileApi(file_client)
         cls.file_content_api = ContentFilesApi(file_client)
-        cls.tasks_api = TasksApi(core_client)
         cls.migration_plans_api = MigrationPlansApi(migration_client)
         cls.pulp2content_api = Pulp2ContentApi(migration_client)
         cls.pulp2repositories_api = Pulp2RepositoriesApi(migration_client)
+
+        set_pulp2_snapshot(name='file_base_4repos')
 
     def tearDown(self):
         """
