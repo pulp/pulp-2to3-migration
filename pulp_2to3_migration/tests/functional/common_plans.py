@@ -53,61 +53,63 @@ FILE_COMPLEX_PLAN = json.dumps({
     }]
 })
 
+INITIAL_REPOSITORIES = [
+    {
+        "name": "rpm-empty",
+        "pulp2_importer_repository_id": "rpm-empty",  # policy: immediate
+        "repository_versions": [
+            {
+                "pulp2_repository_id": "rpm-empty",  # content count: 0
+                "pulp2_distributor_repository_ids": ["rpm-empty"]
+            }
+        ]
+    },
+    {
+        "name": "rpm-empty-for-copy",
+        "pulp2_importer_repository_id": "rpm-empty-for-copy",  # policy: immediate
+        "repository_versions": [
+            {
+                "pulp2_repository_id": "rpm-empty-for-copy",  # content count: 0
+                "pulp2_distributor_repository_ids": ["rpm-empty-for-copy"]
+            }
+        ]
+    },
+    {
+        "name": "rpm-with-modules",
+        "pulp2_importer_repository_id": "rpm-with-modules",  # policy: on_demand
+        "repository_versions": [
+            {
+                "pulp2_repository_id": "rpm-with-modules",
+                "pulp2_distributor_repository_ids": ["rpm-with-modules"]
+            }
+        ]
+    },
+    {
+        "name": "rpm-distribution-tree",
+        "pulp2_importer_repository_id": "rpm-distribution-tree",  # policy: on_demand
+        "repository_versions": [
+            {
+                "pulp2_repository_id": "rpm-distribution-tree",
+                "pulp2_distributor_repository_ids": ["rpm-distribution-tree"]
+            }
+        ]
+    },
+    {
+        "name": "srpm-unsigned",
+        "pulp2_importer_repository_id": "srpm-unsigned",  # policy: on_demand
+        "repository_versions": [
+            {
+                "pulp2_repository_id": "srpm-unsigned",
+                "pulp2_distributor_repository_ids": ["srpm-unsigned"]
+            }
+        ]
+    },
+]
+
 RPM_COMPLEX_PLAN = json.dumps({
     "plugins": [{
         "type": "rpm",
-        "repositories": [
-            {
-                "name": "rpm-empty",
-                "pulp2_importer_repository_id": "rpm-empty",  # policy: immediate
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "rpm-empty",  # content count: 0
-                        "pulp2_distributor_repository_ids": ["rpm-empty"]
-                    }
-                ]
-            },
-            {
-                "name": "rpm-empty-for-copy",
-                "pulp2_importer_repository_id": "rpm-empty-for-copy",  # policy: immediate
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "rpm-empty-for-copy",  # content count: 0
-                        "pulp2_distributor_repository_ids": ["rpm-empty-for-copy"]
-                    }
-                ]
-            },
-            {
-                "name": "rpm-with-modules",
-                "pulp2_importer_repository_id": "rpm-with-modules",  # policy: on_demand
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "rpm-with-modules",
-                        "pulp2_distributor_repository_ids": ["rpm-with-modules"]
-                    }
-                ]
-            },
-            {
-                "name": "rpm-distribution-tree",
-                "pulp2_importer_repository_id": "rpm-distribution-tree",  # policy: on_demand
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "rpm-distribution-tree",
-                        "pulp2_distributor_repository_ids": ["rpm-distribution-tree"]
-                    }
-                ]
-            },
-            {
-                "name": "srpm-unsigned",
-                "pulp2_importer_repository_id": "srpm-unsigned",  # policy: on_demand
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "srpm-unsigned",
-                        "pulp2_distributor_repository_ids": ["srpm-unsigned"]
-                    }
-                ]
-            }
-        ]
+        "repositories": INITIAL_REPOSITORIES,
     }]
 })
 
