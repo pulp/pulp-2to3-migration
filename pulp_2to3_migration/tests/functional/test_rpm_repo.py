@@ -1,37 +1,11 @@
 import os
-import time
 import unittest
 
-from pulpcore.client.pulpcore import Configuration
-from pulpcore.client.pulp_rpm import (
-    ApiClient as RpmApiClient,
-    ContentAdvisoriesApi,
-    # ContentDistributionTreesApi,
-    ContentModulemdDefaultsApi,
-    ContentModulemdsApi,
-    ContentPackagecategoriesApi,
-    ContentPackageenvironmentsApi,
-    ContentPackagegroupsApi,
-    ContentPackagelangpacksApi,
-    ContentPackagesApi,
-    DistributionsRpmApi,
-    PublicationsRpmApi,
-    RemotesRpmApi,
-    RepositoriesRpmApi,
-    RepositoriesRpmVersionsApi,
-)
-from pulpcore.client.pulp_2to3_migration import (
-    ApiClient as MigrationApiClient,
-    MigrationPlansApi,
-)
-from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
-
-from pulp_smash import cli
-from pulp_smash import config as smash_config
-from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
+from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
 
 from .common_plans import RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
-from .constants import BINDINGS_CONFIGURATION, FIXTURES_BASE_URL, TRUNCATE_TABLES_QUERY_BASH
+from .constants import FIXTURES_BASE_URL
+from .rpm_base import BaseTestRpm
 
 PULP_2_RPM_DATA = {
     'repositories': 5,
@@ -81,55 +55,19 @@ PULP_2_RPM_DATA = {
 }
 
 
-class BaseTestRpmRepo:
+class BaseTestRpmRepo(BaseTestRpm):
     """
     Test RPM repo, importer and distributor migration.
     """
-    smash_cfg = smash_config.get_config()
-    smash_cli_client = cli.Client(smash_cfg)
-
     @classmethod
     def setUpClass(cls):
         """
-        Create all the client instances needed to communicate with Pulp.
+        Create all the client instances needed to communicate with Pulp and run a migration.
         """
-        configuration = Configuration(**BINDINGS_CONFIGURATION)
-
-        rpm_client = RpmApiClient(configuration)
-        migration_client = MigrationApiClient(configuration)
-
-        # Create api clients for all resource types
-        cls.rpm_repo_api = RepositoriesRpmApi(rpm_client)
-        cls.rpm_repo_versions_api = RepositoriesRpmVersionsApi(rpm_client)
-        cls.rpm_remote_api = RemotesRpmApi(rpm_client)
-        cls.rpm_distribution_api = DistributionsRpmApi(rpm_client)
-        cls.rpm_publication_api = PublicationsRpmApi(rpm_client)
-        cls.rpm_content_apis = {
-            'advisory': ContentAdvisoriesApi(rpm_client),
-            # skip until https://pulp.plan.io/issues/8050 is fixed
-            # 'disttree': ContentDistributionTreesApi(rpm_client),
-            'modulemd': ContentModulemdsApi(rpm_client),
-            'modulemd-defaults': ContentModulemdDefaultsApi(rpm_client),
-            'category': ContentPackagecategoriesApi(rpm_client),
-            'environment': ContentPackageenvironmentsApi(rpm_client),
-            'group': ContentPackagegroupsApi(rpm_client),
-            'langpack': ContentPackagelangpacksApi(rpm_client),
-            'package': ContentPackagesApi(rpm_client),
-        }
-        cls.migration_plans_api = MigrationPlansApi(migration_client)
+        super().setUpClass()
 
         set_pulp2_snapshot(name='rpm_base_4repos')
-
-        cls.run_migration()
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Clean up the database after the set of tests is run.
-        """
-        cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
-        cls.smash_cli_client.run(cmd, sudo=True)
-        time.sleep(0.5)
+        cls.run_migration(cls.plan_initial)
 
     def test_rpm_repo_migration(self):
         """
@@ -184,29 +122,16 @@ class BaseTestRpmRepo:
                 self.assertEqual(dist.base_path, base_path)
 
 
-class MigrationPlanMixin:
-    """A mixin class for tests to run a migration using a specified plan."""
-    plan = None
-
-    @classmethod
-    def run_migration(cls):
-        """Run a migration using simple plan."""
-        mp = cls.migration_plans_api.create({'plan': cls.plan})
-        mp_run_response = cls.migration_plans_api.run(mp.pulp_href, {})
-        task = monitor_task(mp_run_response.task)
-        monitor_task_group(task.task_group)
-
-
 @unittest.skip('empty repos are not migrated until https://pulp.plan.io/issues/6516 is done')
-class TestRpmRepoMigrationSimplePlan(BaseTestRpmRepo, unittest.TestCase, MigrationPlanMixin):
+class TestRpmRepoMigrationSimplePlan(BaseTestRpmRepo, unittest.TestCase):
     """
     Test RPM repo migration using simple migration plan.
     """
-    plan = RPM_SIMPLE_PLAN
+    plan_initial = RPM_SIMPLE_PLAN
 
 
-class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase, MigrationPlanMixin):
+class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
     """
     Test RPM repo migration using complex migration plan.
     """
-    plan = RPM_COMPLEX_PLAN
+    plan_initial = RPM_COMPLEX_PLAN

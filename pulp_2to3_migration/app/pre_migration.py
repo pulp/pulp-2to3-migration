@@ -669,7 +669,7 @@ def handle_outdated_resources(plan, type_to_repo_ids):
     # Delete old Publications/Distributions which are no longer present in Pulp2.
 
     # It's critical to remove Distributions to avoid base_path overlap.
-    # It make the migration logic easier if we remove old Publications as well.
+    # It makes the migration logic easier if we remove old Publications as well.
 
     # Delete criteria:
     #     - pulp2distributor is no longer in plan
