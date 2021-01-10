@@ -260,7 +260,6 @@ class BaseTestRpmRerun(BaseTestRpm):
         self.assertEqual(new_distribution_count, PULP_2_RPM_DATA['new_distributions'])
 
 
-@unittest.skip('empty repos are not migrated until https://pulp.plan.io/issues/6516 is done')
 class TestRpmRerunSimplePlan(BaseTestRpmRerun, unittest.TestCase):
     """
     Test RPM repo migration using simple migration plan.
