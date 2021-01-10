@@ -141,7 +141,6 @@ class TestMigrationPlan(unittest.TestCase):
         task = monitor_task(mp_run_response.task)
         monitor_task_group(task.task_group)
 
-    @unittest.skip('not fixed yet, https://pulp.plan.io/issues/6516')
     def test_simple_plan_parallel(self):
         """Test that using a simple plan, there is work which is performed in parallel."""
         self._do_test_parallel(FILE_SIMPLE_PLAN, 5)

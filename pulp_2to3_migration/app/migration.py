@@ -158,42 +158,6 @@ def migrate_importers(plan):
                 pb.save()
 
 
-def simple_plugin_migration(plugin):
-    """Migrate everything for a given plugin.
-
-    Args:
-        plugin: Plugin object
-        pb: A progress report object
-    """
-    distributor_migrators = plugin.migrator.distributor_migrators
-    distributor_types = list(plugin.migrator.distributor_migrators.keys())
-    pulp2distributors_qs = Pulp2Distributor.objects.filter(
-        pulp3_distribution=None,
-        pulp3_publication=None,
-        not_in_plan=False,
-        pulp2_type_id__in=distributor_types
-    )
-    repos_to_migrate = Pulp2Repository.objects.filter(pulp2_repo_type=plugin.type,
-                                                      not_in_plan=False)
-
-    task_group = TaskGroup.current()
-    # find appropriate group_progress_reports that later will be updated
-    progress_dist = task_group.group_progress_reports.filter(
-        code='create.distribution'
-    )
-    progress_dist.update(total=F('total') + pulp2distributors_qs.count())
-    progress_rv = task_group.group_progress_reports.filter(
-        code='create.repo_version'
-    )
-    progress_rv.update(total=F('total') + repos_to_migrate.count())
-    for pulp2_repo in repos_to_migrate:
-        # Create one repo version for each pulp 2 repo if needed.
-        create_repo_version(plugin.migrator, progress_rv, pulp2_repo)
-    for pulp2_dist in pulp2distributors_qs:
-        dist_migrator = distributor_migrators.get(pulp2_dist.pulp2_type_id)
-        migrate_repo_distributor(dist_migrator, progress_dist, pulp2_dist)
-
-
 def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
     """Perform a complex migration for a particular repo using the repo setup config.
 
@@ -210,8 +174,7 @@ def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
 
     # importer might not be migrated, e.g. config is empty or it's not specified in a MP
     pulp3_remote = None
-    pulp2_importer_repo_id = \
-        pulp3_repo_setup[repo_name].get('pulp2_importer_repository_id')
+    pulp2_importer_repo_id = pulp3_repo_setup[repo_name].get('pulp2_importer_repository_id')
     if pulp2_importer_repo_id:
         try:
             pulp2_importer = Pulp2Importer.objects.get(
@@ -297,40 +260,36 @@ def create_repoversions_publications_distributions(plan, parallel=True):
     for plugin in plan.get_plugin_plans():
         pulp3_repo_setup = plugin.get_repo_creation_setup()
 
-        if not pulp3_repo_setup:
-            task_func = simple_plugin_migration
-            task_args = [plugin]
-            task_func(*task_args)
-        else:
-            task_func = complex_repo_migration
-            repo_ver_to_create = 0
-            dist_to_create = 0
-            if parallel:
-                for repo_name in pulp3_repo_setup:
-                    repo_versions = pulp3_repo_setup[repo_name]['repository_versions']
-                    repo_ver_to_create += len(repo_versions)
-                    for repo_ver in repo_versions:
-                        dist_to_create += len(repo_ver['dist_repo_ids'])
-                    repo = Repository.objects.get(name=repo_name).cast()
-                    task_args = [plugin, pulp3_repo_setup, repo_name]
-                    enqueue_with_reservation(
-                        task_func,
-                        [repo],
-                        args=task_args,
-                        task_group=TaskGroup.current()
-                    )
-                task_group = TaskGroup.current()
-                progress_rv = task_group.group_progress_reports.filter(code='create.repo_version')
-                progress_rv.update(total=F('total') + repo_ver_to_create)
-                progress_dist = task_group.group_progress_reports.filter(
-                    code='create.distribution'
+        repo_ver_to_create = 0
+        dist_to_create = 0
+
+        if parallel:
+            for repo_name in pulp3_repo_setup:
+                repo_versions = pulp3_repo_setup[repo_name]['repository_versions']
+                repo_ver_to_create += len(repo_versions)
+                for repo_ver in repo_versions:
+                    dist_to_create += len(repo_ver['dist_repo_ids'])
+                repo = Repository.objects.get(name=repo_name).cast()
+                task_args = [plugin, pulp3_repo_setup, repo_name]
+                enqueue_with_reservation(
+                    complex_repo_migration,
+                    [repo],
+                    args=task_args,
+                    task_group=TaskGroup.current()
                 )
-                progress_dist.update(total=F('total') + dist_to_create)
-            else:
-                # Serial (non-parallel)
-                for repo_name in pulp3_repo_setup:
-                    task_args = [plugin, pulp3_repo_setup, repo_name]
-                    task_func(*task_args)
+        else:
+            # Serial (non-parallel)
+            for repo_name in pulp3_repo_setup:
+                task_args = [plugin, pulp3_repo_setup, repo_name]
+                complex_repo_migration(*task_args)
+
+        task_group = TaskGroup.current()
+        progress_rv = task_group.group_progress_reports.filter(code='create.repo_version')
+        progress_rv.update(total=F('total') + repo_ver_to_create)
+        progress_dist = task_group.group_progress_reports.filter(
+            code='create.distribution'
+        )
+        progress_dist.update(total=F('total') + dist_to_create)
 
 
 def create_repo_version(migrator, progress_rv, pulp2_repo, pulp3_remote=None):

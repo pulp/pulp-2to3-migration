@@ -1,3 +1,4 @@
+from collections import defaultdict
 import itertools
 
 from django.contrib.postgres.fields import JSONField
@@ -9,7 +10,63 @@ from pulp_2to3_migration.pulp2.base import (
     Distributor,
     Importer,
     Repository,
+    RepositoryContentUnit,
 )
+
+
+def get_repo_types(plan):
+    """
+    Create mappings for pulp 2 repository types.
+
+    Identify type by inspecting content of a repo.
+    One mapping is repo_id -> repo_type, the other is repo_type -> list of repo_ids.
+
+    It's used later during pre-migration and identification of removed repos from pulp 2
+
+    Args:
+        plan(MigrationPlan): A Migration Plan
+
+    Returns:
+        repo_id_to_type(dict): mapping from a pulp 2 repo_id to a plugin/repo type
+        type_to_repo_ids(dict): mapping from a plugin/repo type to the list of repo_ids
+
+    """
+    repo_id_to_type = {}
+    type_to_repo_ids = defaultdict(set)
+
+    # mapping content type -> plugin/repo type, e.g. 'docker_blob' -> 'docker'
+    content_type_to_plugin = {}
+
+    for plugin in plan.get_plugin_plans():
+        for content_type in plugin.migrator.pulp2_content_models:
+            content_type_to_plugin[content_type] = plugin.migrator.pulp2_plugin
+
+        repos = set(plugin.get_repositories())
+        repos |= set(plugin.get_importers_repos())
+        repos |= set(plugin.get_distributors_repos())
+
+        for repo in repos:
+            repo_id_to_type[repo] = plugin.type
+        type_to_repo_ids[plugin.type].update(repos)
+
+    # TODO: optimizations.
+    # It looks at each content at the moment. Potential optimizations:
+    #  - This is a big query, paginate?
+    #  - Filter by repos from the plan
+    #  - Query any but one record for a repo
+    for rec in RepositoryContentUnit.objects().\
+            only('repo_id', 'unit_type_id').as_pymongo().no_cache():
+        repo_id = rec['repo_id']
+        unit_type_id = rec['unit_type_id']
+
+        # a type for a repo is already known or this content/repo type is not supported
+        if repo_id in repo_id_to_type or unit_type_id not in content_type_to_plugin:
+            continue
+        plugin_name = content_type_to_plugin[unit_type_id]
+        repo_id_to_type[repo_id] = plugin_name
+        type_to_repo_ids[plugin_name].add(repo_id)
+
+    return repo_id_to_type, type_to_repo_ids
 
 
 class MigrationPlan(BaseModel):
@@ -22,13 +79,48 @@ class MigrationPlan(BaseModel):
     plan = JSONField()
     _real_plan = None
 
+    # A mapping from a pulp 2 repo_id to pulp 2 repo type
+    repo_id_to_type = None
+    # A mapping from a pulp 2 repo type to a list of pulp 2 repo_ids
+    type_to_repo_ids = None
+
     @property
     def plan_view(self):
         """
         Cached and validated migration plan.
+
+        Lazy because we don't want to do parsing on empty objects.
         """
         if not self._real_plan:
-            self._real_plan = _InternalMigrationPlan(self.plan)
+            self._real_plan = _InternalMigrationPlan(self)
+            (self.repo_id_to_type, self.type_to_repo_ids) = get_repo_types(self)
+
+            # can't use the .get_plugin_plans() method from here due to recursion problem
+            for plugin_plan in self._real_plan._plugin_plans:
+                if plugin_plan.empty:
+                    # plan was "empty", we need to automatically backfill the information from what
+                    # exists in pulp 2. This is really tricky and a little messy, because it needs
+                    # to happen after the migration plan has been parsed.
+                    repository_ids = self.type_to_repo_ids[plugin_plan.type]
+                    repositories = Repository.objects().filter(
+                        repo_id__in=repository_ids
+                    ).only("repo_id")
+
+                    for repository in repositories.as_pymongo().no_cache():
+                        repo_id = repository['repo_id']
+                        plugin_plan.repositories_to_create[repo_id] = {
+                            "pulp2_importer_repository_id": repo_id,
+                            "repository_versions": [
+                                {
+                                    "repo_id": repo_id,
+                                    "dist_repo_ids": [repo_id],
+                                }
+                            ]
+                        }
+
+                        plugin_plan.repositories_importers_to_migrate.append(repo_id)
+                        plugin_plan.repositories_to_migrate.append(repo_id)
+                        plugin_plan.repositories_distributors_to_migrate.append(repo_id)
 
         return self._real_plan
 
@@ -66,10 +158,9 @@ class MigrationPlan(BaseModel):
 
 class _InternalMigrationPlan:
     def __init__(self, migration_plan):
-        self._migration_plan = migration_plan
         self._plugin_plans = []
 
-        for plugin_data in self._migration_plan['plugins']:
+        for plugin_data in migration_plan.plan['plugins']:
             self._plugin_plans.append(PluginMigrationPlan(plugin_data))
 
         self.repositories_missing_importers = []
@@ -134,7 +225,7 @@ class PluginMigrationPlan:
         Init
 
         Args:
-            plugin_migration_plan: Dictionary for the migration plan of a specific plugin.
+            plugin_migration_plan (dict): The migration plan for a specific plugin.
         """
         self.repositories_importers_to_migrate = []
         self.repositories_to_migrate = []

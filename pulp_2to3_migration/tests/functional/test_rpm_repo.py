@@ -122,7 +122,6 @@ class BaseTestRpmRepo(BaseTestRpm):
                 self.assertEqual(dist.base_path, base_path)
 
 
-@unittest.skip('empty repos are not migrated until https://pulp.plan.io/issues/6516 is done')
 class TestRpmRepoMigrationSimplePlan(BaseTestRpmRepo, unittest.TestCase):
     """
     Test RPM repo migration using simple migration plan.

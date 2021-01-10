@@ -326,7 +326,7 @@ def pre_migrate_lazycatalog(content_type):
         Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
 
 
-def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
+def pre_migrate_all_without_content(plan):
     """
     Pre-migrate repositories, relations to their contents, importers and distributors.
 
@@ -338,8 +338,6 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
 
     Args:
         plan(MigrationPlan): A Migration Plan
-        type_to_repo_ids(dict): A mapping from a pulp 2 repo type to a list of pulp 2 repo_ids
-        repo_id_to_type(dict): A mapping from a pulp 2 repo_id to pulp 2 repo type
     """
 
     _logger.debug('Pre-migrating Pulp 2 repositories')
@@ -350,7 +348,7 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
         for plugin_plan in plan.get_plugin_plans():
             repos = plugin_plan.get_repositories()
             # filter by repo type
-            repos_to_check = type_to_repo_ids[plugin_plan.type]
+            repos_to_check = plan.type_to_repo_ids[plugin_plan.type]
 
             mongo_repo_q = mongo_Q(repo_id__in=repos_to_check)
             mongo_repo_qs = Repository.objects(mongo_repo_q)
@@ -374,7 +372,7 @@ def pre_migrate_all_without_content(plan, type_to_repo_ids, repo_id_to_type):
                 repo_id = repo_data.repo_id
                 with transaction.atomic():
                     if not repos or repos and repo_id in repos:
-                        repo = pre_migrate_repo(repo_data, repo_id_to_type)
+                        repo = pre_migrate_repo(repo_data, plan.repo_id_to_type)
                     # do not pre-migrate importers/distributors in case of special repo setup
                     # and no importers/distributors were specified in the MP
                     if not repos or repos and importers_repos:
@@ -611,7 +609,7 @@ def pre_migrate_repocontent(repo):
     Pulp2RepoContent.objects.bulk_create(repocontent, batch_size=DEFAULT_BATCH_SIZE)
 
 
-def handle_outdated_resources(plan, type_to_repo_ids):
+def handle_outdated_resources(plan):
     """
     Marks repositories, importers, distributors which are no longer present in Pulp2.
 
@@ -619,13 +617,12 @@ def handle_outdated_resources(plan, type_to_repo_ids):
 
     Args:
         plan(MigrationPlan): A Migration Plan
-        type_to_repo_ids(dict): A mapping from a pulp 2 repo type to a list of pulp 2 repo_ids
     """
     for plugin_plan in plan.get_plugin_plans():
         inplan_repos = plugin_plan.get_repositories()
 
         # filter by repo type
-        repos_to_consider = type_to_repo_ids[plugin_plan.type]
+        repos_to_consider = plan.type_to_repo_ids[plugin_plan.type]
 
         # in case only certain repositories are specified in the migration plan
         if inplan_repos:
