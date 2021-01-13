@@ -94,7 +94,10 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         pulp2_content_ids = premigrate_hook()
         query_args["id__in"] = pulp2_content_ids
 
-    mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated, **query_args)
+    mongo_content_qs = content_model.pulp2.objects(
+        _last_updated__gte=last_updated, **query_args
+    ).order_by("_last_updated")
+
     total_content = mongo_content_qs.count()
     _logger.debug('Total count for {type} content to migrate: {total}'.format(
         type=content_type,
