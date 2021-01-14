@@ -81,6 +81,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
     pulp2mutatedcontent = []
     content_type = content_model.pulp2.TYPE_ID
     set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
+    pulp2_subids = content_model.pulp_2to3_detail.get_pulp2_subids() or [None]
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
@@ -186,15 +187,17 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
             pulp2content_pb.total -= 1
             pulp2detail_pb.total -= 1
         else:
-            item = Pulp2Content(
-                pulp2_id=record.id,
-                pulp2_content_type_id=record._content_type_id,
-                pulp2_last_updated=record._last_updated,
-                pulp2_storage_path=record._storage_path,
-                downloaded=downloaded
-            )
-            _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
-            pulp2content.append(item)
+             for subid in pulp2_subids:
+                item = Pulp2Content(
+                    pulp2_id=record.id,
+                    pulp2_content_type_id=record._content_type_id,
+                    pulp2_last_updated=record._last_updated,
+                    pulp2_storage_path=record._storage_path,
+                    downloaded=downloaded,
+                    pulp2_subid=subid,
+                )
+                _logger.debug('Add content item to the list to migrate: {item}'.format(item=item))
+                pulp2content.append(item)
 
         # determine if the batch needs to be saved, also take into account whether there is
         # anything in the pulp2content to be saved

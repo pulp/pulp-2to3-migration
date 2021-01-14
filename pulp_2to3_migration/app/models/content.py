@@ -33,9 +33,10 @@ class Pulp2Content(BaseModel):
     downloaded = models.BooleanField(default=False)
     pulp3_content = models.ForeignKey(Content, on_delete=models.SET_NULL, null=True)
     pulp2_repo = models.ForeignKey(Pulp2Repository, on_delete=models.SET_NULL, null=True)
+    pulp2_subid = models.CharField(max_length=255, null=True)
 
     class Meta:
-        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo')
+        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo', 'pulp2_subid')
         indexes = [
             models.Index(fields=['pulp2_content_type_id']),
         ]
@@ -92,6 +93,21 @@ class Pulp2to3Content(BaseModel):
         """
         raise NotImplementedError()
 
+    def get_pulp2_subids(self):
+        """
+        Get Pulp 2 identifiers which will distinguish items within one Pulp 2 unit.
+
+        In case when pulp 2 unit migrates into multiple pulp 3 units, migration plugin needs
+        subids to map pulp2 content unit to all related pulp 3 units in one to one manner.
+
+        E.g. Pulp 2 deb_component is migrated into 3 different content unit types component name,
+        component arch and component package.There can be 1 name, X arch's and Y packages. The
+        subid list will look like this: [my_name, arch1, arch2, ..., pkgid1, pkgid2, ...]
+
+        Returns:
+              list: subids
+        """
+        return []
 
 class Pulp2LazyCatalog(BaseModel):
     """
