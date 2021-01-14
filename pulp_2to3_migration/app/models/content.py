@@ -33,9 +33,10 @@ class Pulp2Content(BaseModel):
     downloaded = models.BooleanField(default=False)
     pulp3_content = models.ForeignKey(Content, on_delete=models.SET_NULL, null=True)
     pulp2_repo = models.ForeignKey(Pulp2Repository, on_delete=models.SET_NULL, null=True)
+    pulp2_subid = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo')
+        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo', 'pulp2_subid')
         indexes = [
             models.Index(fields=['pulp2_content_type_id']),
         ]
