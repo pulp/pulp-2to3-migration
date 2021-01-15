@@ -88,3 +88,42 @@ class BaseTestRpm:
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         cls.smash_cli_client.run(cmd, sudo=True)
         time.sleep(0.5)
+
+
+class RepoInfo(dict):
+    """
+    Wrapper object for repo information dict.
+
+    Calculates expectations properly depending on whether a simple migration plan is used, or not.
+    """
+
+    def __init__(self, *args, is_simple=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_simple = is_simple
+
+    @property
+    def repositories(self):
+        if self.is_simple:
+            return {k: v for k, v in self['content'].items() if v}
+        else:
+            return self['content']
+
+    @property
+    def content_total(self):
+        # we can't just sum up the content counts because the same content could be in
+        # multiple repos
+        return self['content_total']
+
+    @property
+    def remotes(self):
+        # for complex plans, you can use one remote for many repos, so we can't assume
+        # the number of repos == the number of repositories
+        return self['remotes']
+
+    @property
+    def publications(self):
+        return len(self.repositories)
+
+    @property
+    def distributions(self):
+        return len(self.repositories)

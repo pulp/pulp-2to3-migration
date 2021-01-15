@@ -1,17 +1,13 @@
 import os
 import unittest
-
 from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
 
 from .common_plans import RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
 from .constants import FIXTURES_BASE_URL
-from .rpm_base import BaseTestRpm
+from .rpm_base import BaseTestRpm, RepoInfo
 
 PULP_2_RPM_DATA = {
-    'repositories': 5,
     'remotes': 3,
-    'publications': 5,
-    'distributions': 5,
     'content': {
         'rpm-empty': {},
         'rpm-empty-for-copy': {},
@@ -76,16 +72,16 @@ class BaseTestRpmRepo(BaseTestRpm):
         Check that names are migrated correctly and that the number of versions and content count is
         correct.
         """
-        self.assertEqual(self.rpm_repo_api.list().count, PULP_2_RPM_DATA['repositories'])
+        self.assertEqual(self.rpm_repo_api.list().count, len(self.repo_info.repositories))
 
         # content count in total
         for content_type, api in self.rpm_content_apis.items():
             with self.subTest(content_type=content_type):
-                self.assertEqual(api.list().count, PULP_2_RPM_DATA['content_total'][content_type])
+                self.assertEqual(api.list().count, self.repo_info.content_total[content_type])
 
         for repo in self.rpm_repo_api.list().results:
             with self.subTest(repo=repo):
-                version_count = 2 if PULP_2_RPM_DATA['content'][repo.name] else 1
+                version_count = 2 if self.repo_info.repositories[repo.name] else 1
                 self.assertEqual(
                     self.rpm_repo_versions_api.list(repo.pulp_href).count, version_count
                 )
@@ -95,14 +91,14 @@ class BaseTestRpmRepo(BaseTestRpm):
                         repo_content = api.list(repository_version=repo.latest_version_href)
                         self.assertEqual(
                             repo_content.count,
-                            PULP_2_RPM_DATA['content'][repo.name].get(content_type, 0)
+                            self.repo_info.repositories[repo.name].get(content_type, 0)
                         )
 
     def test_rpm_importer_migration(self):
         """
         Test that RPM importers are correctly migrated.
         """
-        self.assertEqual(self.rpm_remote_api.list().count, PULP_2_RPM_DATA['remotes'])
+        self.assertEqual(self.rpm_remote_api.list().count, self.repo_info.remotes)
         for remote in self.rpm_remote_api.list().results:
             with self.subTest(remote=remote):
                 repo_name = '-'.join(remote.name.split('-')[1:])
@@ -114,8 +110,8 @@ class BaseTestRpmRepo(BaseTestRpm):
         """
         Test that RPM distributors are correctly migrated.
         """
-        self.assertEqual(self.rpm_publication_api.list().count, PULP_2_RPM_DATA['publications'])
-        self.assertEqual(self.rpm_distribution_api.list().count, PULP_2_RPM_DATA['distributions'])
+        self.assertEqual(self.rpm_publication_api.list().count, self.repo_info.publications)
+        self.assertEqual(self.rpm_distribution_api.list().count, self.repo_info.distributions)
         for dist in self.rpm_distribution_api.list().results:
             with self.subTest(dist=dist):
                 base_path = '-'.join(dist.name.split('-')[1:])
@@ -127,6 +123,7 @@ class TestRpmRepoMigrationSimplePlan(BaseTestRpmRepo, unittest.TestCase):
     Test RPM repo migration using simple migration plan.
     """
     plan_initial = RPM_SIMPLE_PLAN
+    repo_info = RepoInfo(PULP_2_RPM_DATA, is_simple=True)
 
 
 class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
@@ -134,3 +131,4 @@ class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
     Test RPM repo migration using complex migration plan.
     """
     plan_initial = RPM_COMPLEX_PLAN
+    repo_info = RepoInfo(PULP_2_RPM_DATA)
