@@ -8,7 +8,7 @@ from .rpm_base import BaseTestRpm, RepoInfo
 
 PULP_2_RPM_DATA = {
     'remotes': 3,
-    'content': {
+    'content_initial': {
         'rpm-empty': {},
         'rpm-empty-for-copy': {},
         'rpm-with-modules': {

@@ -6,7 +6,7 @@ from collections import defaultdict
 from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
 
 from .common_plans import INITIAL_REPOSITORIES, RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
-from .rpm_base import BaseTestRpm
+from .rpm_base import BaseTestRpm, RepoInfo
 
 
 RERUN_REPOSITORIES = INITIAL_REPOSITORIES + [
@@ -30,11 +30,36 @@ RPM_RERUN_PLAN = json.dumps({
 })
 
 PULP_2_RPM_DATA = {
-    'repositories': 6,
     'remotes': 4,
-    'publications': 6,
-    'distributions': 6,
-    'content': {
+    'content_initial': {
+        'rpm-empty': {},
+        'rpm-empty-for-copy': {},
+        'rpm-with-modules': {
+            'advisory': 6,
+            'modulemd': 10,
+            'modulemd-defaults': 3,
+            'category': 1,
+            'group': 2,
+            'langpack': 1,
+            'package': 34,
+        },
+        'rpm-distribution-tree': {
+            'disttree': 1,
+            'environment': 1,
+            'category': 1,
+            'group': 1,
+            'langpack': 1,
+            'package': 1,
+        },
+        'srpm-unsigned': {
+            'advisory': 2,
+            'category': 1,
+            'group': 2,
+            'langpack': 1,
+            'package': 3,
+        },
+    },
+    'content_rerun': {
         'rpm-empty': {},
         'rpm-empty-for-copy': {
             'package': 1
@@ -88,7 +113,6 @@ PULP_2_RPM_DATA = {
         'rpm-richnweak-deps': 2
 
     },
-    'new_repos': 1,
     'new_remotes': 2,
     'new_publications': 4,
     'new_distributions': 5,
@@ -115,16 +139,24 @@ class BaseTestRpmRerun(BaseTestRpm):
                 'distributions': defaultdict(dict),
             }
             for repo in cls.rpm_repo_api.list().results:
-                data['repos'][repo.name]['created'] = repo.pulp_created
                 latest_version = cls.rpm_repo_versions_api.read(repo.latest_version_href)
-                data['repos'][repo.name]['latest_version_number'] = latest_version.number
-                data['repos'][repo.name]['latest_version_created'] = latest_version.pulp_created
+                data['repos'][repo.name] = {
+                    'created': repo.pulp_created,
+                    'latest_version_number': latest_version.number,
+                    'latest_version_created': latest_version.pulp_created,
+                }
             for remote in cls.rpm_remote_api.list().results:
-                data['remotes'][remote.name]['created'] = remote.pulp_created
+                data['remotes'][remote.name] = {
+                    'created': remote.pulp_created
+                }
             for pub in cls.rpm_publication_api.list().results:
-                data['publications'][pub.repository]['created'] = pub.pulp_created
+                data['publications'][pub.repository] = {
+                    'created': pub.pulp_created
+                }
             for dist in cls.rpm_distribution_api.list().results:
-                data['distributions'][dist.name]['created'] = dist.pulp_created
+                data['distributions'][dist.name] = {
+                    'created': dist.pulp_created
+                }
             return data
 
         set_pulp2_snapshot(name='rpm_base_4repos')
@@ -145,12 +177,12 @@ class BaseTestRpmRerun(BaseTestRpm):
             if pr.code == 'migrating.content':
                 content_added = pr.done
                 break
-        self.assertEqual(content_added, PULP_2_RPM_DATA['content_added'])
+        self.assertEqual(content_added, self.repo_info['content_added'])
 
         # content count in total
         for content_type, api in self.rpm_content_apis.items():
             with self.subTest(content_type=content_type):
-                self.assertEqual(api.list().count, PULP_2_RPM_DATA['content_total'][content_type])
+                self.assertEqual(api.list().count, self.repo_info.content_total[content_type])
 
     def test_rpm_only_added_or_changed_repos(self):
         """
@@ -158,7 +190,7 @@ class BaseTestRpmRerun(BaseTestRpm):
 
         Compare timestamps from initial run. And make sure repos are migrated correctly.
         """
-        self.assertEqual(self.rpm_repo_api.list().count, PULP_2_RPM_DATA['repositories'])
+        self.assertEqual(self.rpm_repo_api.list().count, len(self.repo_info.repositories))
         new_repo_count = 0
         for repo in self.rpm_repo_api.list().results:
             with self.subTest(repo=repo):
@@ -173,7 +205,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                     new_repo_count += 1
 
                 repo_versions = self.rpm_repo_versions_api.list(repo.pulp_href)
-                self.assertEqual(repo_versions.count, PULP_2_RPM_DATA['versions'][repo.name])
+                self.assertEqual(repo_versions.count, self.repo_info['versions'][repo.name])
 
                 # content count per repo
                 for content_type, api in self.rpm_content_apis.items():
@@ -181,9 +213,9 @@ class BaseTestRpmRerun(BaseTestRpm):
                         repo_content = api.list(repository_version=repo.latest_version_href)
                         self.assertEqual(
                             repo_content.count,
-                            PULP_2_RPM_DATA['content'][repo.name].get(content_type, 0)
+                            self.repo_info.repositories[repo.name].get(content_type, 0)
                         )
-        self.assertEqual(new_repo_count, PULP_2_RPM_DATA['new_repos'])
+        self.assertEqual(new_repo_count, len(self.repo_info.new_repositories))
 
     def test_rpm_importers_only_added_or_with_changed_config(self):
         """
@@ -192,7 +224,7 @@ class BaseTestRpmRerun(BaseTestRpm):
         The only changed feed is for the 'rpm-with-modules' repo.
         """
         REPO_FEED_CHANGE = 'rpm-with-modules'
-        self.assertEqual(self.rpm_remote_api.list().count, PULP_2_RPM_DATA['remotes'])
+        self.assertEqual(self.rpm_remote_api.list().count, self.repo_info['remotes'])
         new_remote_count = 0
         for remote in self.rpm_remote_api.list().results:
             with self.subTest(remote=remote):
@@ -207,7 +239,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                 else:
                     new_remote_count += 1
 
-        self.assertEqual(new_remote_count, PULP_2_RPM_DATA['new_remotes'])
+        self.assertEqual(new_remote_count, self.repo_info['new_remotes'])
 
     def test_rpm_distributors_only_added_or_with_changed_config(self):
         """
@@ -225,8 +257,8 @@ class BaseTestRpmRerun(BaseTestRpm):
         CHANGED_DIST_REPOS = (
             REPO_NEW_CONTENT, REPO_REMOVED_CONTENT, REPO_CHECKSUMTYPE_CHANGE, REPO_BASE_PATH_CHANGE
         )
-        self.assertEqual(self.rpm_publication_api.list().count, PULP_2_RPM_DATA['publications'])
-        self.assertEqual(self.rpm_distribution_api.list().count, PULP_2_RPM_DATA['distributions'])
+        self.assertEqual(self.rpm_publication_api.list().count, self.repo_info.publications)
+        self.assertEqual(self.rpm_distribution_api.list().count, self.repo_info.distributions)
         new_publication_count = 0
         for pub in self.rpm_publication_api.list().results:
             with self.subTest(pub=pub):
@@ -241,7 +273,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                 else:
                     new_publication_count += 1
 
-        self.assertEqual(new_publication_count, PULP_2_RPM_DATA['new_publications'])
+        self.assertEqual(new_publication_count, self.repo_info['new_publications'])
 
         new_distribution_count = 0
         for dist in self.rpm_distribution_api.list().results:
@@ -257,7 +289,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                 else:
                     new_distribution_count += 1
 
-        self.assertEqual(new_distribution_count, PULP_2_RPM_DATA['new_distributions'])
+        self.assertEqual(new_distribution_count, self.repo_info['new_distributions'])
 
 
 class TestRpmRerunSimplePlan(BaseTestRpmRerun, unittest.TestCase):
@@ -266,6 +298,7 @@ class TestRpmRerunSimplePlan(BaseTestRpmRerun, unittest.TestCase):
     """
     plan_initial = RPM_SIMPLE_PLAN
     plan_rerun = RPM_SIMPLE_PLAN
+    repo_info = RepoInfo(PULP_2_RPM_DATA, is_simple=True)
 
 
 class TestRpmRerunComplexPlan(BaseTestRpmRerun, unittest.TestCase):
@@ -274,3 +307,4 @@ class TestRpmRerunComplexPlan(BaseTestRpmRerun, unittest.TestCase):
     """
     plan_initial = RPM_COMPLEX_PLAN
     plan_rerun = RPM_RERUN_PLAN
+    repo_info = RepoInfo(PULP_2_RPM_DATA)
