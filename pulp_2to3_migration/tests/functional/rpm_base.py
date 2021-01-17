@@ -98,32 +98,63 @@ class RepoInfo(dict):
     """
 
     def __init__(self, *args, is_simple=False, **kwargs):
+        """Init.
+
+        Args:
+            is_simple (bool): Whether the expectations should be for a simple or complex plan.
+        """
         super().__init__(*args, **kwargs)
         self.is_simple = is_simple
 
     @property
     def repositories(self):
+        """Return dictionaries of content counts.
+        """
+        repositories = self.get('content_rerun', None) or self['content_initial']
         if self.is_simple:
-            return {k: v for k, v in self['content'].items() if v}
+            return {k: v for k, v in repositories.items() if v}
         else:
-            return self['content']
+            return repositories
+
+    @property
+    def new_repositories(self):
+        """Return the dictionaries for new repositories only.
+        """
+        repos = []
+        for repo_name, new_content in self['content_rerun'].items():
+            if self.is_simple:
+                initial_content = self['content_initial'].get(repo_name, None)
+                if not initial_content and new_content:
+                    repos.append(repo_name)
+            else:
+                if repo_name not in self['content_initial']:
+                    repos.append(repo_name)
+        return repos
 
     @property
     def content_total(self):
+        """Return content count dictionary.
+        """
         # we can't just sum up the content counts because the same content could be in
         # multiple repos
         return self['content_total']
 
     @property
     def remotes(self):
+        """Return the count of remotes.
+        """
         # for complex plans, you can use one remote for many repos, so we can't assume
         # the number of repos == the number of repositories
         return self['remotes']
 
     @property
     def publications(self):
+        """Return the count of publications.
+        """
         return len(self.repositories)
 
     @property
     def distributions(self):
+        """Return the count of distributions.
+        """
         return len(self.repositories)
