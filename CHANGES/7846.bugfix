@@ -1,0 +1,1 @@
+Fix an error migrating module content with no "stream" or "profile" information specified, as is allowed by the spec.
