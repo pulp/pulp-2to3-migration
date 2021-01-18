@@ -587,7 +587,7 @@ class Pulp2Modulemd(Pulp2to3Content):
                 version=md.version,
                 context=md.context,
                 arch=md.arch,
-                dependencies=md.dependencies,
+                dependencies=md.dependencies or [],
                 artifacts=md.artifacts,
                 checksum=md.checksum,
                 pulp2content=pulp2_id_obj_map[md.id])
@@ -612,7 +612,7 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
     # Unit key fields
     module = models.TextField()
     stream = models.TextField()
-    profiles = JSONField(dict)
+    profiles = JSONField(default=dict)
     digest = models.TextField()
     repo_id = models.TextField()
 
@@ -660,14 +660,20 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_content_batch = pulp2_models.ModulemdDefaults.objects.filter(id__in=pulp2_ids)
-        pulp2defaults_to_save = [
-            cls(module=defaults.name,
-                stream=defaults.stream,
-                profiles=_get_profiles(defaults.profiles),
-                digest=defaults.checksum,
-                repo_id=defaults.repo_id,
-                pulp2content=pulp2_id_obj_map[defaults.id])
-            for defaults in pulp2_content_batch]
+        pulp2defaults_to_save = []
+
+        for defaults in pulp2_content_batch:
+            kwargs = {
+                'module': defaults.name,
+                'digest': defaults.checksum,
+                'repo_id': defaults.repo_id,
+                'pulp2content': pulp2_id_obj_map[defaults.id]
+            }
+            if defaults.stream:
+                kwargs['stream'] = defaults.stream
+            if defaults.profiles:
+                kwargs['profiles'] = _get_profiles(defaults.profiles)
+            pulp2defaults_to_save.append(cls(**kwargs))
         cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True,
                                 batch_size=DEFAULT_BATCH_SIZE)
 
@@ -761,6 +767,7 @@ class Pulp2Distribution(Pulp2to3Content):
             # Reset build_timestamp so Pulp will fetch all the addons during the next sync
             treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
             return treeinfo_serialized
+        assert False, "Failed to find treeinfo, something went wrong"
 
     def create_pulp3_content(self):
         """
@@ -835,8 +842,8 @@ class Pulp2PackageGroup(Pulp2to3Content):
     description = models.TextField()
     # This field contains mandatory, default, optional, conditional packages
     packages = JSONField()
-    desc_by_lang = JSONField(dict)
-    name_by_lang = JSONField(dict)
+    desc_by_lang = JSONField(default=dict)
+    name_by_lang = JSONField(default=dict)
     biarch_only = models.BooleanField(default=False)
 
     pulp2_type = 'package_group'
@@ -905,8 +912,8 @@ class Pulp2PackageCategory(Pulp2to3Content):
     name = models.TextField()
     description = models.TextField()
     packagegroupids = JSONField()
-    desc_by_lang = JSONField(dict)
-    name_by_lang = JSONField(dict)
+    desc_by_lang = JSONField(default=dict)
+    name_by_lang = JSONField(default=dict)
 
     pulp2_type = 'package_category'
 
