@@ -541,7 +541,7 @@ class Pulp2Modulemd(Pulp2to3Content):
 
     artifacts = JSONField()
     checksum = models.TextField()
-    dependencies = JSONField()
+    dependencies = JSONField(default=list)
 
     pulp2_type = 'modulemd'
 
