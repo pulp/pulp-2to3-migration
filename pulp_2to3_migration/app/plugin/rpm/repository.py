@@ -73,7 +73,12 @@ class RpmDistributor(Pulp2to3Distributor):
             if pulp2_checksum_type:
                 checksum_types = {'metadata': pulp2_checksum_type,
                                   'package': pulp2_checksum_type}
-            publish(repo_version.pk, checksum_types=checksum_types)
+            sqlite = pulp2_config.get('generate_sqlite', False)
+            try:
+                publish(repo_version.pk, checksum_types=checksum_types, sqlite_metadata=sqlite)
+            except TypeError:
+                # hack, pulp_rpm <3.9 doesn't support sqlite_metadata kwarg
+                publish(repo_version.pk, checksum_types=checksum_types)
             publication = repo_version.publication_set.first()
 
         # create distribution
