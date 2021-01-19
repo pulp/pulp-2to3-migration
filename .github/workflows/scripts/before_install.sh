@@ -135,7 +135,7 @@ if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch main
 if [ -n "$PULP_DEB_PR_NUMBER" ]; then
   cd pulp_deb
   git fetch --depth=1 origin pull/$PULP_DEB_PR_NUMBER/head:$PULP_DEB_PR_NUMBER

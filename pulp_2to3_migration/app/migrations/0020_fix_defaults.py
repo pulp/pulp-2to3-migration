@@ -17,6 +17,11 @@ class Migration(migrations.Migration):
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
         migrations.AlterField(
+            model_name='pulp2modulemd',
+            name='dependencies',
+            field=django.contrib.postgres.fields.jsonb.JSONField(default=list),
+        ),
+        migrations.AlterField(
             model_name='pulp2packagecategory',
             name='desc_by_lang',
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),

@@ -2,14 +2,14 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-- branch: master
-  name: pulp_file
-- branch: master
-  name: pulp_container
-- branch: master
-  name: pulp_rpm
-- branch: master
-  name: pulp_deb
+- name: pulp_file
+  branch: master
+- name: pulp_container
+  branch: master
+- name: pulp_rpm
+  branch: master
+- name: pulp_deb
+  branch: main
 black: false
 check_commit_message: true
 check_manifest: true
