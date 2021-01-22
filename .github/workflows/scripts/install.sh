@@ -52,7 +52,7 @@ fi
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
-  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@master
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@main
 fi
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
