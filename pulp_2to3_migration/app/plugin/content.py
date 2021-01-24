@@ -284,6 +284,8 @@ class ContentMigrationFirstStage(Stage):
                     d_artifacts = []
                     base_path = pulp2content.pulp2_storage_path
                     remotes = set()
+                    missing_artifact = False
+
                     for image_relative_path in extra_info['download']['images']:
                         image_path = os.path.join(base_path, image_relative_path)
                         downloaded = os.path.exists(image_path)
@@ -317,11 +319,8 @@ class ContentMigrationFirstStage(Stage):
                                 remote_declarative_artifacts.append(da)
 
                             if not remote_declarative_artifacts:
-                                _logger.warn(_(
-                                    'On_demand content cannot be migrated without a remote '
-                                    'pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
-                                )
-                                continue
+                                missing_artifact = True
+                                break
 
                             d_artifacts.extend(remote_declarative_artifacts)
                         else:
@@ -332,6 +331,14 @@ class ContentMigrationFirstStage(Stage):
                                 remote=None,
                                 deferred_download=False)
                             d_artifacts.append(da)
+
+                    if missing_artifact:
+                        _logger.warn(_(
+                            'On_demand content cannot be migrated without a remote '
+                            'pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
+                        )
+                        continue
+
                     for lce in pulp2lazycatalog:
                         lce.is_migrated = True
                     future_relations.update({'lces': list(pulp2lazycatalog)})
