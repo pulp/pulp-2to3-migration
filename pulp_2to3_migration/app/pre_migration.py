@@ -139,7 +139,9 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
     mongo_fields = set(['id', '_storage_path', '_last_updated', '_content_type_id'])
     if hasattr(content_model.pulp2, 'downloaded'):
         mongo_fields.add('downloaded')
-    for i, record in enumerate(mongo_content_qs.only(*mongo_fields).no_cache()):
+
+    batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(batch_size)
+    for i, record in enumerate(batched_mongo_content_qs.no_cache()):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
