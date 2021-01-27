@@ -72,7 +72,7 @@ class TestMigrationPlan(unittest.TestCase):
         """
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         cls.smash_cli_client.run(cmd, sudo=True)
-        time.sleep(0.5)
+        time.sleep(5)
 
     def _load_and_run(self, plan, run_params={}):
         """Load and run a migration plan."""

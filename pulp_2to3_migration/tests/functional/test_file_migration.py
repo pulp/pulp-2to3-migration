@@ -129,7 +129,7 @@ class TestMigrationPlan(unittest.TestCase):
         """
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         self.smash_cli_client.run(cmd, sudo=True)
-        time.sleep(0.5)
+        time.sleep(5)
 
     def _do_test(self, repos, migration_plan):
         mp = self.migration_plans_api.create({'plan': migration_plan})
