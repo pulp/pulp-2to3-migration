@@ -741,7 +741,7 @@ class Pulp2Distribution(Pulp2to3Content):
         Create a Pulp 3 Distribution content for saving later in a bulk operation.
 
         Returns:
-            dict: a serialized treeinfo data
+            dict: a serialized treeinfo data, or None if no treeinfo can be found.
 
         """
         namespaces = [".treeinfo", "treeinfo"]
@@ -767,7 +767,8 @@ class Pulp2Distribution(Pulp2to3Content):
             # Reset build_timestamp so Pulp will fetch all the addons during the next sync
             treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
             return treeinfo_serialized
-        assert False, "Failed to find treeinfo, something went wrong"
+
+        return None
 
     def create_pulp3_content(self):
         """
@@ -775,12 +776,16 @@ class Pulp2Distribution(Pulp2to3Content):
 
         Returns:
             (DistributionTree, dict): an in-memory DistributionTree content and serialized
-                                      treeinfo data
+                                      treeinfo data. Returns (None, None) if no treeinfo
+                                      can be found.
 
         """
         treeinfo_serialized = self.get_treeinfo_serialized()
-        return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
-                treeinfo_serialized)
+        if treeinfo_serialized is None:
+            return None, None
+        else:
+            return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
+                    treeinfo_serialized)
 
 
 class Pulp2PackageLangpacks(Pulp2to3Content):
