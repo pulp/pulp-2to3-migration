@@ -272,9 +272,28 @@ class ContentMigrationFirstStage(Stage):
                     extra_info = None
                     if is_multi_artifact:
                         extra_info = pulp_2to3_detail_content.get_treeinfo_serialized()
+                        # If we can't find the .treeinfo for the Distribution, warn and skip
+                        if extra_info is None:
+                            _logger.warning(
+                                _(
+                                    "Failed to find or instantiate extra_info for multi-artifact "
+                                    "pulp2 unit_id: {} ; skipping".format(pulp2content.pulp2_id)
+                                )
+                            )
+                            continue
                 else:
                     # create pulp3 content and assign relations if present
                     pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
+
+                # If we can't find/create the Distribution, warn and skip
+                if pulp3content is None:
+                    _logger.warning(
+                        _(
+                            "Failed to find or instantiate pulp3 content for pulp2 unit_id: {} ;"
+                            " skipping".format(pulp2content.pulp2_id)
+                        )
+                    )
+                    continue
 
                 future_relations = {'pulp2content': pulp2content}
                 if extra_info:
