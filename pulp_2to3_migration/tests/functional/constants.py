@@ -17,6 +17,15 @@ TABLES_TO_KEEP = (
 
     # 'auth_permission' references it, so it should not be truncated
     'django_content_type',
+
+    # not to freak out the tasking system
+    'core_reservedresource',
+    'core_reservedresourcerecord',
+    'core_task',
+    'core_taskgroup',
+    'core_taskreservedresource',
+    'core_taskreservedresourcerecord',
+    'core_worker',
 )
 
 TRUNCATE_TABLES_QUERY_BASH = f"""
