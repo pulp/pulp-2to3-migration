@@ -17,6 +17,7 @@ TABLES_TO_KEEP = (
 
     # 'auth_permission' references it, so it should not be truncated
     'django_content_type',
+    # just a test PR, needed some change to commit
 )
 
 TRUNCATE_TABLES_QUERY_BASH = f"""
