@@ -13,6 +13,39 @@ Changelog
 
 .. towncrier release notes start
 
+0.7.0 (2021-02-04)
+==================
+
+Bugfixes
+--------
+
+- Multi-artifact content aren't (not) skipped properly when some artifacts are unavailable.
+  `#7681 <https://pulp.plan.io/issues/7681>`_
+- Taught pre-migration to order content by last-updated.
+
+  This lets a migration recover reliably from fatal errors during migration attempts.
+  NOTE: this fix assumes the Pulp2 instance is at least at 2.21.5. Earlier versions are
+  missing an index in the Mongo database that makes the ordering possible.
+  `#7781 <https://pulp.plan.io/issues/7781>`_
+- Fix an error migrating module content with no "stream" or "profile" information specified, as is allowed by the spec.
+  `#7846 <https://pulp.plan.io/issues/7846>`_
+- No longer generate sqlite metadata when publishing unless the Pulp 2 configuration specified to do so.
+  `#7851 <https://pulp.plan.io/issues/7851>`_
+- Fixed Pulp2Content serialization when filters are applied.
+  `#7994 <https://pulp.plan.io/issues/7994>`_
+- Taught rpm to warn and continue if a Distribution is missing a treeinfo file.
+  `#8084 <https://pulp.plan.io/issues/8084>`_
+
+
+Misc
+----
+
+- `#6516 <https://pulp.plan.io/issues/6516>`_, `#7903 <https://pulp.plan.io/issues/7903>`_, `#7934 <https://pulp.plan.io/issues/7934>`_, `#7966 <https://pulp.plan.io/issues/7966>`_, `#7998 <https://pulp.plan.io/issues/7998>`_, `#7999 <https://pulp.plan.io/issues/7999>`_, `#8040 <https://pulp.plan.io/issues/8040>`_, `#8041 <https://pulp.plan.io/issues/8041>`_
+
+
+----
+
+
 0.6.0 (2020-12-04)
 ==================
 

@@ -1,5 +1,0 @@
-Taught pre-migration to order content by last-updated.
-
-This lets a migration recover reliably from fatal errors during migration attempts.
-NOTE: this fix assumes the Pulp2 instance is at least at 2.21.5. Earlier versions are
-missing an index in the Mongo database that makes the ordering possible.
