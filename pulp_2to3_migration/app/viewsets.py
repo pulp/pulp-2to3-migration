@@ -112,7 +112,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
                     "plugins specified in the migration plan.",
         responses={202: AsyncOperationResponseSerializer}
     )
-    @action(detail=True, methods=('post',))
+    @action(detail=True, methods=('post',), serializer_class=None)
     def reset(self, request, pk):
         """Reset Pulp 3 data for plugins specified in the migration plan."""
         migration_plan = self.get_object()
