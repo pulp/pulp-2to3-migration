@@ -70,7 +70,7 @@ class TestMigrationPlanReset(unittest.TestCase):
 
     def _reset_pulp3_data(self, migration_plan):
         """Run a reset task and wait for it to be complete."""
-        mp_run_response = self.migration_plans_api.reset(migration_plan.pulp_href, {})
+        mp_run_response = self.migration_plans_api.reset(migration_plan.pulp_href)
         monitor_task(mp_run_response.task)
 
     def test_reset_file_plugin(self):
@@ -172,9 +172,9 @@ class TestMigrationPlanReset(unittest.TestCase):
         mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
 
         # run twice
-        mp_run_response = self.migration_plans_api.reset(mp.pulp_href, {})
+        mp_run_response = self.migration_plans_api.reset(mp.pulp_href)
         with self.assertRaises(ApiException):
-            self.migration_plans_api.reset(mp.pulp_href, {})
+            self.migration_plans_api.reset(mp.pulp_href)
 
         # make sure the first task is completed not to interfere with further tests
         monitor_task(mp_run_response.task)
@@ -186,7 +186,7 @@ class TestMigrationPlanReset(unittest.TestCase):
         # run the migration plan and then immediately run reset without waiting
         mp_run_response = self.migration_plans_api.run(mp.pulp_href, {})
         with self.assertRaises(ApiException):
-            self.migration_plans_api.reset(mp.pulp_href, {})
+            self.migration_plans_api.reset(mp.pulp_href)
 
         # make sure the first task is completed not to interfere with further tests
         task = monitor_task(mp_run_response.task)
