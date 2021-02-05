@@ -106,6 +106,9 @@ class RpmDistributor(Pulp2to3Distributor):
             bool: True, if a publication needs to be recreated; False if no changes are needed
 
         """
+        if not pulp2distributor.pulp3_publication:
+            return True
+
         new_checksum_type = pulp2distributor.pulp2_config.get('checksum_type')
         current_checksum_type = pulp2distributor.pulp3_publication.cast().metadata_checksum_type
 
