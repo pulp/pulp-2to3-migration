@@ -1,6 +1,7 @@
 import logging
 
 from collections import namedtuple
+from datetime import datetime
 
 from django.db import transaction
 from django.db.models import Max, Q
@@ -279,11 +280,18 @@ def pre_migrate_all_without_content(plan):
     """
     Pre-migrate repositories, relations to their contents, importers and distributors.
 
-    NOTE: MongoDB and Django handle datetime fields differently. MongoDB doesn't care about
-    timezones and provides "naive" time, while Django is complaining about time without a timezone.
-    The problem is that naive time != time with specified timezone, that's why all the time for
-    MongoDB comparisons should be naive and all the time for Django/PostgreSQL should be timezone
-    aware.
+    Look at the last updated times in the pulp2to3 tables for repositories/importers/distributors:
+     * pulp2_last_unit_added or pulp2_last_unit_removed for repositories
+     * pulp2_last_updated for importers and distributors
+
+    Query empty-never-had-content repos (can't filter them out in any way) and repos for which
+    there were:
+     * content changes since the last run
+     * importer changes since the last run
+     * distributor changes since the last run
+
+    Query in order of last_unit_added for the case when pre-migration is interrupted before we are
+    done with repositories.
 
     Args:
         plan(MigrationPlan): A Migration Plan
@@ -296,27 +304,68 @@ def pre_migrate_all_without_content(plan):
 
         for plugin_plan in plan.get_plugin_plans():
             repos = plugin_plan.get_repositories()
-            # filter by repo type
-            repos_to_check = plan.type_to_repo_ids[plugin_plan.type]
-
-            mongo_repo_q = mongo_Q(repo_id__in=repos_to_check)
-            mongo_repo_qs = Repository.objects(mongo_repo_q)
-
-            pb.total += mongo_repo_qs.count()
-            pb.save()
-
             importers_repos = plugin_plan.get_importers_repos()
             distributors_repos = plugin_plan.get_distributors_repos()
 
-            distributor_migrators = plugin_plan.migrator.distributor_migrators
             importer_types = list(plugin_plan.migrator.importer_migrators.keys())
+            distributor_migrators = plugin_plan.migrator.distributor_migrators
+            distributor_types = list(distributor_migrators.keys())
+
+            # figure out which repos/importers/distributors have been updated since the last run
+            epoch = datetime.utcfromtimestamp(0)
+            repo_type_q = Q(pulp2_repo_type=plugin_plan.type)
+            imp_type_q = Q(pulp2_type_id__in=importer_types)
+            dist_type_q = Q(pulp2_type_id__in=distributor_types)
+
+            plugin_pulp2repos = Pulp2Repository.objects.filter(repo_type_q)
+            repo_premigrated_last_by_added = plugin_pulp2repos.aggregate(
+                Max('pulp2_last_unit_added')
+            )['pulp2_last_unit_added__max'] or epoch
+            repo_premigrated_last_by_removed = plugin_pulp2repos.aggregate(
+                Max('pulp2_last_unit_removed')
+            )['pulp2_last_unit_removed__max'] or epoch
+            imp_premigrated_last = Pulp2Importer.objects.filter(imp_type_q).aggregate(
+                Max('pulp2_last_updated')
+            )['pulp2_last_updated__max'] or epoch
+            dist_premigrated_last = Pulp2Distributor.objects.filter(dist_type_q).aggregate(
+                Max('pulp2_last_updated')
+            )['pulp2_last_updated__max'] or epoch
+
+            is_content_added_q = mongo_Q(last_unit_added__gte=repo_premigrated_last_by_added)
+            is_content_removed_q = mongo_Q(last_unit_removed__gte=repo_premigrated_last_by_removed)
+            is_new_enough_repo_q = is_content_added_q | is_content_removed_q
+            is_empty_repo_q = mongo_Q(last_unit_added__exists=False)
+            is_new_enough_imp_q = mongo_Q(last_updated__gte=imp_premigrated_last)
+            is_new_enough_dist_q = mongo_Q(last_updated__gte=dist_premigrated_last)
+            repo_repo_id_q = mongo_Q(repo_id__in=repos)
+            imp_repo_id_q = mongo_Q(repo_id__in=importers_repos)
+            dist_repo_id_q = mongo_Q(repo_id__in=distributors_repos)
+
+            updated_importers = Importer.objects(
+                imp_repo_id_q & is_new_enough_imp_q
+            ).only('repo_id')
+            updated_imp_repos = set(imp.repo_id for imp in updated_importers)
+            updated_distributors = Distributor.objects(
+                dist_repo_id_q & is_new_enough_dist_q
+            ).only('repo_id')
+            updated_dist_repos = set(dist.repo_id for dist in updated_distributors)
+            updated_impdist_repos = updated_imp_repos | updated_dist_repos
+
+            mongo_updated_repo_q = repo_repo_id_q & (is_new_enough_repo_q | is_empty_repo_q)
+            mongo_updated_imp_dist_repo_q = mongo_Q(repo_id__in=updated_impdist_repos)
+
+            mongo_repo_qs = Repository.objects(
+                mongo_updated_repo_q | mongo_updated_imp_dist_repo_q
+            ).order_by('last_unit_added')
+
+            pb.total += mongo_repo_qs.count()
+            pb.save()
 
             for repo_data in mongo_repo_qs.only('id',
                                                 'repo_id',
                                                 'last_unit_added',
                                                 'last_unit_removed',
-                                                'description',
-                                                'notes'):
+                                                'description'):
                 repo = None
                 repo_id = repo_data.repo_id
                 with transaction.atomic():
@@ -329,12 +378,18 @@ def pre_migrate_all_without_content(plan):
                     if not repos or repos and distributors_repos:
                         pre_migrate_distributor(
                             repo_id, distributors_repos, distributor_migrators, repo)
-                pb.increment()
+                    pb.increment()
 
 
 def pre_migrate_repo(record, repo_id_to_type):
     """
     Pre-migrate a pulp 2 repo.
+
+    NOTE: MongoDB and Django handle datetime fields differently. MongoDB doesn't care about
+    timezones and provides "naive" time, while Django is complaining about time without a timezone.
+    The problem is that naive time != time with specified timezone, that's why all the time for
+    MongoDB comparisons should be naive and all the time for Django/PostgreSQL should be timezone
+    aware.
 
     Args:
         record(Repository): Pulp 2 repository data

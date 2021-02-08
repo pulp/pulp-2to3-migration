@@ -251,7 +251,9 @@ class TestMigrationBehaviour(unittest.TestCase):
         Check correctness of the dara for the first repo in the list.
         """
         self._load_and_run(plan)
-        pulp2repository = self.pulp2repositories_api.list(ordering='pulp2_id', limit=1).results[0]
+        pulp2repository = self.pulp2repositories_api.list(
+            ordering='pulp2_repo_id', limit=1
+        ).results[0]
         pulp3_repo = self.file_repo_api.read(pulp2repository.pulp3_repository_href)
         pulp3_remote = self.file_remotes_api.read(pulp2repository.pulp3_remote_href)
         pulp3_pub = self.file_publications_api.read(pulp2repository.pulp3_publication_href)
@@ -315,7 +317,7 @@ class TestMigrationBehaviour(unittest.TestCase):
         Importers are swapped in the plan.
         """
         self._load_and_run(IMPORTER_DIFF_PLAN)
-        pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_id').results
+        pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
         pulp3_remote1 = self.file_remotes_api.read(pulp2repo1.pulp3_remote_href)
         pulp3_remote2 = self.file_remotes_api.read(pulp2repo2.pulp3_remote_href)
@@ -336,7 +338,7 @@ class TestMigrationBehaviour(unittest.TestCase):
         Distributors are swapped in the plan.
         """
         self._load_and_run(DISTRIBUTOR_DIFF_PLAN)
-        pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_id').results
+        pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
         pulp3_pub1 = self.file_publications_api.read(pulp2repo1.pulp3_publication_href)
         pulp3_pub2 = self.file_publications_api.read(pulp2repo2.pulp3_publication_href)
