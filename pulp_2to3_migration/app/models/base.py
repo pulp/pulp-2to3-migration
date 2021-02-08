@@ -33,6 +33,7 @@ def get_repo_types(plan):
     """
     repo_id_to_type = {}
     type_to_repo_ids = defaultdict(set)
+    is_simple_plan = False
 
     # mapping content type -> plugin/repo type, e.g. 'docker_blob' -> 'docker'
     content_type_to_plugin = {}
@@ -40,6 +41,12 @@ def get_repo_types(plan):
     for plugin in plan.get_plugin_plans():
         for content_type in plugin.migrator.pulp2_content_models:
             content_type_to_plugin[content_type] = plugin.migrator.pulp2_plugin
+
+        # if any of the plugin plans is empty, we'd need to go through all repo content relations
+        # to determine repo types correctly.
+        if plugin.empty:
+            is_simple_plan = True
+            continue
 
         repos = set(plugin.get_repositories())
         repos |= set(plugin.get_importers_repos())
@@ -49,22 +56,25 @@ def get_repo_types(plan):
             repo_id_to_type[repo] = plugin.type
         type_to_repo_ids[plugin.type].update(repos)
 
-    # TODO: optimizations.
-    # It looks at each content at the moment. Potential optimizations:
-    #  - This is a big query, paginate?
-    #  - Filter by repos from the plan
-    #  - Query any but one record for a repo
-    for rec in RepositoryContentUnit.objects().\
-            only('repo_id', 'unit_type_id').as_pymongo().no_cache():
-        repo_id = rec['repo_id']
-        unit_type_id = rec['unit_type_id']
+    # Go through repo content relations only when at least one of the plans is not complex,
+    # otherwise the type is determined by the plan in a much more efficient way.
+    if is_simple_plan:
+        # TODO: optimizations.
+        # It looks at each content at the moment. Potential optimizations:
+        #  - This is a big query, paginate?
+        #  - Filter by repos from the plan
+        #  - Query any but one record for a repo
+        for rec in RepositoryContentUnit.objects().\
+                only('repo_id', 'unit_type_id').as_pymongo().no_cache():
+            repo_id = rec['repo_id']
+            unit_type_id = rec['unit_type_id']
 
-        # a type for a repo is already known or this content/repo type is not supported
-        if repo_id in repo_id_to_type or unit_type_id not in content_type_to_plugin:
-            continue
-        plugin_name = content_type_to_plugin[unit_type_id]
-        repo_id_to_type[repo_id] = plugin_name
-        type_to_repo_ids[plugin_name].add(repo_id)
+            # a type for a repo is already known or this content/repo type is not supported
+            if repo_id in repo_id_to_type or unit_type_id not in content_type_to_plugin:
+                continue
+            plugin_name = content_type_to_plugin[unit_type_id]
+            repo_id_to_type[repo_id] = plugin_name
+            type_to_repo_ids[plugin_name].add(repo_id)
 
     return repo_id_to_type, type_to_repo_ids
 
