@@ -1,0 +1,1 @@
+Fixed an edge-case failure in erratum-migration when doing repeated migrations.
