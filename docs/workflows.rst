@@ -12,18 +12,26 @@ A recommended scenario:
 
 All the commands should be run on Pulp 3 machine.
 
+.. note::
+   The commands below use the Pulp 3's CLI. See the `pulp-cli docs <https://github.com/pulp/pulp-cli#pulp-command-line-interface>`_
+   for more information.
+
 1. Create a :doc:`Migration Plan <../migration_plan>`
 
 .. code:: bash
 
     $ # migrate content for Pulp 2 ISO plugin
-    $ http POST :24817/pulp/api/v3/migration-plans/ plan='{"plugins": [{"type": "iso"}]}'
-
-    HTTP/1.1 201 Created
+    $ pulp migration plan create plan='{"plugins": [{"type": "iso"}]}'
     {
-        "pulp_created": "2019-07-23T08:18:12.927007Z",
-        "pulp_href": "/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/",
-        "plan": "{ "plugins": [{"type": "iso"}]}"
+      "pulp_href": "/pulp/api/v3/migration-plans/8d8d49ee-a754-4a6a-aa7a-d8de4d1039c2/",
+      "pulp_created": "2021-02-13T14:20:15.678368Z",
+      "plan": {
+        "plugins": [
+          {
+            "type": "iso"
+          }
+        ]
+      }
     }
 
 
@@ -33,12 +41,9 @@ migration. Optionally, skip corrupted or missing Pulp 2 content by specifying th
 
 .. code:: bash
 
-    $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/
-
-    HTTP/1.1 202 Accepted
-    {
-        "task": "/pulp/api/v3/tasks/55db2086-cf2e-438f-b5b7-cd0dbb7c8cf4/"
-    }
+    $ pulp migration plan run --href "/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/"
+    Started background task /pulp/api/v3/tasks/e52ce832-4f83-4bbf-8420-f1b653289243/
+    ....Done.
 
 .. note::
     It is possible to re-run migration as many times as needed (if the Pulp 3 plugin which is
@@ -49,28 +54,21 @@ migration. Optionally, skip corrupted or missing Pulp 2 content by specifying th
 
 .. code:: bash
 
-    $ http :24817/pulp/api/v3/pulp2repositories/
-
-    HTTP/1.1 200 OK
-    {
-        "count": 1,
-        "next": null,
-        "previous": null,
-        "results": [
-            {
-                "is_migrated": true,
-                "not_in_plan": false,
-                "pulp2_object_id": "5dbc478c472f68283ad8e6bd",
-                "pulp2_repo_id": "file-large",
-                "pulp3_distribution_hrefs": [],
-                "pulp3_publication_href": [],
-                "pulp3_remote_href": "/pulp/api/v3/remotes/file/file/ca0e505e-51c2-46e1-be40-3762d372f9b2/",
-                "pulp3_repository_version": null,
-                "pulp_created": "2019-11-01T14:59:04.648920Z",
-                "pulp_href": "/pulp/api/v3/pulp2repositories/92c6d1c8-718b-4ea9-8a23-b2386849c2c5/"
-            }
-        ]
-    }
+    $ pulp migration pulp2 repository list
+    [
+      {
+        "is_migrated": true,
+        "not_in_plan": false,
+        "pulp2_object_id": "5dbc478c472f68283ad8e6bd",
+        "pulp2_repo_id": "file-large",
+        "pulp3_distribution_hrefs": [],
+        "pulp3_publication_href": [],
+        "pulp3_remote_href": "/pulp/api/v3/remotes/file/file/ca0e505e-51c2-46e1-be40-3762d372f9b2/",
+        "pulp3_repository_version": null,
+        "pulp_created": "2019-11-01T14:59:04.648920Z",
+        "pulp_href": "/pulp/api/v3/pulp2repositories/92c6d1c8-718b-4ea9-8a23-b2386849c2c5/"
+      }
+    ]
 
 
 Reset migrated Pulp 3 data
@@ -96,13 +94,17 @@ reset.
 
 .. code:: bash
 
-    $ http POST :24817/pulp/api/v3/migration-plans/ plan='{"plugins": [{"type": "iso"}]}'
-
-    HTTP/1.1 201 Created
+    $ pulp migration plan create --plan='{"plugins": [{"type": "iso"}]}'
     {
-        "pulp_created": "2019-07-23T08:18:12.927007Z",
-        "pulp_href": "/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/",
-        "plan": "{ "plugins": [{"type": "iso"}]}"
+      "pulp_href": "/pulp/api/v3/migration-plans/fdea2154-b598-4259-9754-c8a1911caf1c/",
+      "pulp_created": "2021-02-13T14:45:14.423100Z",
+      "plan": {
+        "plugins": [
+          {
+            "type": "iso"
+          }
+        ]
+      }
     }
 
 2. Use the ``pulp_href`` of the created Migration Plan and its ``reset/`` endpoint to reset Pulp 3
@@ -111,12 +113,10 @@ data.
 .. code:: bash
 
     $ # reset Pulp 3 data to be able to migrate Pulp 2 ISO plugin from scratch
-    $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/reset/
+    $ pulp migration plan reset --href "/pulp/api/v3/migration-plans/fdea2154-b598-4259-9754-c8a1911caf1c/"
+    Started background task /pulp/api/v3/tasks/247a6a07-f131-4ca3-9c8e-11c591ca0f14/
+    ...Done.
 
-    HTTP/1.1 202 Accepted
-    {
-        "task": "/pulp/api/v3/tasks/55db2086-cf2e-438f-b5b7-cd0dbb7c8cf4/"
-    }
 
 .. note::
     Because this task removes data selectively, only for the plugins specified in the migration
@@ -126,12 +126,9 @@ data.
 
 .. code:: bash
 
-    $ http POST :24817/pulp/api/v3/migration-plans/59f8a786-c7d7-4e2b-ad07-701479d403c5/run/
-
-    HTTP/1.1 202 Accepted
-    {
-        "task": "/pulp/api/v3/tasks/65db2086-cf2e-438f-b5b7-cd0dbb7c8cf5/"
-    }
+    $ pulp migration plan run --href "/pulp/api/v3/migration-plans/fdea2154-b598-4259-9754-c8a1911caf1c/"
+    Started background task /pulp/api/v3/tasks/6707d196-8d98-4bf4-946b-1e0f2dcdb9f4/
+    ..Done.
 
 .. _level_of_deb_support:
 
