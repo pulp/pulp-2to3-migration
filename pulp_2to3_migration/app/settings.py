@@ -10,3 +10,5 @@ PULP2_MONGODB = {
     'verify_ssl': True,
     'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
 }
+
+ALLOWED_CONTENT_CHECKSUMS = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
