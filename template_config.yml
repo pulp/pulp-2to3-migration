@@ -40,6 +40,7 @@ pydocstyle: false
 pypi_username: pulp
 redmine_project: migration
 test_bindings: false
+test_cli: true
 test_performance: false
 test_released_plugin_with_next_pulpcore_release: false
 test_s3: false
