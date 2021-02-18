@@ -34,6 +34,7 @@ else
 fi
 mkdir .ci/ansible/vars || true
 echo "---" > .ci/ansible/vars/main.yaml
+echo "legacy_component_name: pulp_2to3_migration" >> .ci/ansible/vars/main.yaml
 echo "component_name: pulp_2to3_migration" >> .ci/ansible/vars/main.yaml
 echo "component_version: '${COMPONENT_VERSION}'" >> .ci/ansible/vars/main.yaml
 
