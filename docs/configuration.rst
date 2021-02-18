@@ -6,6 +6,7 @@ Requirements
 
 * ``/var/lib/pulp`` is shared from Pulp 2 machine
 * access to Pulp 2 database
+* [recommended] all Pulp 3 supported checksum types are allowed
 
 
 Configuration
@@ -45,3 +46,21 @@ E.g.
         'verify_ssl': True,
         'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
     }
+
+3. Configure `ALLOWED_CONTENT_CHECKSUMS` in your settings, ``/etc/pulp/settings.py`` before you
+run a migration. It is recommended to list all Pulp 3 supported checksum types.
+pulp-2to3-migration is shipped with such default configuration. In case you have a custom one in
+``/etc/pulp/settings.py``, make sure it lists all types as shown below:
+
+.. code:: python
+
+    ALLOWED_CONTENT_CHECKSUMS = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
+
+If you are sure that your Pulp 2 installation has no md5 or sha1 checksums for any content
+(on_demand or downloaded) or in any distributor configuration, then you are fine to exclude those
+from the setting.
+
+If you are concerned having `md5` and `sha1` enabled, you can always adjust the setting after
+the migration is done and remove those two checksum types from the allowed list. After modifying
+the setting, you likely will need to run ``pulpcore-manager handle-artifact-checksums`` to remove
+unsupported checksums from the database, or Pulp will refuse to start.
