@@ -1,1 +1,0 @@
-Fixed distributor re-migration case when it was changed in Pulp 2 between migration plan runs.

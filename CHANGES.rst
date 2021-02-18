@@ -13,6 +13,47 @@ Changelog
 
 .. towncrier release notes start
 
+0.8.0 (2021-02-18)
+==================
+
+Features
+--------
+
+- Added the ability to migrate additional Debian content types needed for structured publishing.
+  `#7865 <https://pulp.plan.io/issues/7865>`_
+- The default configuration now contains the ALLOWED_CONTENT_CHECKSUMS setting with all checksum types supported in Pulp 2.
+  `#8266 <https://pulp.plan.io/issues/8266>`_
+
+
+Bugfixes
+--------
+
+- Fixed the re-run times when repositories/importers/distributors haven't changed much since the last run.
+  `#7779 <https://pulp.plan.io/issues/7779>`_
+- Fixed an edge-case failure in erratum-migration when doing repeated migrations.
+  `#8166 <https://pulp.plan.io/issues/8166>`_
+- Fixed distributor re-migration case when it was changed in Pulp 2 between migration plan runs.
+  `#8195 <https://pulp.plan.io/issues/8195>`_
+- Fixed openapi schema for reset/ endpoint. Bindings no longer require `plan` parameter.
+  `#8211 <https://pulp.plan.io/issues/8211>`_
+
+
+Improved Documentation
+----------------------
+
+- Added a note that ALLOWED_CONTENT_CHECKSUMS is strongly recommended to allow all supported checksum types, and can be adjusted after the migration.
+  `#8266 <https://pulp.plan.io/issues/8266>`_
+
+
+Misc
+----
+
+- `#8137 <https://pulp.plan.io/issues/8137>`_
+
+
+----
+
+
 0.7.0 (2021-02-04)
 ==================
 
