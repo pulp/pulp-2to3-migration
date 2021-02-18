@@ -1,1 +1,0 @@
-Added a note that ALLOWED_CONTENT_CHECKSUMS is strongly recommended to allow all supported checksum types, and can be adjusted after the migration.

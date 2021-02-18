@@ -1,1 +1,0 @@
-Added the pulp2_subid field to the Pulp2Content model to facilitate one to many 2to3 mappings.
