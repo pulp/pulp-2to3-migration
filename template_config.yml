@@ -7,7 +7,7 @@ additional_plugins:
 - name: pulp_container
   branch: 2.2
 - name: pulp_rpm
-  branch: 3.9
+  branch: 3.8
 - name: pulp_deb
   branch: 2.9
 black: false
