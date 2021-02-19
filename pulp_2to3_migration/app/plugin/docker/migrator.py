@@ -85,8 +85,8 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     }
 
     future_types = {
-        'docker_manifest': pulp2_models.Manifest,
-        'docker_manifest_list': pulp2_models.ManifestList
+        'docker_manifest': Pulp2Manifest,
+        'docker_manifest_list': Pulp2ManifestList
     }
 
     @classmethod
