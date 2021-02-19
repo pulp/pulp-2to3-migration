@@ -3,13 +3,13 @@
 
 additional_plugins:
 - name: pulp_file
-  branch: master
+  branch: 1.5
 - name: pulp_container
-  branch: master
+  branch: 2.2
 - name: pulp_rpm
-  branch: master
+  branch: 3.9
 - name: pulp_deb
-  branch: main
+  branch: 2.9
 black: false
 check_commit_message: true
 check_manifest: true
@@ -33,8 +33,8 @@ plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 publish_docs_to_pulpprojectdotorg: true
 pulp_settings: null
-pulpcore_branch: master
-pulpcore_pip_version_specifier: null
+pulpcore_branch: 3.9
+pulpcore_pip_version_specifier: ~=3.9.0
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
