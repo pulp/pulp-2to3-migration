@@ -1,4 +1,7 @@
-from .base import MigrationPlan  # noqa
+from .base import (  # noqa
+    MigrationPlan,
+    RepoSetup,
+)
 from .content import (  # noqa
     Pulp2Content,
     Pulp2LazyCatalog,

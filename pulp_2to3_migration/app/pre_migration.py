@@ -23,6 +23,7 @@ from pulp_2to3_migration.app.models import (
     Pulp2LazyCatalog,
     Pulp2RepoContent,
     Pulp2Repository,
+    RepoSetup,
 )
 from pulp_2to3_migration.pulp2.base import (
     Distributor,
@@ -597,6 +598,9 @@ def handle_outdated_resources(plan):
     Args:
         plan(MigrationPlan): A Migration Plan
     """
+    RepoSetup.mark_changed_relations()
+    RepoSetup.finalize()
+
     for plugin_plan in plan.get_plugin_plans():
         inplan_repos = plugin_plan.get_repositories()
 
@@ -672,3 +676,12 @@ def handle_outdated_resources(plan):
         # Delete outdated distributions
         BaseDistribution.objects.filter(
             pulp2distributor__in=pulp2distributors_with_old_distributions_qs).delete()
+
+        # Remove relations to the pulp2repository in case the relation changed.
+        # Pulp2Distributors with is_migrated=false is handled and re-added properly at
+        # migration stage.
+        # NOTE: this needs to be removed last, the queries above use this relation.
+        not_migrated_dists = Pulp2Distributor.objects.filter(is_migrated=False).only('pulp_id')
+        Pulp2Distributor.pulp2_repos.through.objects.filter(
+            pulp2distributor__in=not_migrated_dists
+        ).delete()

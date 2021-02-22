@@ -1,7 +1,8 @@
-from collections import defaultdict
 import itertools
+from collections import defaultdict
 
 from django.contrib.postgres.fields import JSONField
+from django.db import IntegrityError, models
 
 from pulpcore.plugin.models import BaseModel
 
@@ -12,6 +13,8 @@ from pulp_2to3_migration.pulp2.base import (
     Repository,
     RepositoryContentUnit,
 )
+
+from .repository import Pulp2Repository
 
 
 def get_repo_types(plan):
@@ -131,6 +134,10 @@ class MigrationPlan(BaseModel):
                         plugin_plan.repositories_importers_to_migrate.append(repo_id)
                         plugin_plan.repositories_to_migrate.append(repo_id)
                         plugin_plan.repositories_distributors_to_migrate.append(repo_id)
+                        RepoSetup.set_importer(repo_id, plugin_plan.type, importer_repo_id=repo_id)
+                        RepoSetup.set_distributors(
+                            repo_id, plugin_plan.type, distributor_repo_ids=[repo_id]
+                        )
 
         return self._real_plan
 
@@ -312,9 +319,9 @@ class PluginMigrationPlan:
             for repository in repositories:
                 name = repository['name']
 
-                _find_importer_repo = repository.get('pulp2_importer_repository_id')
-                if _find_importer_repo:
-                    self.repositories_importers_to_migrate.append(_find_importer_repo)
+                importer_repo_id = repository.get('pulp2_importer_repository_id')
+                if importer_repo_id:
+                    self.repositories_importers_to_migrate.append(importer_repo_id)
 
                 repository_versions = []
                 for repository_version in repository.get('repository_versions', []):
@@ -330,7 +337,153 @@ class PluginMigrationPlan:
                         {'repo_id': pulp2_repository_id, 'dist_repo_ids': distributor_repo_ids}
                     )
 
+                    RepoSetup.set_importer(pulp2_repository_id, self.type, importer_repo_id)
+                    RepoSetup.set_distributors(pulp2_repository_id, self.type, distributor_repo_ids)
+
                 self.repositories_to_create[name] = {
-                    "pulp2_importer_repository_id": _find_importer_repo,
+                    "pulp2_importer_repository_id": importer_repo_id,
                     "repository_versions": repository_versions
                 }
+
+
+class RepoSetup(BaseModel):
+    """
+    A model to reflect changes between previous and current migration plans.
+    """
+    OLD = 0
+    UP_TO_DATE = 1
+    NEW = 2
+    STATUS_CHOICES = (
+        (OLD, 'old'),
+        (UP_TO_DATE, 'up to date'),
+        (NEW, 'new'),
+    )
+
+    IMPORTER = 0
+    DISTRIBUTOR = 1
+    RESOURCE_TYPE_CHOICES = (
+        (IMPORTER, 'importer'),
+        (DISTRIBUTOR, 'distributor')
+    )
+
+    pulp2_repo_id = models.TextField()
+    pulp2_repo_type = models.CharField(max_length=25)
+    pulp2_resource_repo_id = models.TextField(blank=True)
+    pulp2_resource_type = models.SmallIntegerField(choices=RESOURCE_TYPE_CHOICES)
+    status = models.SmallIntegerField(choices=STATUS_CHOICES)
+
+    class Meta:
+        unique_together = ('pulp2_repo_id', 'pulp2_resource_repo_id', 'pulp2_resource_type')
+        indexes = [
+            models.Index(fields=['pulp2_resource_type']),
+            models.Index(fields=['status'])
+        ]
+
+    @classmethod
+    def finalize(cls):
+        """
+        Finalize RepoSetup process.
+
+        For that the following needs to be performed in specified order:
+         - remove records that are marked as old ones (they are leftovers from the old run)
+         - set status for all records to `old`, as a sign of completion of the RepoSetup process.
+
+        It is only safe to do after the premigration step is done.
+        If premigration was interrupted, all records should stay as they are.
+        """
+        cls.objects.filter(status=cls.OLD).delete()
+        cls.objects.filter().update(status=cls.OLD)
+
+    @classmethod
+    def reset_plugin(cls, plugin_type):
+        """
+        Remove all records for a specified plugin.
+
+        Args:
+            plugin_type(str): pulp2 plugin name to reset
+        """
+        cls.objects.filter(pulp2_repo_type=plugin_type).delete()
+
+    @classmethod
+    def set_importer(cls, repo_id, repo_type, importer_repo_id):
+        """
+        Sets proper status for the `repo_id`, `importer_repo_id` pair:
+         - `up to date` for the relations which stayed the same
+         - `new` for absolutely new ones or if a repository had a different importer according to
+           the previous plan
+
+        If previous premigration failed, we should be careful not to override any in `new` state
+        with `up to date` ones, to let the `new` ones be processed (potentially for the second
+        time).
+
+        Args:
+            repo_id(str): pulp 2 repository id
+            repo_type(str): pulp 2 repo type
+            importer_repo_id(str): pulp 2 repository id of an importer
+        """
+        relation, created = cls.objects.get_or_create(
+            pulp2_resource_type=cls.IMPORTER,
+            pulp2_repo_type=repo_type,
+            pulp2_repo_id=repo_id,
+            pulp2_resource_repo_id=importer_repo_id,
+            defaults={'status': cls.NEW}
+        )
+
+        is_unchanged_relation = not created and relation.status == cls.OLD
+        if is_unchanged_relation:
+            relation.status = cls.UP_TO_DATE
+            relation.save()
+
+    @classmethod
+    def set_distributors(cls, repo_id, repo_type, distributor_repo_ids):
+        """
+        Sets proper status for the `repo_id`, `distributor_repo_id` pairs:
+         - `up to date` for the relations which stayed the same
+         - `new` for absolutely new ones or if a repository had different distributors according to
+           the previous plan
+
+        If previous premigration failed, we should be careful not to override any in `new` state
+        with `up to date` ones, to let the `new` ones be processed (potentially for the second
+        time).
+
+        Args:
+            repo_id(str): pulp 2 repository id
+            repo_type(str): pulp 2 repo type
+            distributor_repo_ids(list): pulp 2 repository ids of distributors
+        """
+        up_to_date_count = cls.objects.filter(
+            pulp2_repo_id=repo_id,
+            pulp2_resource_type=cls.DISTRIBUTOR,
+            pulp2_resource_repo_id__in=distributor_repo_ids,
+            status=cls.OLD
+        ).update(status=cls.UP_TO_DATE)
+
+        no_new_relations = up_to_date_count == len(distributor_repo_ids)
+        if no_new_relations:
+            return
+
+        # create new relations
+        for distributor_repo_id in distributor_repo_ids:
+            try:
+                cls.objects.create(
+                    pulp2_resource_type=cls.DISTRIBUTOR,
+                    pulp2_repo_type=repo_type,
+                    pulp2_repo_id=repo_id,
+                    pulp2_resource_repo_id=distributor_repo_id,
+                    status=cls.NEW,
+                )
+            except IntegrityError:
+                # ignore existing relations, they've been already updated as up to date ones
+                pass
+
+    @classmethod
+    def mark_changed_relations(cls):
+        """
+        Set is_migrated to False for any relations which changed and no longer up to date.
+        """
+        changed_relations_repo_ids = RepoSetup.objects.exclude(
+            status=cls.UP_TO_DATE
+        ).only('pulp2_repo_id').values_list('pulp2_repo_id', flat=True)
+        Pulp2Repository.objects.filter(
+            pulp2_repo_id__in=changed_relations_repo_ids
+        ).update(is_migrated=False)
