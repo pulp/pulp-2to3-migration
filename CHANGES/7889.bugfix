@@ -1,0 +1,1 @@
+Fixed re-migration cases when a distributor on an importer changed in the migration plan between re-runs.

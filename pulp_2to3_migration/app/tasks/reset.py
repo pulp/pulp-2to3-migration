@@ -10,6 +10,7 @@ from pulp_2to3_migration.app.models import (
     Pulp2LazyCatalog,
     Pulp2RepoContent,
     Pulp2Repository,
+    RepoSetup,
 )
 
 
@@ -33,6 +34,7 @@ def reset_pulp3_data(migration_plan_pk):
                    total=len(pulp2_plugins))
     with ProgressReport(**pb_data) as pb:
         for plugin in plan.get_plugin_plans():
+            RepoSetup.reset_plugin(plugin.type)
             for dist_migrator in plugin.migrator.distributor_migrators.values():
                 for dist_model in dist_migrator.pulp3_distribution_models:
                     dist_model.objects.all().only('pk').delete()

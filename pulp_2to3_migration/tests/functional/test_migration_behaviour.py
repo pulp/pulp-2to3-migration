@@ -4,7 +4,12 @@ import unittest
 
 from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
 
-from .common_plans import FILE_SIMPLE_PLAN, FILE_COMPLEX_PLAN
+from .common_plans import (
+    FILE_COMPLEX_PLAN,
+    FILE_DISTRIBUTOR_DIFF_PLAN,
+    FILE_IMPORTER_DIFF_PLAN,
+    FILE_SIMPLE_PLAN,
+)
 from .constants import FILE_MANY_URL, FILE_URL, TRUNCATE_TABLES_QUERY_BASH
 from .file_base import BaseTestFile
 
@@ -24,60 +29,6 @@ MANY_INTO_ONE_PLAN = json.dumps({
                     },
                     {
                         "pulp2_repository_id": "file-many"  # content count: iso - 250
-                    }
-                ]
-            }
-        ]
-    }]
-})
-
-IMPORTER_DIFF_PLAN = json.dumps({
-    "plugins": [{
-        "type": "iso",
-        "repositories": [
-            {
-                "name": "file",
-                "pulp2_importer_repository_id": "file-many",  # policy: on_demand
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "file"  # content count: iso - 3
-                    }
-                ]
-            },
-            {
-                "name": "file-many",
-                "pulp2_importer_repository_id": "file",  # policy: immediate
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "file-many"  # content count: iso - 250
-                    }
-                ]
-            }
-        ]
-    }]
-})
-
-DISTRIBUTOR_DIFF_PLAN = json.dumps({
-    "plugins": [{
-        "type": "iso",
-        "repositories": [
-            {
-                "name": "file",
-                "pulp2_importer_repository_id": "file",  # policy: immediate
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "file",  # content count: iso - 3
-                        "pulp2_distributor_repository_ids": ["file-many"]
-                    }
-                ]
-            },
-            {
-                "name": "file-many",
-                "pulp2_importer_repository_id": "file-many",  # policy: on_demand
-                "repository_versions": [
-                    {
-                        "pulp2_repository_id": "file-many",  # content count: iso - 250
-                        "pulp2_distributor_repository_ids": ["file"]
                     }
                 ]
             }
@@ -267,7 +218,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
 
         Importers are swapped in the plan.
         """
-        self.run_migration(IMPORTER_DIFF_PLAN)
+        self.run_migration(FILE_IMPORTER_DIFF_PLAN)
         pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
         pulp3_remote1 = self.file_remote_api.read(pulp2repo1.pulp3_remote_href)
@@ -288,7 +239,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
 
         Distributors are swapped in the plan.
         """
-        self.run_migration(DISTRIBUTOR_DIFF_PLAN)
+        self.run_migration(FILE_DISTRIBUTOR_DIFF_PLAN)
         pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
         pulp3_pub1 = self.file_publication_api.read(pulp2repo1.pulp3_publication_href)

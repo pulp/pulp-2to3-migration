@@ -116,3 +116,57 @@ RPM_COMPLEX_PLAN = json.dumps({
 
 FILE_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "iso"}]})
 RPM_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "rpm"}]})
+
+FILE_DISTRIBUTOR_DIFF_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file",
+                "pulp2_importer_repository_id": "file",  # policy: immediate
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file",  # content count: iso - 3
+                        "pulp2_distributor_repository_ids": ["file-many"]
+                    }
+                ]
+            },
+            {
+                "name": "file-many",
+                "pulp2_importer_repository_id": "file-many",  # policy: on_demand
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file-many",  # content count: iso - 250
+                        "pulp2_distributor_repository_ids": ["file"]
+                    }
+                ]
+            }
+        ]
+    }]
+})
+
+FILE_IMPORTER_DIFF_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file",
+                "pulp2_importer_repository_id": "file-many",  # policy: on_demand
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file"  # content count: iso - 3
+                    }
+                ]
+            },
+            {
+                "name": "file-many",
+                "pulp2_importer_repository_id": "file",  # policy: immediate
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file-many"  # content count: iso - 250
+                    }
+                ]
+            }
+        ]
+    }]
+})
