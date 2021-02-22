@@ -369,15 +369,12 @@ def pre_migrate_all_without_content(plan):
                 repo = None
                 repo_id = repo_data.repo_id
                 with transaction.atomic():
-                    if not repos or repos and repo_id in repos:
+                    if repo_id in repos:
                         repo = pre_migrate_repo(repo_data, plan.repo_id_to_type)
-                    # do not pre-migrate importers/distributors in case of special repo setup
-                    # and no importers/distributors were specified in the MP
-                    if not repos or repos and importers_repos:
-                        pre_migrate_importer(repo_id, importers_repos, importer_types, repo)
-                    if not repos or repos and distributors_repos:
-                        pre_migrate_distributor(
-                            repo_id, distributors_repos, distributor_migrators, repo)
+                    if repo_id in importers_repos:
+                        pre_migrate_importer(repo_id, importer_types, repo)
+                    if repo_id in distributors_repos:
+                        pre_migrate_distributor(repo_id, distributor_migrators, repo)
                     pb.increment()
 
 
@@ -432,14 +429,12 @@ def pre_migrate_repo(record, repo_id_to_type):
     return repo
 
 
-def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
+def pre_migrate_importer(repo_id, importer_types, repo=None):
     """
     Pre-migrate a pulp 2 importer.
 
     Args:
         repo_id(str): An id of a pulp 2 repository which importer should be migrated
-        importers(list): A list of importers which are expected to be migrated. If empty,
-                         all are migrated.
         importer_types(list): a list of supported importer types
         repo(Pulp2Repository): A pre-migrated pulp 2 repository for this importer
     """
@@ -447,10 +442,6 @@ def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
 
     # importers with empty config are not needed - nothing to migrate
     mongo_importer_q &= mongo_Q(config__exists=True) & mongo_Q(config__ne={})
-
-    # in case only certain importers are specified in the migration plan
-    if importers:
-        mongo_importer_q &= mongo_Q(repo_id__in=importers)
 
     mongo_importer_qs = Importer.objects(mongo_importer_q)
     if not mongo_importer_qs:
@@ -501,24 +492,18 @@ def pre_migrate_importer(repo_id, importers, importer_types, repo=None):
         importer.save()
 
 
-def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=None):
+def pre_migrate_distributor(repo_id, distributor_migrators, repo=None):
     """
     Pre-migrate a pulp 2 distributor.
 
     Args:
         repo_id(str): An id of a pulp 2 repository which distributor should be migrated
-        distributors(list): A list of distributors which are expected to be migrated. If empty,
-                            all are migrated.
         distributor_migrators(dict): supported distributor types and their models for migration
         repo(Pulp2Repository): A pre-migrated pulp 2 repository for this distributor
     """
     distributor_types = list(distributor_migrators.keys())
     mongo_distributor_q = mongo_Q(repo_id=repo_id,
                                   distributor_type_id__in=distributor_types)
-
-    # in case only certain distributors are specified in the migration plan
-    if distributors:
-        mongo_distributor_q &= mongo_Q(repo_id__in=distributors)
 
     mongo_distributor_qs = Distributor.objects(mongo_distributor_q)
     if not mongo_distributor_qs:
@@ -539,12 +524,6 @@ def pre_migrate_distributor(repo_id, distributors, distributor_migrators, repo=N
                       'pulp2_config': dist_data.config,
                       'pulp2_repo_id': repo_id,
                       'is_migrated': False})
-
-        # this is the case for the simple plan
-        # add native distributor to the repo
-        # this will go away with the simple-complex plan conversion work
-        if not distributors and repo:
-            repo.pulp2_dists.add(distributor)
 
         if not created:
             # if it was marked as such because it was not present in the migration plan
@@ -625,12 +604,9 @@ def handle_outdated_resources(plan):
     for plugin_plan in plan.get_plugin_plans():
         inplan_repos = plugin_plan.get_repositories()
 
-        # filter by repo type
+        # filter by repo type and by the repos specified in a plan
         repos_to_consider = plan.type_to_repo_ids[plugin_plan.type]
-
-        # in case only certain repositories are specified in the migration plan
-        if inplan_repos:
-            repos_to_consider = set(inplan_repos).intersection(repos_to_consider)
+        repos_to_consider = set(inplan_repos).intersection(repos_to_consider)
 
         mongo_repo_q = mongo_Q(repo_id__in=repos_to_consider)
         mongo_repo_obj_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only('id'))
@@ -641,11 +617,7 @@ def handle_outdated_resources(plan):
 
         # Mark removed or excluded importers
         inplan_imp_repos = plugin_plan.get_importers_repos()
-        if inplan_imp_repos:
-            mongo_imp_q = mongo_Q(repo_id__in=inplan_imp_repos)
-        else:
-            # simple migration plan case, all importers are migrated
-            mongo_imp_q = mongo_Q()
+        mongo_imp_q = mongo_Q(repo_id__in=inplan_imp_repos)
         mongo_imp_obj_ids = set(str(i.id) for i in Importer.objects(mongo_imp_q).only('id'))
         imp_types = plugin_plan.migrator.importer_migrators.keys()
 
@@ -655,11 +627,7 @@ def handle_outdated_resources(plan):
 
         # Mark removed or excluded distributors
         inplan_dist_repos = plugin_plan.get_distributors_repos()
-        if inplan_dist_repos:
-            mongo_dist_q = mongo_Q(repo_id__in=inplan_dist_repos)
-        else:
-            # simple migration plan case, all distributors are migrated
-            mongo_dist_q = mongo_Q()
+        mongo_dist_q = mongo_Q(repo_id__in=inplan_dist_repos)
         mongo_dist_obj_ids = set(str(i.id) for i in Distributor.objects(mongo_dist_q).only('id'))
         dist_types = plugin_plan.migrator.distributor_migrators.keys()
 
