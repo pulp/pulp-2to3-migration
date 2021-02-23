@@ -76,7 +76,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         content_model: Models for content which is being migrated.
         mutable_type: Boolean that indicates whether the content type is mutable.
     """
-    batch_size = 500
+    batch_size = 100
     pulp2content = []
     pulp2mutatedcontent = []
     content_type = content_model.pulp2.TYPE_ID
