@@ -62,7 +62,6 @@ def migrate_repositories(plan):
     with ProgressReport(**progress_data) as pb:
         for plugin in plan.get_plugin_plans():
 
-            # TODO: Should we filter out repos which have is_migrated=True?
             pulp2repos_qs = Pulp2Repository.objects.filter(
                 pulp3_repository_version=None,
                 not_in_plan=False,
@@ -88,11 +87,11 @@ def migrate_repositories(plan):
                 repo_version_setup = repos_to_create[pulp3_repo_name].get('repository_versions')
                 for repo_version in repo_version_setup:
                     pulp2_repo_ids.append(repo_version['repo_id'])
-                pulp2repos_qs = Pulp2Repository.objects.filter(pulp2_repo_id__in=pulp2_repo_ids)
-                for pulp2repo in pulp2repos_qs:
-                    if not pulp2repo.pulp3_repository:
-                        pulp2repo.pulp3_repository = repo
-                        pulp2repo.save()
+                pulp2repos_qs = Pulp2Repository.objects.filter(
+                    pulp2_repo_id__in=pulp2_repo_ids, pulp3_repository__isnull=True
+                )
+                pulp2repos_qs.update(pulp3_repository=repo)
+
                 if created:
                     pb.increment()
                 else:
@@ -284,11 +283,9 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
 
     if pulp3_remote:
         pulp2_repo.pulp3_repository_remote = pulp3_remote
-    # pulp2importer might not be migrated, e.g. config was empty
-    elif hasattr(pulp2_repo, 'pulp2importer'):
-        pulp2_repo.pulp3_repository_remote = pulp2_repo.pulp2importer.pulp3_remote
-    if pulp2_repo.is_migrated:
         pulp2_repo.save()
+
+    if pulp2_repo.is_migrated:
         progress_rv.update(total=F('total') - 1)
         return
 

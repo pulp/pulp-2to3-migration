@@ -366,15 +366,14 @@ def pre_migrate_all_without_content(plan):
                                                 'last_unit_added',
                                                 'last_unit_removed',
                                                 'description'):
-                repo = None
                 repo_id = repo_data.repo_id
                 with transaction.atomic():
                     if repo_id in repos:
-                        repo = pre_migrate_repo(repo_data, plan.repo_id_to_type)
+                        pre_migrate_repo(repo_data, plan.repo_id_to_type)
                     if repo_id in importers_repos:
-                        pre_migrate_importer(repo_id, importer_types, repo)
+                        pre_migrate_importer(repo_id, importer_types)
                     if repo_id in distributors_repos:
-                        pre_migrate_distributor(repo_id, distributor_migrators, repo)
+                        pre_migrate_distributor(repo_id, distributor_migrators)
                     pb.increment()
 
 
@@ -429,14 +428,13 @@ def pre_migrate_repo(record, repo_id_to_type):
     return repo
 
 
-def pre_migrate_importer(repo_id, importer_types, repo=None):
+def pre_migrate_importer(repo_id, importer_types):
     """
     Pre-migrate a pulp 2 importer.
 
     Args:
         repo_id(str): An id of a pulp 2 repository which importer should be migrated
         importer_types(list): a list of supported importer types
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository for this importer
     """
     mongo_importer_q = mongo_Q(repo_id=repo_id, importer_type_id__in=importer_types)
 
@@ -471,7 +469,6 @@ def pre_migrate_importer(repo_id, importer_types, repo=None):
         defaults={'pulp2_type_id': importer_data.importer_type_id,
                   'pulp2_last_updated': last_updated,
                   'pulp2_config': importer_data.config,
-                  'pulp2_repository': repo,
                   'pulp2_repo_id': repo_id,
                   'is_migrated': False})
 
@@ -492,14 +489,13 @@ def pre_migrate_importer(repo_id, importer_types, repo=None):
         importer.save()
 
 
-def pre_migrate_distributor(repo_id, distributor_migrators, repo=None):
+def pre_migrate_distributor(repo_id, distributor_migrators):
     """
     Pre-migrate a pulp 2 distributor.
 
     Args:
         repo_id(str): An id of a pulp 2 repository which distributor should be migrated
         distributor_migrators(dict): supported distributor types and their models for migration
-        repo(Pulp2Repository): A pre-migrated pulp 2 repository for this distributor
     """
     distributor_types = list(distributor_migrators.keys())
     mongo_distributor_q = mongo_Q(repo_id=repo_id,

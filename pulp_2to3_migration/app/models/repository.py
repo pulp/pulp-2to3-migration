@@ -112,7 +112,6 @@ class Pulp2Importer(BaseModel):
         not_in_plan (models.BooleanField): True if a resource is not a part of the migration plan.
 
     Relations:
-        pulp2_repository (models.OneToOneField): Pulp 2 repository this importer belongs to
         pulp3_remote (models.OneToOneField): Pulp 3 remote which this importer was migrated to
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
@@ -123,7 +122,6 @@ class Pulp2Importer(BaseModel):
     is_migrated = models.BooleanField(default=False)
     not_in_plan = models.BooleanField(default=False)
 
-    pulp2_repository = models.OneToOneField(Pulp2Repository, on_delete=models.CASCADE, null=True)
     pulp3_remote = models.OneToOneField(Remote, on_delete=models.SET_NULL, null=True)
 
     class Meta:
