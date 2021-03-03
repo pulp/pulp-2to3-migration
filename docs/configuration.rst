@@ -8,6 +8,11 @@ Requirements
 * access to Pulp 2 database
 * [recommended] all Pulp 3 supported checksum types are allowed
 
+.. note::
+
+    The migration workload is very I/O intensive. It's highly recommended that the volume
+    backing your Postgresql database be on a SSD or other low latency, high IOPS storage volume.
+
 
 Configuration
 -------------
@@ -19,6 +24,13 @@ On Pulp 2 machine
 one of the ``bindIP`` in ``/etc/mongod.conf``.
 
 2. Make sure ``/var/lib/pulp`` is on a shared filesystem.
+
+.. note::
+
+    If you experience Pulp 2 workers timing out during the migration, consider making them more
+    tolerant to delayed mongodb writes by increasing the ``worker_timeout`` setting in the
+    ``[tasks]`` section of your Pulp 2 ``server.conf``. Typically a value of 300 seconds has worked
+    well even during large migration workloads.
 
 
 On Pulp 3 machine
@@ -64,3 +76,10 @@ If you are concerned having `md5` and `sha1` enabled, you can always adjust the 
 the migration is done and remove those two checksum types from the allowed list. After modifying
 the setting, you likely will need to run ``pulpcore-manager handle-artifact-checksums`` to remove
 unsupported checksums from the database, or Pulp will refuse to start.
+
+.. note::
+
+    If you experience Pulp 3 workers timing out during the migration, consider making them more
+    tolerant to delayed PostgreSQL writes by increasing the Pulp 3 ``WORKER_TTL`` setting. Typically
+    a value of 300 seconds has worked well even during large migration workloads. This setting is
+    available in ``pulpcore>=3.11``.
