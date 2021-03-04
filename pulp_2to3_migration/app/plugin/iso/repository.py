@@ -1,3 +1,5 @@
+import os
+
 from pulp_2to3_migration.app.plugin.api import (
     is_different_relative_url,
     Pulp2to3Importer,
@@ -6,8 +8,6 @@ from pulp_2to3_migration.app.plugin.api import (
 
 from pulp_file.app.models import FileRemote, FilePublication, FileDistribution
 from pulp_file.app.tasks.publishing import publish
-
-from urllib.parse import urljoin
 
 
 class IsoImporter(Pulp2to3Importer):
@@ -34,7 +34,7 @@ class IsoImporter(Pulp2to3Importer):
         # pulp2 iso importer is compatible only with repos that contain namely PULP_MANIFEST
         url = base_config.get('url')
         if url:
-            base_config['url'] = urljoin(url, 'PULP_MANIFEST')
+            base_config['url'] = os.path.join(url, 'PULP_MANIFEST')
         return FileRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
