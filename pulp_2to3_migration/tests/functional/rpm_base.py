@@ -4,7 +4,7 @@ from pulpcore.client.pulpcore import Configuration
 from pulpcore.client.pulp_rpm import (
     ApiClient as RpmApiClient,
     ContentAdvisoriesApi,
-    # ContentDistributionTreesApi,
+    ContentDistributionTreesApi,
     ContentModulemdDefaultsApi,
     ContentModulemdsApi,
     ContentPackagecategoriesApi,
@@ -59,8 +59,7 @@ class BaseTestRpm:
         cls.rpm_publication_api = PublicationsRpmApi(rpm_client)
         cls.rpm_content_apis = {
             'advisory': ContentAdvisoriesApi(rpm_client),
-            # skip until https://pulp.plan.io/issues/8050 is fixed
-            # 'disttree': ContentDistributionTreesApi(rpm_client),
+            'disttree': ContentDistributionTreesApi(rpm_client),
             'modulemd': ContentModulemdsApi(rpm_client),
             'modulemd-defaults': ContentModulemdDefaultsApi(rpm_client),
             'category': ContentPackagecategoriesApi(rpm_client),
