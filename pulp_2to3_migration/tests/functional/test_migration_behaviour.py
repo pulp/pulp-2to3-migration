@@ -2,33 +2,11 @@ import json
 import time
 import unittest
 
-from pulpcore.client.pulpcore import Configuration
-
-from pulpcore.client.pulp_file import (
-    ApiClient as FileApiClient,
-    ContentFilesApi,
-    DistributionsFileApi,
-    PublicationsFileApi,
-    RemotesFileApi,
-    RepositoriesFileApi,
-    RepositoriesFileVersionsApi
-)
-from pulpcore.client.pulp_2to3_migration import (
-    ApiClient as MigrationApiClient,
-    MigrationPlansApi,
-    Pulp2ContentApi,
-    Pulp2RepositoriesApi
-)
-
 from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
 
-from pulp_smash import cli
-from pulp_smash import config as smash_config
-from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
-
 from .common_plans import FILE_SIMPLE_PLAN, FILE_COMPLEX_PLAN
-from .constants import BINDINGS_CONFIGURATION, FILE_MANY_URL, FILE_URL, TRUNCATE_TABLES_QUERY_BASH
-
+from .constants import FILE_MANY_URL, FILE_URL, TRUNCATE_TABLES_QUERY_BASH
+from .file_base import BaseTestFile
 
 MANY_INTO_ONE_PLAN = json.dumps({
     "plugins": [{
@@ -186,33 +164,15 @@ CONTENT_COUNT = {
 }
 
 
-class TestMigrationBehaviour(unittest.TestCase):
+class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
     """Test the migration behaviour."""
-
-    smash_cfg = smash_config.get_config()
-    smash_cli_client = cli.Client(smash_cfg)
 
     @classmethod
     def setUpClass(cls):
         """
-        Create all the client instances needed to communicate with Pulp.
+        Populate needed pulp2 snapshot.
         """
-        configuration = Configuration(**BINDINGS_CONFIGURATION)
-
-        file_client = FileApiClient(configuration)
-        migration_client = MigrationApiClient(configuration)
-
-        # Create api clients for all resource types needed
-        cls.file_content_api = ContentFilesApi(file_client)
-        cls.file_distributions_api = DistributionsFileApi(file_client)
-        cls.file_publications_api = PublicationsFileApi(file_client)
-        cls.file_remotes_api = RemotesFileApi(file_client)
-        cls.file_repo_api = RepositoriesFileApi(file_client)
-        cls.file_repo_versions_api = RepositoriesFileVersionsApi(file_client)
-        cls.migration_plans_api = MigrationPlansApi(migration_client)
-        cls.pulp2content_api = Pulp2ContentApi(migration_client)
-        cls.pulp2repositories_api = Pulp2RepositoriesApi(migration_client)
-
+        super().setUpClass()
         set_pulp2_snapshot(name='file_base_4repos')
 
     def tearDown(self):
@@ -223,22 +183,13 @@ class TestMigrationBehaviour(unittest.TestCase):
         self.smash_cli_client.run(cmd, sudo=True)
         time.sleep(0.5)
 
-    def _load_and_run(self, plan, run_params={}):
-        """Load and run a migration plan."""
-        mp = self.migration_plans_api.create({'plan': plan})
-        mp_run_response = self.migration_plans_api.run(mp.pulp_href, run_params)
-        task = monitor_task(mp_run_response.task)
-        # to ensure that migration fully finished and further tests won't collide with it
-        monitor_task_group(task.task_group)
-        return task
-
     def _test_pulp2content(self, plan):
         """
         Test that pulp2content/ endpoint provides an href for a migrated content.
 
         Check the first content in the list.
         """
-        self._load_and_run(plan)
+        self.run_migration(plan)
         pulp2content = self.pulp2content_api.list(ordering='pulp2_id', limit=1).results[0]
         content_href = pulp2content.pulp3_content
         file_content = self.file_content_api.read(content_href)
@@ -250,14 +201,14 @@ class TestMigrationBehaviour(unittest.TestCase):
 
         Check correctness of the dara for the first repo in the list.
         """
-        self._load_and_run(plan)
+        self.run_migration(plan)
         pulp2repository = self.pulp2repositories_api.list(
             ordering='pulp2_repo_id', limit=1
         ).results[0]
         pulp3_repo = self.file_repo_api.read(pulp2repository.pulp3_repository_href)
-        pulp3_remote = self.file_remotes_api.read(pulp2repository.pulp3_remote_href)
-        pulp3_pub = self.file_publications_api.read(pulp2repository.pulp3_publication_href)
-        pulp3_dist = self.file_distributions_api.read(pulp2repository.pulp3_distribution_hrefs[0])
+        pulp3_remote = self.file_remote_api.read(pulp2repository.pulp3_remote_href)
+        pulp3_pub = self.file_publication_api.read(pulp2repository.pulp3_publication_href)
+        pulp3_dist = self.file_distribution_api.read(pulp2repository.pulp3_distribution_hrefs[0])
 
         self.assertEqual(self.pulp2repositories_api.list().count, 4)
         self.assertTrue(pulp2repository.is_migrated)
@@ -294,7 +245,7 @@ class TestMigrationBehaviour(unittest.TestCase):
         Each repo version behaves in "mirror" mode is case, each repo version should perfectly
         reflect the pulp 2 repo and not be additive.
         """
-        self._load_and_run(MANY_INTO_ONE_PLAN)
+        self.run_migration(MANY_INTO_ONE_PLAN)
         pulp2repositories = self.pulp2repositories_api.list().results
         pulp3_repo = self.file_repo_api.list().results[0]
 
@@ -316,11 +267,11 @@ class TestMigrationBehaviour(unittest.TestCase):
 
         Importers are swapped in the plan.
         """
-        self._load_and_run(IMPORTER_DIFF_PLAN)
+        self.run_migration(IMPORTER_DIFF_PLAN)
         pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
-        pulp3_remote1 = self.file_remotes_api.read(pulp2repo1.pulp3_remote_href)
-        pulp3_remote2 = self.file_remotes_api.read(pulp2repo2.pulp3_remote_href)
+        pulp3_remote1 = self.file_remote_api.read(pulp2repo1.pulp3_remote_href)
+        pulp3_remote2 = self.file_remote_api.read(pulp2repo2.pulp3_remote_href)
 
         self.assertEqual(pulp2repo1.pulp2_repo_id, 'file')
         self.assertEqual(pulp2repo2.pulp2_repo_id, 'file-many')
@@ -337,13 +288,13 @@ class TestMigrationBehaviour(unittest.TestCase):
 
         Distributors are swapped in the plan.
         """
-        self._load_and_run(DISTRIBUTOR_DIFF_PLAN)
+        self.run_migration(DISTRIBUTOR_DIFF_PLAN)
         pulp2repositories = self.pulp2repositories_api.list(ordering='pulp2_repo_id').results
         pulp2repo1, pulp2repo2 = pulp2repositories
-        pulp3_pub1 = self.file_publications_api.read(pulp2repo1.pulp3_publication_href)
-        pulp3_pub2 = self.file_publications_api.read(pulp2repo2.pulp3_publication_href)
-        pulp3_dist1 = self.file_distributions_api.read(pulp2repo1.pulp3_distribution_hrefs[0])
-        pulp3_dist2 = self.file_distributions_api.read(pulp2repo2.pulp3_distribution_hrefs[0])
+        pulp3_pub1 = self.file_publication_api.read(pulp2repo1.pulp3_publication_href)
+        pulp3_pub2 = self.file_publication_api.read(pulp2repo2.pulp3_publication_href)
+        pulp3_dist1 = self.file_distribution_api.read(pulp2repo1.pulp3_distribution_hrefs[0])
+        pulp3_dist2 = self.file_distribution_api.read(pulp2repo2.pulp3_distribution_hrefs[0])
 
         self.assertEqual(pulp2repo1.pulp2_repo_id, 'file')
         self.assertEqual(pulp2repo2.pulp2_repo_id, 'file-many')
@@ -358,12 +309,12 @@ class TestMigrationBehaviour(unittest.TestCase):
 
     def test_importer_no_repo(self):
         """Test that an importer can be migrated without its native Pulp 2 repo."""
-        self._load_and_run(IMPORTER_NO_REPO_PLAN)
+        self.run_migration(IMPORTER_NO_REPO_PLAN)
         pulp2repository = self.pulp2repositories_api.list().results[0]
-        pulp3_remote = self.file_remotes_api.read(pulp2repository.pulp3_remote_href)
+        pulp3_remote = self.file_remote_api.read(pulp2repository.pulp3_remote_href)
 
         self.assertEqual(self.pulp2repositories_api.list().count, 1)
-        self.assertEqual(self.file_remotes_api.list().count, 1)
+        self.assertEqual(self.file_remote_api.list().count, 1)
         self.assertTrue(pulp2repository.is_migrated)
         self.assertEqual(pulp2repository.pulp2_repo_id, 'file')
         self.assertEqual(pulp3_remote.url, FILE_MANY_URL)
@@ -371,13 +322,13 @@ class TestMigrationBehaviour(unittest.TestCase):
 
     def test_distributor_no_repo(self):
         """Test that a distributor can be migrated without its native Pulp 2 repo."""
-        self._load_and_run(DISTRIBUTOR_NO_REPO_PLAN)
+        self.run_migration(DISTRIBUTOR_NO_REPO_PLAN)
         pulp2repository = self.pulp2repositories_api.list().results[0]
-        pulp3_pub = self.file_publications_api.read(pulp2repository.pulp3_publication_href)
-        pulp3_dist = self.file_distributions_api.read(pulp2repository.pulp3_distribution_hrefs[0])
+        pulp3_pub = self.file_publication_api.read(pulp2repository.pulp3_publication_href)
+        pulp3_dist = self.file_distribution_api.read(pulp2repository.pulp3_distribution_hrefs[0])
 
         self.assertEqual(self.pulp2repositories_api.list().count, 1)
-        self.assertEqual(self.file_distributions_api.list().count, 1)
+        self.assertEqual(self.file_distribution_api.list().count, 1)
         self.assertTrue(pulp2repository.is_migrated)
         self.assertEqual(pulp2repository.pulp2_repo_id, 'file')
         self.assertEqual(pulp3_pub.repository_version, pulp2repository.pulp3_repository_version)
@@ -386,7 +337,7 @@ class TestMigrationBehaviour(unittest.TestCase):
 
     def test_no_on_demand_importer(self):
         """Test that if there is no importer for on_demand content, such content is not migrated."""
-        self._load_and_run(NO_ON_DEMAND_IMPORTER_PLAN)
+        self.run_migration(NO_ON_DEMAND_IMPORTER_PLAN)
         pulp3_repo = self.file_repo_api.list().results[0]
         repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)
 
@@ -395,7 +346,7 @@ class TestMigrationBehaviour(unittest.TestCase):
 
     def test_no_immediate_importer(self):
         """Test that if there is no importer for downloaded content, such content is migrated."""
-        self._load_and_run(NO_IMMEDIATE_IMPORTER_PLAN)
+        self.run_migration(NO_IMMEDIATE_IMPORTER_PLAN)
         pulp3_repo = self.file_repo_api.list().results[0]
         repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)
 
