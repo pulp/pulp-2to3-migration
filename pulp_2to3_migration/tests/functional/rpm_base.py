@@ -71,10 +71,20 @@ class BaseTestRpm:
         cls.migration_plans_api = MigrationPlansApi(migration_client)
 
     @classmethod
-    def run_migration(cls, plan):
-        """Run a migration using simple plan."""
+    def run_migration(cls, plan, run_params={}):
+        """
+        Run a migration plan.
+
+        Args:
+            plan(str): A migration plan to run, in JSON format.
+            run_params(dict): parameters for the `run` call. Optional.
+
+        Returns:
+            task(pulpcore.app.models.Task): a migration task created for this plan
+
+        """
         mp = cls.migration_plans_api.create({'plan': plan})
-        mp_run_response = cls.migration_plans_api.run(mp.pulp_href, {})
+        mp_run_response = cls.migration_plans_api.run(mp.pulp_href, run_params)
         task = monitor_task(mp_run_response.task)
         monitor_task_group(task.task_group)
         return task

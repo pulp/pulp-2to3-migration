@@ -2,31 +2,13 @@ import json
 import time
 import unittest
 
-from pulpcore.client.pulpcore import (
-    ApiClient as CoreApiClient,
-    Configuration,
-    TasksApi
-)
-from pulpcore.client.pulp_file import (
-    ApiClient as FileApiClient,
-    ContentFilesApi,
-    RepositoriesFileApi,
-    RepositoriesFileVersionsApi
-)
-from pulpcore.client.pulp_2to3_migration import (
-    ApiClient as MigrationApiClient,
-    MigrationPlansApi
-)
 from pulp_2to3_migration.tests.functional.util import (
     get_psql_smash_cmd,
     set_pulp2_snapshot
 )
 
-from pulp_smash import cli
-from pulp_smash import config as smash_config
-from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
-
-from .constants import BINDINGS_CONFIGURATION, TRUNCATE_TABLES_QUERY_BASH
+from .constants import TRUNCATE_TABLES_QUERY_BASH
+from .file_base import BaseTestFile
 
 PULP_2_ISO_FIXTURE_DATA = {
     'file': 3,
@@ -97,45 +79,27 @@ DIFFERENT_IMPORTER_MIGRATION_PLAN = json.dumps({
 #   - Check that distributions are created properly
 #   - Check that remotes are created properly
 
-class TestMigrationPlan(unittest.TestCase):
+class TestMigrationPlan(BaseTestFile, unittest.TestCase):
     """Test the APIs for creating a Migration Plan."""
-
-    smash_cfg = smash_config.get_config()
-    smash_cli_client = cli.Client(smash_cfg)
 
     @classmethod
     def setUpClass(cls):
         """
-        Create all the client instances needed to communicate with Pulp.
+        Populate needed pulp2 snapshot.
         """
-        configuration = Configuration(**BINDINGS_CONFIGURATION)
-
-        core_client = CoreApiClient(configuration)
-        file_client = FileApiClient(configuration)
-        migration_client = MigrationApiClient(configuration)
-
-        # Create api clients for all resource types
-        cls.file_repo_api = RepositoriesFileApi(file_client)
-        cls.file_repo_versions_api = RepositoriesFileVersionsApi(file_client)
-        cls.file_content_api = ContentFilesApi(file_client)
-        cls.tasks_api = TasksApi(core_client)
-        cls.migration_plans_api = MigrationPlansApi(migration_client)
-
+        super().setUpClass()
         set_pulp2_snapshot(name='file_base_4repos')
 
     def tearDown(self):
         """
-        Clean up the database after each test
+        Clean up the database after each test.
         """
         cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
         self.smash_cli_client.run(cmd, sudo=True)
         time.sleep(0.5)
 
     def _do_test(self, repos, migration_plan):
-        mp = self.migration_plans_api.create({'plan': migration_plan})
-        mp_run_response = self.migration_plans_api.run(mp.pulp_href, {})
-        task = monitor_task(mp_run_response.task)
-        monitor_task_group(task.task_group)
+        self.run_migration(migration_plan, {})
 
         for repo_id in repos:
             pulp3repos = self.file_repo_api.list(name=repo_id)
