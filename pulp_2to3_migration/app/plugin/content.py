@@ -3,7 +3,6 @@ import functools
 import logging
 import os
 import shutil
-from urllib.parse import urljoin
 
 from gettext import gettext as _
 
@@ -374,7 +373,7 @@ class ContentMigrationFirstStage(Stage):
                         for remote in remotes:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
-                                url=urljoin(remote.url, relative_path),
+                                url=os.path.join(remote.url, relative_path),
                                 relative_path=relative_path,
                                 remote=remote,
                                 deferred_download=False,
