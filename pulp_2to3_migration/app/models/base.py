@@ -349,6 +349,15 @@ class PluginMigrationPlan:
 class RepoSetup(BaseModel):
     """
     A model to reflect changes between previous and current migration plans.
+
+    Fields:
+        pulp2_repo_id (models.TextField): pulp2_repo_id to migrate into a repo_version
+        pulp2_repo_type (models.CharField): pulp2 repo type
+        pulp2_resource_repo_id (models.TextField): pulp2_repo_id of the resource
+            (importer/distributor) to migrate
+        pulp2_resource_type (models.SmallIntegerField): pulp2 resource type - importer/distributor
+        status (models.SmallIntegerField): status of the record
+
     """
     OLD = 0
     UP_TO_DATE = 1

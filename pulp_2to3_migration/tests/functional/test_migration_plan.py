@@ -1,11 +1,13 @@
 import json
+import time
 import unittest
 
 from pulpcore.client.pulp_2to3_migration.exceptions import ApiException
-from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
+from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
 from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group, PulpTaskError
 
 from .common_plans import FILE_SIMPLE_PLAN, FILE_COMPLEX_PLAN
+from .constants import TRUNCATE_TABLES_QUERY_BASH
 from .file_base import BaseTestFile
 
 EXTRA_COMMA_PLAN = '{"plugins": [{"type": "iso"},]}'
@@ -43,6 +45,14 @@ class TestMigrationPlan(BaseTestFile, unittest.TestCase):
         """
         super().setUpClass()
         set_pulp2_snapshot(name='file_base_4repos')
+
+    def tearDown(self):
+        """
+        Clean up the database after each test.
+        """
+        cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
+        self.smash_cli_client.run(cmd, sudo=True)
+        time.sleep(0.5)
 
     def _do_test_parallel(self, plan, outcome):
         """Test that there were multiple tasks running in parallel as a part of a task group."""
@@ -105,3 +115,8 @@ class TestMigrationPlan(BaseTestFile, unittest.TestCase):
     def test_complex_plan_parallel(self):
         """Test that using a complex plan, there is work which is performed in parallel."""
         self._do_test_parallel(FILE_COMPLEX_PLAN, 5)
+
+    def test_optimized_tasks_rerun(self):
+        """Test that second run of the same plan with no changes at all triggers only one task"""
+        self._do_test_parallel(FILE_COMPLEX_PLAN, 5)
+        self._do_test_parallel(FILE_COMPLEX_PLAN, 1)

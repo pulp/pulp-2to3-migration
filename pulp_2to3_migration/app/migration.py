@@ -61,6 +61,14 @@ def migrate_repositories(plan):
     )
     with ProgressReport(**progress_data) as pb:
         for plugin in plan.get_plugin_plans():
+            # all pulp2 repos in current plan were already migrated, no need to proceed
+            not_migrated_repos = Pulp2Repository.objects.filter(
+                is_migrated=False,
+                not_in_plan=False,
+                pulp2_repo_type=plugin.type
+            )
+            if not not_migrated_repos.exists():
+                continue
 
             pulp2repos_qs = Pulp2Repository.objects.filter(
                 pulp3_repository_version=None,
@@ -234,6 +242,22 @@ def create_repoversions_publications_distributions(plan, parallel=True):
         parallel (bool): If True, attempt to migrate things in parallel where possible.
     """
     for plugin in plan.get_plugin_plans():
+        # verify whether all pulp2 repos and distributors have been migrated
+        not_migrated_repos = Pulp2Repository.objects.filter(
+            is_migrated=False,
+            not_in_plan=False,
+            pulp2_repo_type=plugin.type)
+        not_migrated_dists = Pulp2Distributor.objects.filter(
+            is_migrated=False,
+            not_in_plan=False,
+            pulp2_type_id__in=plugin.migrator.distributor_migrators.keys())
+        # no need to proceed - everything is migrated
+        if not not_migrated_repos and not not_migrated_dists:
+            continue
+        not_migrated_repo_ids = not_migrated_repos.values_list('pulp2_repo_id', flat=True)
+        not_migrated_repo_ids_dists = not_migrated_dists.values_list('pulp2_repo_id', flat=True)
+        repos_ids_to_check = set(not_migrated_repo_ids).union(not_migrated_repo_ids_dists)
+
         pulp3_repo_setup = plugin.get_repo_creation_setup()
 
         repo_ver_to_create = 0
@@ -242,22 +266,36 @@ def create_repoversions_publications_distributions(plan, parallel=True):
         if parallel:
             for repo_name in pulp3_repo_setup:
                 repo_versions = pulp3_repo_setup[repo_name]['repository_versions']
-                repo_ver_to_create += len(repo_versions)
+                needs_a_task = False
                 for repo_ver in repo_versions:
-                    dist_to_create += len(repo_ver['dist_repo_ids'])
-                repo = Repository.objects.get(name=repo_name).cast()
-                task_args = [plugin, pulp3_repo_setup, repo_name]
-                enqueue_with_reservation(
-                    complex_repo_migration,
-                    [repo],
-                    args=task_args,
-                    task_group=TaskGroup.current()
-                )
+                    repos = set(repo_ver['dist_repo_ids'] + [repo_ver['repo_id']])
+                    # check whether any resources are not migrated and need a task
+                    if repos.intersection(repos_ids_to_check):
+                        needs_a_task = True
+                        dist_to_create += len(repo_ver['dist_repo_ids'])
+                if needs_a_task:
+                    repo_ver_to_create += len(repo_versions)
+                    repo = Repository.objects.get(name=repo_name).cast()
+                    task_args = [plugin, pulp3_repo_setup, repo_name]
+                    enqueue_with_reservation(
+                        complex_repo_migration,
+                        [repo],
+                        args=task_args,
+                        task_group=TaskGroup.current()
+                    )
         else:
             # Serial (non-parallel)
             for repo_name in pulp3_repo_setup:
-                task_args = [plugin, pulp3_repo_setup, repo_name]
-                complex_repo_migration(*task_args)
+                repo_versions = pulp3_repo_setup[repo_name]['repository_versions']
+                needs_a_task = False
+                for repo_ver in repo_versions:
+                    repos = set(repo_ver['dist_repo_ids'] + [repo_ver['repo_id']])
+                    # check whether any resources are not migrated and need a task
+                    if repos.intersection(repos_ids_to_check):
+                        needs_a_task = True
+                if needs_a_task:
+                    task_args = [plugin, pulp3_repo_setup, repo_name]
+                    complex_repo_migration(*task_args)
 
         task_group = TaskGroup.current()
         progress_rv = task_group.group_progress_reports.filter(code='create.repo_version')
