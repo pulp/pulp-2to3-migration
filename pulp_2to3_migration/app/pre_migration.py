@@ -179,7 +179,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                     pulp2_last_updated=record._last_updated,
                     pulp2_storage_path=record._storage_path,
                     downloaded=downloaded,
-                    pulp2_repo=relation.pulp2_repository
+                    pulp2_repo=relation.pulp2_repository,
                 )
                 _logger.debug(
                     'Add content item to the list to migrate: {item}'.format(item=item))
@@ -211,6 +211,25 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
             )
             pulp2content_batch = Pulp2Content.objects.bulk_create(pulp2content,
                                                                   ignore_conflicts=True)
+
+            # bulk_create(ignore_conflicts=True) hands back the same item-set we passed in,
+            # *even if* it decided to update an existing db-record rather than creating a new
+            # one with the passed-in PK. As a result, we can't trust pulp2content_batch to
+            # have the 'right' PKs (i.e., the in-memory p2content_batch doesn't match the
+            # db-reality). This causes the pre_migrate_content_detail() below to fail as it
+            # attempts to create detail-records for the Pulp2Content records it's been handed.
+            # THEREFORE - we need to find the 'real' IDs of everything in p2content-batch based
+            # on its uniqueness-fields and update the in-memory list with them.
+            for p2c in pulp2content_batch:
+                filter_q = Q(
+                    pulp2_content_type_id=content_type,
+                    pulp2_id=p2c.pulp2_id,
+                    pulp2_repo=p2c.pulp2_repo,
+                    pulp2_subid=p2c.pulp2_subid,
+                )
+                p2c_db = Pulp2Content.objects.get(filter_q)
+                p2c.pulp_id = p2c_db.pulp_id
+
             content_saved = len(pulp2content_batch) - existing_count
             pulp2content_pb.done += content_saved
             pulp2content_pb.save()

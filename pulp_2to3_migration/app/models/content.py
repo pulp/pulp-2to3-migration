@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+from django.db.models.constraints import UniqueConstraint
 
 from pulpcore.app.models import Content  # it has to be imported directly from pulpcore see #5353
 from pulpcore.plugin.models import BaseModel
@@ -36,7 +38,15 @@ class Pulp2Content(BaseModel):
     pulp2_subid = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        unique_together = ('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo', 'pulp2_subid')
+        constraints = [
+            UniqueConstraint(
+                fields=['pulp2_id', 'pulp2_content_type_id', 'pulp2_repo', 'pulp2_subid'],
+                name='unique_with_optional'
+            ),
+            UniqueConstraint(fields=['pulp2_id', 'pulp2_content_type_id', 'pulp2_subid'],
+                             condition=Q(pulp2_repo=None),
+                             name='unique_without_optional'),
+        ]
         indexes = [
             models.Index(fields=['pulp2_content_type_id']),
         ]
