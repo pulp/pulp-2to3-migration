@@ -13,6 +13,39 @@ Changelog
 
 .. towncrier release notes start
 
+0.9.0 (2021-03-09)
+==================
+
+Bugfixes
+--------
+
+- Fixed re-migration cases when a distributor on an importer changed in the migration plan between re-runs.
+  `#7889 <https://pulp.plan.io/issues/7889>`_
+- Ensure trailing slash is present when assembling the url.
+  `#8321 <https://pulp.plan.io/issues/8321>`_
+- Fixed pulp2content unique-constraint to correctly handle a null repo-id field.
+  `#8329 <https://pulp.plan.io/issues/8329>`_
+
+
+Improved Documentation
+----------------------
+
+- Added docs on the value of fast storage volumes and adjusting the worker timeout values for both
+  Pulp 2 and Pulp 3.
+  `#7847 <https://pulp.plan.io/issues/7847>`_
+- Updated docs to pulp-cli.
+  `#8254 <https://pulp.plan.io/issues/8254>`_
+
+
+Misc
+----
+
+- `#7009 <https://pulp.plan.io/issues/7009>`_, `#8288 <https://pulp.plan.io/issues/8288>`_, `#8314 <https://pulp.plan.io/issues/8314>`_
+
+
+----
+
+
 0.8.0 (2021-02-18)
 ==================
 
