@@ -434,7 +434,7 @@ class RepoSetup(BaseModel):
             pulp2_resource_type=cls.IMPORTER,
             pulp2_repo_type=repo_type,
             pulp2_repo_id=repo_id,
-            pulp2_resource_repo_id=importer_repo_id,
+            pulp2_resource_repo_id=importer_repo_id or '',
             defaults={'status': cls.NEW}
         )
 
@@ -478,7 +478,7 @@ class RepoSetup(BaseModel):
                     pulp2_resource_type=cls.DISTRIBUTOR,
                     pulp2_repo_type=repo_type,
                     pulp2_repo_id=repo_id,
-                    pulp2_resource_repo_id=distributor_repo_id,
+                    pulp2_resource_repo_id=distributor_repo_id or '',
                     status=cls.NEW,
                 )
             except IntegrityError:
