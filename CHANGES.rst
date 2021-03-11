@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.9.1 (2021-03-11)
+==================
+
+Bugfixes
+--------
+
+- Fixed a migration failure when no importer was specified in the migration plan.
+  `#8389 <https://pulp.plan.io/issues/8389>`_
+
+
+----
+
+
 0.9.0 (2021-03-09)
 ==================
 
