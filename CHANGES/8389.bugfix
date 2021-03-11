@@ -1,0 +1,1 @@
+Fixed a migraiton failure when no importer was specified in the migration plan.

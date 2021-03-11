@@ -107,6 +107,23 @@ NO_IMMEDIATE_IMPORTER_PLAN = json.dumps({
     }]
 })
 
+NO_IMPORTER_PLAN = json.dumps({
+    "plugins": [{
+        "type": "iso",
+        "repositories": [
+            {
+                "name": "file",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "file",  # content count: iso - 3
+                        "pulp2_distributor_repository_ids": ["file"]
+                    }
+                ]
+            }
+        ]
+    }]
+})
+
 CONTENT_COUNT = {
     'file': 3,
     'file2': 3,
@@ -303,3 +320,19 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
 
         self.assertEqual(self.file_repo_versions_api.list(pulp3_repo.pulp_href).count, 2)
         self.assertEqual(repo_content.count, 3)
+
+    def test_no_importer(self):
+        """Test that if there is no importer specified at all, migraiton is still working fine."""
+        self.run_migration(NO_IMPORTER_PLAN)
+        pulp3_repo = self.file_repo_api.list().results[0]
+        repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)
+        pulp2repository = self.pulp2repositories_api.list().results[0]
+        pulp3_pub = self.file_publication_api.read(pulp2repository.pulp3_publication_href)
+        pulp3_dist = self.file_distribution_api.read(pulp2repository.pulp3_distribution_hrefs[0])
+
+        self.assertEqual(self.file_repo_versions_api.list(pulp3_repo.pulp_href).count, 2)
+        self.assertEqual(repo_content.count, 3)
+        self.assertEqual(pulp2repository.pulp2_repo_id, 'file')
+        self.assertEqual(pulp3_pub.repository_version, pulp2repository.pulp3_repository_version)
+        self.assertEqual(pulp3_pub.distributions[0], pulp3_dist.pulp_href)
+        self.assertEqual(pulp3_dist.base_path, 'file')
