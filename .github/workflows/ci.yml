@@ -17,7 +17,7 @@ on:
 jobs:
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
       - uses: actions/checkout@v2
@@ -40,7 +40,7 @@ jobs:
           GITHUB_CONTEXT: ${{ github.event.pull_request.commits_url }}
         run: sh .github/workflows/scripts/check_commit.sh
 
-      
+
 
       # Lint code.
       - name: Run flake8
@@ -50,10 +50,10 @@ jobs:
       - name: Check manifest
         run: check-manifest
 
-      
+
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     # run only after lint finishes
     needs: lint
     strategy:

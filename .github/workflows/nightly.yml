@@ -14,7 +14,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     strategy:
       fail-fast: false
@@ -69,7 +69,7 @@ jobs:
         shell: bash
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     needs: test
 
     env:
@@ -123,22 +123,22 @@ jobs:
         env:
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
 
-      
+
       - name: Publish nightly client to rubygems
         run: .ci/scripts/publish_client_gem.sh
         shell: bash
-      
 
-      
+
+
       - name: Publish nightly client to pypi
         run: .ci/scripts/publish_client_pypi.sh
         shell: bash
-      
 
-      
+
+
       - name: Publish nightly docs
         run: .ci/scripts/publish_docs.sh nightly ${GITHUB_REF##*/}
-      
+
 
       - name: After failure
         if: failure()
