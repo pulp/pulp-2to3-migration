@@ -1,11 +1,13 @@
 import json
+import time
 import unittest
 
 from collections import defaultdict
 
-from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
+from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
 
 from .common_plans import INITIAL_REPOSITORIES, RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
+from .constants import TRUNCATE_TABLES_QUERY_BASH
 from .rpm_base import BaseTestRpm, RepoInfo
 
 
@@ -26,6 +28,56 @@ RPM_RERUN_PLAN = json.dumps({
     "plugins": [{
         "type": "rpm",
         "repositories": RERUN_REPOSITORIES
+    }]
+})
+
+COPY_INTO_SAME_REPO_PLAN = json.dumps({
+    "plugins": [{
+        "type": "rpm",
+        "repositories": [
+            {
+                "name": "rpm-with-modules",
+                "pulp2_importer_repository_id": "rpm-with-modules",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "rpm-with-modules",
+                        "pulp2_distributor_repository_ids": ["rpm-with-modules"]
+                    },
+                    {
+                        "pulp2_repository_id": "rpm-with-modules-copy",
+                        "pulp2_distributor_repository_ids": ["rpm-with-modules-copy"]
+                    },
+                ]
+            }
+        ]
+    }]
+})
+
+COPY_INTO_NEW_REPO_PLAN = json.dumps({
+    "plugins": [{
+        "type": "rpm",
+        "repositories": [
+            {
+                "name": "rpm-with-modules",
+                "pulp2_importer_repository_id": "rpm-with-modules",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "rpm-with-modules",
+                        "pulp2_distributor_repository_ids": ["rpm-with-modules"]
+                    }
+                ]
+            },
+            {
+                "name": "rpm-with-modules-copy",
+                "pulp2_importer_repository_id": "rpm-with-modules-copy",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "rpm-with-modules-copy",
+                        "pulp2_distributor_repository_ids": ["rpm-with-modules-copy"]
+                    }
+                ]
+            }
+        ]
     }]
 })
 
@@ -308,3 +360,57 @@ class TestRpmRerunComplexPlan(BaseTestRpmRerun, unittest.TestCase):
     plan_initial = RPM_COMPLEX_PLAN
     plan_rerun = RPM_RERUN_PLAN
     repo_info = RepoInfo(PULP_2_RPM_DATA)
+
+
+class TestRpmRerunCopy(BaseTestRpm, unittest.TestCase):
+    """
+    Test RPM repo migration when content is copied in Pulp 2 between the runs.
+    """
+    plan_initial = RPM_COMPLEX_PLAN
+
+    def tearDown(self):
+        """
+        Clean up the database after each test.
+        """
+        cmd = get_psql_smash_cmd(TRUNCATE_TABLES_QUERY_BASH)
+        self.smash_cli_client.run(cmd, sudo=True)
+        time.sleep(0.5)
+
+    def test_migrate_copy_into_same_repo(self):
+        """
+        Test the migration of a pulp 2 copy repo into the same pulp 3 repo as the original one.
+
+        All advisories should be in place.
+        """
+        set_pulp2_snapshot(name='rpm_base_4repos')
+        self.task_initial = self.run_migration(self.plan_initial)
+        set_pulp2_snapshot(name='rpm_base_4repos_rerun_copy')
+        self.task_rerun = self.run_migration(COPY_INTO_SAME_REPO_PLAN)
+
+        pulp2repo = self.pulp2repositories_api.list(pulp2_repo_id='rpm-with-modules').results[0]
+        version_href = pulp2repo.pulp3_repository_version
+        repo_advisories = self.rpm_content_apis['advisory'].list(repository_version=version_href)
+
+        self.assertEqual(repo_advisories.count, 6)
+        self.assertEqual(self.rpm_distribution_api.list(base_path='rpm-with-modules-copy').count, 1)
+
+    def test_migrate_copy_into_new_repo(self):
+        """
+        Test the migration of a pulp 2 copy repo into the new pulp 3 repo.
+
+        All advisories should be in place.
+        """
+        set_pulp2_snapshot(name='rpm_base_4repos')
+        self.task_initial = self.run_migration(self.plan_initial)
+        set_pulp2_snapshot(name='rpm_base_4repos_rerun_copy')
+        self.task_rerun = self.run_migration(COPY_INTO_NEW_REPO_PLAN)
+
+        pulp2repo = self.pulp2repositories_api.list(
+            pulp2_repo_id='rpm-with-modules-copy'
+        ).results[0]
+        version_href = pulp2repo.pulp3_repository_version
+        repo_advisories = self.rpm_content_apis['advisory'].list(repository_version=version_href)
+
+        self.assertEqual(self.rpm_repo_versions_api.read(version_href).number, 1)
+        self.assertEqual(repo_advisories.count, 6)
+        self.assertEqual(self.rpm_distribution_api.list(base_path='rpm-with-modules-copy').count, 1)

@@ -322,7 +322,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.assertEqual(repo_content.count, 3)
 
     def test_no_importer(self):
-        """Test that if there is no importer specified at all, migraiton is still working fine."""
+        """Test that if there is no importer specified at all, migration is still working fine."""
         self.run_migration(NO_IMPORTER_PLAN)
         pulp3_repo = self.file_repo_api.list().results[0]
         repo_content = self.file_content_api.list(repository_version=pulp3_repo.latest_version_href)

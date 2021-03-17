@@ -21,6 +21,7 @@ from pulpcore.client.pulp_rpm import (
 from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi,
+    Pulp2RepositoriesApi,
 )
 
 from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd
@@ -69,6 +70,7 @@ class BaseTestRpm:
             'package': ContentPackagesApi(rpm_client),
         }
         cls.migration_plans_api = MigrationPlansApi(migration_client)
+        cls.pulp2repositories_api = Pulp2RepositoriesApi(migration_client)
 
     @classmethod
     def run_migration(cls, plan, run_params={}):
