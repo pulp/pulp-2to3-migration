@@ -143,7 +143,7 @@ class Pulp2ContentSerializer(ModelSerializer):
     pulp2_id = serializers.CharField(max_length=255)
     pulp2_content_type_id = serializers.CharField(max_length=255)
     pulp2_last_updated = serializers.IntegerField()
-    pulp2_storage_path = serializers.CharField()
+    pulp2_storage_path = serializers.CharField(allow_blank=True)
     downloaded = serializers.BooleanField(default=False)
     pulp3_content = DetailRelatedField(
         required=False, allow_null=True, queryset=Pulp2Content.objects.all(),
