@@ -21,6 +21,7 @@ from pulpcore.client.pulp_rpm import (
 from pulpcore.client.pulp_2to3_migration import (
     ApiClient as MigrationApiClient,
     MigrationPlansApi,
+    Pulp2ContentApi,
     Pulp2RepositoriesApi,
 )
 
@@ -70,6 +71,7 @@ class BaseTestRpm:
             'package': ContentPackagesApi(rpm_client),
         }
         cls.migration_plans_api = MigrationPlansApi(migration_client)
+        cls.pulp2content_api = Pulp2ContentApi(migration_client)
         cls.pulp2repositories_api = Pulp2RepositoriesApi(migration_client)
 
     @classmethod
