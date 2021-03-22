@@ -1,0 +1,1 @@
+Fixed the case when some Pulp 2 content was removed and cleaned up between migration re-runs.

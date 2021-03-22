@@ -189,6 +189,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                 'remotes': defaultdict(dict),
                 'publications': defaultdict(dict),
                 'distributions': defaultdict(dict),
+                'pulp2content': defaultdict(dict),
             }
             for repo in cls.rpm_repo_api.list().results:
                 latest_version = cls.rpm_repo_versions_api.read(repo.latest_version_href)
@@ -209,6 +210,11 @@ class BaseTestRpmRerun(BaseTestRpm):
                 data['distributions'][dist.name] = {
                     'created': dist.pulp_created
                 }
+            for pulp2content in cls.pulp2content_api.list().results:
+                data['pulp2content'][pulp2content.pulp2_id] = {
+                    'pulp3content': pulp2content.pulp3_content
+                }
+
             return data
 
         set_pulp2_snapshot(name='rpm_base_4repos')
@@ -342,6 +348,21 @@ class BaseTestRpmRerun(BaseTestRpm):
                     new_distribution_count += 1
 
         self.assertEqual(new_distribution_count, self.repo_info['new_distributions'])
+
+    def test_old_premigrated_content_removed(self):
+        """
+        Test that premigrated content is removed if the corresponding Pulp 2 content is removed.
+
+        Before the migration re-run an RPM package `bear` is removed from Pulp2 and orphan
+        cleanup is run. The Pulp2Content record for this package should be removed,
+        package itself in Pulp 3 should stay.
+        """
+        removed_package = self.rpm_content_apis['package'].list(name='bear').results[0]
+        for pulp2_id, pulp2content in self.first_migration_data['pulp2content'].items():
+            if pulp2content['pulp3content'] == removed_package.pulp_href:
+                break
+
+        self.assertEqual(self.pulp2content_api.list(pulp2_id=pulp2_id).count, 0)
 
 
 class TestRpmRerunSimplePlan(BaseTestRpmRerun, unittest.TestCase):

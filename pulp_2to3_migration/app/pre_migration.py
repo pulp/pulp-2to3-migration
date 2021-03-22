@@ -77,11 +77,39 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         content_model: Models for content which is being migrated.
         mutable_type: Boolean that indicates whether the content type is mutable.
     """
+    def delete_removed_pulp2_content(content_model):
+        """
+        Delete Pulp2Content records for content which is no longer present in Pulp2.
+
+        This is to avoid situations and extra work when not all content migrated during the first
+        migration run, then orphan clean up is run in Pulp 2, and then migration is run again.
+
+        Args:
+            content_model: Pulp 2 content model
+
+        """
+        content_type = content_model.pulp2.TYPE_ID
+        mongo_content_qs = content_model.pulp2.objects().only('id')
+        mongo_content_ids = {c['_id'] for c in mongo_content_qs.as_pymongo().no_cache()}
+        premigrated_content_ids = set(
+            Pulp2Content.objects.filter(
+                pulp2_content_type_id=content_type
+            ).only('pulp2_id').values_list('pulp2_id', flat=True)
+        )
+        content_ids_to_delete = premigrated_content_ids - mongo_content_ids
+        if content_ids_to_delete:
+            Pulp2Content.objects.filter(
+                pulp2_content_type_id=content_type,
+                pulp2_id__in=content_ids_to_delete
+            ).delete()
+
     batch_size = 100
     pulp2content = []
     pulp2mutatedcontent = []
     content_type = content_model.pulp2.TYPE_ID
     set_pulp2_repo = content_model.pulp_2to3_detail.set_pulp2_repo
+
+    delete_removed_pulp2_content(content_model)
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
