@@ -259,8 +259,8 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         ).select_related(
             'pulp2_repository'
         ).only(
-            'pulp2_repository'
-        )
+            'pulp2_repository', 'pulp2_created',
+        ).order_by('pulp2_created')
 
         mongo_content_qs = content_model.pulp2.objects(
             id__in=content_relations.values_list('pulp2_unit_id', flat=True))
@@ -278,7 +278,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2_subid='',
             )
 
-            # Ensure that no existing pulp2content with slipped into bulk_create.
+            # Ensure that no existing pulp2content slipped into bulk_create.
             # Otherwise, we'll have a problem with later bulk_create for detail models.
             if Pulp2Content.objects.filter(specific_content_q).exists():
                 continue
@@ -286,7 +286,13 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
             item = Pulp2Content(
                 pulp2_id=record.id,
                 pulp2_content_type_id=record._content_type_id,
-                pulp2_last_updated=record._last_updated,
+                # Set `pulp2_last_updated` to the date of when a content unit got copied.
+                # (We can't set it to anything higher, in case pre-migration crashes and we would
+                # need to pick it up correctly on the next re-run.)
+                # When erratum is copied in pulp 2, it doesn't change its _last_updated timestamp.
+                # It means that Katello has no way to identify that the erratum has been copied
+                # since the last migration run, without reimporting all errata, which is expensive.
+                pulp2_last_updated=int(relation.pulp2_created.timestamp()),
                 pulp2_storage_path=record._storage_path,
                 downloaded=downloaded,
                 pulp2_repo=relation.pulp2_repository

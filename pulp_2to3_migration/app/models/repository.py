@@ -94,6 +94,7 @@ class Pulp2RepoContent(BaseModel):
         unique_together = ('pulp2_repository', 'pulp2_unit_id')
         indexes = [
             models.Index(fields=['pulp2_content_type_id']),
+            models.Index(fields=['pulp2_created'])
         ]
 
 
