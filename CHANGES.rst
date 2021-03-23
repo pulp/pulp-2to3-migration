@@ -13,6 +13,25 @@ Changelog
 
 .. towncrier release notes start
 
+0.10.0 (2021-03-23)
+===================
+
+Bugfixes
+--------
+
+- Fixed the case when some Pulp 2 content was removed and cleaned up between migration re-runs.
+  `#7887 <https://pulp.plan.io/issues/7887>`_
+- Fixed a migraiton failure when no importer was specified in the migration plan.
+  `#8382 <https://pulp.plan.io/issues/8382>`_
+- Fixed errata re-migration when it's been copied to a new repo in Pulp2 between migration re-runs.
+  `#8417 <https://pulp.plan.io/issues/8417>`_
+- Fixed the case when listing pulp2content/ endpoint using bindings would fail if content didn't have a storage path in Pulp 2.
+  `#8436 <https://pulp.plan.io/issues/8436>`_
+
+
+----
+
+
 0.9.1 (2021-03-11)
 ==================
 
