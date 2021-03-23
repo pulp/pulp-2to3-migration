@@ -1,1 +1,0 @@
-Fixed errata re-migration when it's been copied to a new repo in Pulp2 between migration re-runs.
