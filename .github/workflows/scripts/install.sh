@@ -36,25 +36,25 @@ TAG=ci_build
 if [ -e $REPO_ROOT/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@master
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@1.6
 fi
 
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@2.4
 fi
 
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.9
 fi
 
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
-  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@main
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@2.10
 fi
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
@@ -70,7 +70,7 @@ image:
   tag: "${TAG}"
 plugins:
   - name: pulpcore
-    source: pulpcore
+    source: pulpcore~=3.11.0
   - name: pulp-2to3-migration
     source:  "${PLUGIN_NAME}"
   - name: pulp_file

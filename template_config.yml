@@ -2,16 +2,17 @@
 # were not present before running plugin-template have been added with their default values.
 
 additional_plugins:
-- branch: master
+- branch: 1.6
   name: pulp_file
-- branch: master
+- branch: 2.4
   name: pulp_container
-- branch: master
+- branch: 3.9
   name: pulp_rpm
-- branch: main
+- branch: 2.10
   name: pulp_deb
 black: false
 check_commit_message: true
+check_gettext: true
 check_manifest: true
 check_stray_pulpcore_imports: false
 coverage: false
@@ -29,18 +30,20 @@ plugin_caps: PULP-2TO3-MIGRATION
 plugin_caps_short: 2TO3-MIGRATION
 plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
+plugin_default_branch: master
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 publish_docs_to_pulpprojectdotorg: true
 pulp_settings: null
-pulpcore_branch: master
-pulpcore_pip_version_specifier: null
+pulpcore_branch: '3.11'
+pulpcore_pip_version_specifier: ~=3.11.0
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
 redmine_project: migration
 test_bindings: false
 test_cli: true
+test_fips_nightly: false
 test_performance: false
 test_released_plugin_with_next_pulpcore_release: false
 test_s3: false
