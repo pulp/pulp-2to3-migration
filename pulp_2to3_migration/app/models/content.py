@@ -49,6 +49,7 @@ class Pulp2Content(BaseModel):
         ]
         indexes = [
             models.Index(fields=['pulp2_content_type_id']),
+            models.Index(fields=['pulp2_last_updated']),
         ]
 
 

@@ -65,6 +65,9 @@ class Pulp2Repository(BaseModel):
     class Meta:
         indexes = [
             models.Index(fields=['pulp2_repo_type']),
+            models.Index(fields=['pulp2_last_unit_added']),
+            models.Index(fields=['pulp2_last_unit_removed']),
+            models.Index(fields=['pulp2_repo_id']),
         ]
 
 
@@ -128,6 +131,8 @@ class Pulp2Importer(BaseModel):
     class Meta:
         indexes = [
             models.Index(fields=['pulp2_type_id']),
+            models.Index(fields=['pulp2_last_updated']),
+            models.Index(fields=['pulp2_repo_id']),
         ]
 
 
@@ -178,4 +183,6 @@ class Pulp2Distributor(BaseModel):
         unique_together = ('pulp2_object_id',)
         indexes = [
             models.Index(fields=['pulp2_type_id']),
+            models.Index(fields=['pulp2_last_updated']),
+            models.Index(fields=['pulp2_repo_id']),
         ]
