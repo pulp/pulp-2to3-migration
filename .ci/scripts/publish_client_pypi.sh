@@ -32,6 +32,7 @@ export response=$(curl --write-out %{http_code} --silent --output /dev/null http
 
 if [ "$response" == "200" ];
 then
+  echo "pulp-2to3-migration $VERSION has already been released. Skipping."
   exit
 fi
 
