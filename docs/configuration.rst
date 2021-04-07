@@ -77,6 +77,17 @@ the migration is done and remove those two checksum types from the allowed list.
 the setting, you likely will need to run ``pulpcore-manager handle-artifact-checksums`` to remove
 unsupported checksums from the database, or Pulp will refuse to start.
 
+4. Configure `CONTENT_PREMIGRATION_BATCH_SIZE` if needed.
+If your Pulp 2 setup is large and your system is relatively slow in terms of I/O (e.g. you have
+HDD), consider adjusting the batch size for content premigration. The default is 1000.
+
+It is recommended to decrease it gradually, approximately by half each time. On a very slow
+system and with many errata content to migrate, it might need to go as low as 50. Decreasing the
+value increases the time of content migration from pulp 2 to pulp 3. It's noticeable for a large
+setups only.
+
+The main sign that `CONTENT_PREMIGRATION_BATCH_SIZE` needs to go down is the ``pymongo.errors.CursorNotFound: Cursor not found`` errors in logs.
+
 .. note::
 
     If you experience Pulp 3 workers timing out during the migration, consider making them more
