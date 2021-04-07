@@ -3,6 +3,7 @@ import logging
 from collections import namedtuple
 from datetime import datetime
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Max, Q
 from django.utils import timezone
@@ -103,7 +104,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2_id__in=content_ids_to_delete
             ).delete()
 
-    batch_size = 100
+    batch_size = settings.CONTENT_PREMIGRATION_BATCH_SIZE or DEFAULT_BATCH_SIZE
     pulp2content = []
     pulp2mutatedcontent = []
     content_type = content_model.pulp2.TYPE_ID
