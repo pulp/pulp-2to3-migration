@@ -42,19 +42,19 @@ fi
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@2.4
 fi
 
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.10
 fi
 
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
-  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@main
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@2.11
 fi
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
