@@ -137,7 +137,7 @@ if [ -n "$PULP_FILE_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_container.git --branch 2.4
+git clone --depth=1 https://github.com/pulp/pulp_container.git --branch 2.5
 if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd pulp_container
   git fetch --depth=1 origin pull/$PULP_CONTAINER_PR_NUMBER/head:$PULP_CONTAINER_PR_NUMBER
