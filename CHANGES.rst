@@ -13,6 +13,25 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.0 (2021-04-12)
+===================
+
+Features
+--------
+
+- Added a new configuration option `CONTENT_PREMIGRATION_BATCH_SIZE` to be able to adjust the content batch size if the system is slow.
+  `#8470 <https://pulp.plan.io/issues/8470>`_
+
+
+Misc
+----
+
+- `#6742 <https://pulp.plan.io/issues/6742>`_
+
+
+----
+
+
 0.10.0 (2021-03-23)
 ===================
 
