@@ -1,0 +1,1 @@
+Handled properly skipping of corrupted or missing docker content.

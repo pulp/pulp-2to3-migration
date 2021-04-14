@@ -260,10 +260,23 @@ class DockerContentSaver(ContentSaver):
 
         """
         for dc in batch:
-            if type(dc.content) == Tag:
+            if isinstance(dc.content, Tag):
                 related_man_id = dc.extra_data.get('tag_rel')
                 # find manifest by id
                 # We are relying on the order of the processed DC
                 # Manifests should have passed through ContentSaver stage already
                 man = Manifest.objects.filter(digest=related_man_id).first()
                 dc.content.tagged_manifest = man
+
+    async def _post_save(self, batch):
+        """
+        Remove tag if it  points to a tagged_manifest=null
+
+        Args:
+            batch (list of :class:`~pulpcore.plugin.stages.DeclarativeContent`): The batch of
+                :class:`~pulpcore.plugin.stages.DeclarativeContent` objects to be saved.
+
+        """
+        for dc in batch:
+            if isinstance(dc.content, Tag) and not dc.content.tagged_manifest:
+                dc.content.delete()
