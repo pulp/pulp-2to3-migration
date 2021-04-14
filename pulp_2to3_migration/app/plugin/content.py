@@ -407,6 +407,8 @@ class ContentMigrationFirstStage(Stage):
                         downloaded=pulp2content.downloaded
                     )
                     if artifact is None:
+                        if pb:
+                            pb.increment()
                         continue
 
                     if is_lazy_type and pulp2lazycatalog:
@@ -439,8 +441,11 @@ class ContentMigrationFirstStage(Stage):
                             await self.put(dc)
 
                         if not at_least_one_lce_migrated:
-                            _logger.warn(_('On_demand content cannot be migrated without a remote '
-                                           'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)))
+                            _logger.warn(
+                                _('On_demand content cannot be migrated without a remote '
+                                  'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)
+                                  )
+                            )
                         future_relations.update({'lces': list(pulp2lazycatalog)})
                     else:
                         relative_path = (
@@ -461,11 +466,16 @@ class ContentMigrationFirstStage(Stage):
 
                 if has_future and dc:
                     futures.append(dc)
-                resolve_futures = len(futures) >= DEFAULT_BATCH_SIZE or pb.done == pb.total
+                resolve_futures = len(futures) >= DEFAULT_BATCH_SIZE
                 if resolve_futures:
                     for dc in futures:
                         await dc.resolution()
                     futures.clear()
+
+            # resolve futures if there are any left
+            for dc in futures:
+                await dc.resolution()
+            futures.clear()
 
 
 class UpdateLCEs(Stage):
