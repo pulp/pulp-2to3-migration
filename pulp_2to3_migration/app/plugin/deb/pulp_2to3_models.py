@@ -449,6 +449,11 @@ class Pulp2DebComponentPackage(Pulp2to3Content):
             relative_path=self.package_relative_path,
             sha256=self.package_sha256,
         ).first()
+        if not package:
+            # Perhaps the package was never created because the file was corrupt!
+            # We simply don't create the PackageReleaseComponent (just how the Package
+            # itself was not created) and hope for the best.
+            return (None, None)
         pulp3_package_release_component = pulp3_models.PackageReleaseComponent(
             release_component=release_component,
             package=package,
