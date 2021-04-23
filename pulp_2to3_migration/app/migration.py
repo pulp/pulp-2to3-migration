@@ -43,10 +43,12 @@ def migrate_content(plan, skip_corrupted=False):
                 pulp3_content=None
             ).count()
 
+            pb.total += num_to_migrate
+            pb.save()
+
             # migrate
             plugin.migrator.migrate_content_to_pulp3(skip_corrupted=skip_corrupted)
 
-            pb.total += num_to_migrate
             pb.done = pb.total
             pb.save()
 

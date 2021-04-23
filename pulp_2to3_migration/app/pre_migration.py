@@ -134,13 +134,13 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         total=total_content))
 
     pulp2content_pb = ProgressReport(
-        message='Pre-migrating Pulp 2 {} content (general info)'.format(content_type.upper()),
+        message='Pre-migrating Pulp 2 {} content (general info)'.format(content_type),
         code='premigrating.content.general',
         total=total_content,
         state=TASK_STATES.RUNNING)
     pulp2content_pb.save()
     pulp2detail_pb = ProgressReport(
-        message='Pre-migrating Pulp 2 {} content (detail info)'.format(content_type.upper()),
+        message='Pre-migrating Pulp 2 {} content (detail info)'.format(content_type),
         code='premigrating.content.detail',
         total=total_content,
         state=TASK_STATES.RUNNING)
