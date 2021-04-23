@@ -233,8 +233,7 @@ class ContentMigrationFirstStage(Stage):
             pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by('repo_id')
 
         with ProgressReport(
-            message='Migrating {} content to Pulp 3 {}'.format(self.migrator.pulp2_plugin,
-                                                               content_type),
+            message='Migrating {} content to Pulp 3'.format(content_type),
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=pulp_2to3_detail_qs.count()
         ) as pb:
