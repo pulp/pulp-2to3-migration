@@ -96,25 +96,40 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
         pulp2repo_file_1run = self.pulp2repositories_api.list(pulp2_repo_id='file').results[0]
         pulp2repo_filemany_1run = self.pulp2repositories_api.list(
             pulp2_repo_id='file-many').results[0]
+        pulp3_repo_file_1run = self.file_repo_api.read(pulp2repo_file_1run.pulp3_repository_href)
+        pulp3_repo_filemany_1run = self.file_repo_api.read(
+            pulp2repo_filemany_1run.pulp3_repository_href
+        )
         pulp3_remote_file_1run = self.file_remote_api.read(pulp2repo_file_1run.pulp3_remote_href)
         pulp3_remote_filemany_1run = self.file_remote_api.read(
             pulp2repo_filemany_1run.pulp3_remote_href
         )
+
+        self.assertEqual(pulp3_remote_file_1run.url, FILE_URL)
+        self.assertEqual(pulp3_remote_filemany_1run.url, FILE_MANY_URL)
+        self.assertEqual(pulp3_repo_file_1run.remote, pulp2repo_file_1run.pulp3_remote_href)
+        self.assertEqual(pulp3_repo_filemany_1run.remote, pulp2repo_filemany_1run.pulp3_remote_href)
 
         # run a plan with swapped importers
         self.run_migration(FILE_IMPORTER_DIFF_PLAN)
         pulp2repo_file_2run = self.pulp2repositories_api.list(pulp2_repo_id='file').results[0]
         pulp2repo_filemany_2run = self.pulp2repositories_api.list(
             pulp2_repo_id='file-many').results[0]
+        pulp3_repo_file_2run = self.file_repo_api.read(pulp2repo_file_2run.pulp3_repository_href)
+        pulp3_repo_filemany_2run = self.file_repo_api.read(
+            pulp2repo_filemany_2run.pulp3_repository_href
+        )
         pulp3_remote_file_2run = self.file_remote_api.read(pulp2repo_file_2run.pulp3_remote_href)
         pulp3_remote_filemany_2run = self.file_remote_api.read(
             pulp2repo_filemany_2run.pulp3_remote_href
         )
 
-        self.assertEqual(pulp3_remote_file_1run.url, FILE_URL)
-        self.assertEqual(pulp3_remote_filemany_1run.url, FILE_MANY_URL)
+        # should be swapped between run 1 and 2
         self.assertEqual(pulp3_remote_file_1run, pulp3_remote_filemany_2run)
         self.assertEqual(pulp3_remote_filemany_1run, pulp3_remote_file_2run)
+        # both Pulp2Repository and Pulp 3 "Repository" should still match
+        self.assertEqual(pulp3_repo_file_2run.remote, pulp2repo_file_2run.pulp3_remote_href)
+        self.assertEqual(pulp3_repo_filemany_2run.remote, pulp2repo_filemany_2run.pulp3_remote_href)
 
     def test_distributor_swap(self):
         """
