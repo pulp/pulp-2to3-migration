@@ -425,15 +425,18 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
                 # exclude the resolved path from further search
                 paths.remove(bad_path)
 
+    pulp3_repo = pulp2_repo.pulp3_repository
     if pulp3_remote:
         pulp2_repo.pulp3_repository_remote = pulp3_remote
         pulp2_repo.save()
+
+        pulp3_repo.remote = pulp3_remote
+        pulp3_repo.save()
 
     if pulp2_repo.is_migrated:
         progress_rv.update(total=F('total') - 1)
         return
 
-    pulp3_repo = pulp2_repo.pulp3_repository
     unit_ids = Pulp2RepoContent.objects.filter(pulp2_repository=pulp2_repo).values_list(
         'pulp2_unit_id', flat=True)
     incoming_content = set(

@@ -167,7 +167,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         """
         Test that pulp2repositories/ endpoint provides info for the migrated Pulp 2 repository.
 
-        Check correctness of the dara for the first repo in the list.
+        Check correctness of the data for the first repo in the list.
         """
         self.run_migration(plan)
         pulp2repository = self.pulp2repositories_api.list(
@@ -185,6 +185,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.assertEqual(pulp3_repo.latest_version_href, pulp2repository.pulp3_repository_version)
         self.assertEqual(pulp3_remote.url, FILE_URL)
         self.assertEqual(pulp3_remote.policy, 'immediate')
+        self.assertEqual(pulp3_remote.pulp_href, pulp2repository.pulp3_remote_href)
         self.assertEqual(pulp3_pub.manifest, 'PULP_MANIFEST')
         self.assertEqual(pulp3_pub.repository_version, pulp2repository.pulp3_repository_version)
         self.assertEqual(pulp3_pub.distributions[0], pulp3_dist.pulp_href)
@@ -240,6 +241,8 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         pulp2repo1, pulp2repo2 = pulp2repositories
         pulp3_remote1 = self.file_remote_api.read(pulp2repo1.pulp3_remote_href)
         pulp3_remote2 = self.file_remote_api.read(pulp2repo2.pulp3_remote_href)
+        pulp3_repo1 = self.file_repo_api.read(pulp2repo1.pulp3_repository_href)
+        pulp3_repo2 = self.file_repo_api.read(pulp2repo2.pulp3_repository_href)
 
         self.assertEqual(pulp2repo1.pulp2_repo_id, 'file')
         self.assertEqual(pulp2repo2.pulp2_repo_id, 'file-many')
@@ -249,6 +252,8 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.assertEqual(pulp3_remote2.url, FILE_URL)
         self.assertEqual(pulp3_remote1.policy, 'on_demand')
         self.assertEqual(pulp3_remote2.policy, 'immediate')
+        self.assertEqual(pulp3_repo1.remote, pulp2repo1.pulp3_remote_href)
+        self.assertEqual(pulp3_repo2.remote, pulp2repo2.pulp3_remote_href)
 
     def test_distributor_different_repo(self):
         """
@@ -280,6 +285,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.run_migration(IMPORTER_NO_REPO_PLAN)
         pulp2repository = self.pulp2repositories_api.list().results[0]
         pulp3_remote = self.file_remote_api.read(pulp2repository.pulp3_remote_href)
+        pulp3_repo = self.file_repo_api.read(pulp2repository.pulp3_repository_href)
 
         self.assertEqual(self.pulp2repositories_api.list().count, 1)
         self.assertEqual(self.file_remote_api.list().count, 1)
@@ -287,6 +293,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.assertEqual(pulp2repository.pulp2_repo_id, 'file')
         self.assertEqual(pulp3_remote.url, FILE_MANY_URL)
         self.assertEqual(pulp3_remote.policy, 'on_demand')
+        self.assertEqual(pulp3_repo.remote, pulp2repository.pulp3_remote_href)
 
     def test_distributor_no_repo(self):
         """Test that a distributor can be migrated without its native Pulp 2 repo."""
@@ -333,6 +340,7 @@ class TestMigrationBehaviour(BaseTestFile, unittest.TestCase):
         self.assertEqual(self.file_repo_versions_api.list(pulp3_repo.pulp_href).count, 2)
         self.assertEqual(repo_content.count, 3)
         self.assertEqual(pulp2repository.pulp2_repo_id, 'file')
+        self.assertEqual(pulp3_repo.remote, pulp2repository.pulp3_remote_href)
         self.assertEqual(pulp3_pub.repository_version, pulp2repository.pulp3_repository_version)
         self.assertEqual(pulp3_pub.distributions[0], pulp3_dist.pulp_href)
         self.assertEqual(pulp3_dist.base_path, 'file')
