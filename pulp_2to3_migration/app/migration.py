@@ -9,7 +9,7 @@ from pulpcore.plugin.models import (
     Repository,
     TaskGroup,
 )
-from pulpcore.plugin.tasking import enqueue_with_reservation
+from pulpcore.plugin.tasking import dispatch
 
 from pulp_2to3_migration.app.models import (
     Pulp2Content,
@@ -279,7 +279,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     repo_ver_to_create += len(repo_versions)
                     repo = Repository.objects.get(name=repo_name).cast()
                     task_args = [plugin, pulp3_repo_setup, repo_name]
-                    enqueue_with_reservation(
+                    dispatch(
                         complex_repo_migration,
                         [repo],
                         args=task_args,
