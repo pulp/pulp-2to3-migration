@@ -1,0 +1,1 @@
+Fixed migration of Pulp 2 deb importers without configured components or architectures
