@@ -35,8 +35,12 @@ class DebImporter(Pulp2to3Importer):
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
         base_config['name'] = name
         base_config['distributions'] = pulp2_config.get('releases').replace(',', ' ')
-        base_config['components'] = pulp2_config.get('components').replace(',', ' ')
-        base_config['architectures'] = pulp2_config.get('architectures').replace(',', ' ')
+        components = pulp2_config.get('components')
+        if components:
+            base_config['components'] = components.replace(',', ' ')
+        architectures = pulp2_config.get('architectures')
+        if architectures:
+            base_config['architectures'] = architectures.replace(',', ' ')
         return AptRemote.objects.update_or_create(**base_config)
 
 
