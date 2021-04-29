@@ -21,6 +21,15 @@ from pulp_rpm.app.models import (
 )
 from pulp_rpm.app.tasks.synchronizing import RpmContentSaver
 
+from pulpcore.plugin.stages import (
+    ArtifactSaver,
+    RemoteArtifactSaver,
+    ResolveContentFutures,
+    Stage,
+    QueryExistingArtifacts,
+    QueryExistingContents,
+)
+
 from . import pulp2_models
 
 from .pulp_2to3_models import (
@@ -42,14 +51,7 @@ from .repository import (
     RpmImporter,
 )
 
-from pulpcore.plugin.stages import (
-    ArtifactSaver,
-    RemoteArtifactSaver,
-    ResolveContentFutures,
-    Stage,
-    QueryExistingArtifacts,
-    QueryExistingContents,
-)
+from .utils import exclude_unsupported_metadata
 
 from . import package_utils
 
@@ -126,6 +128,9 @@ class RpmMigrator(Pulp2to3PluginMigrator):
     }
     multi_artifact_types = {
         'distribution': Pulp2Distribution
+    }
+    premigrate_hook = {
+        'yum_repo_metadata_file': exclude_unsupported_metadata,
     }
 
     @classmethod
