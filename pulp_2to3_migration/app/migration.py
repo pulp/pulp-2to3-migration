@@ -1,14 +1,19 @@
 import logging
 
 from django.db.models import F, Q
+from gettext import gettext as _
+
+from pygtrie import StringTrie
 
 from pulpcore.plugin.models import (
     Content,
+    ContentArtifact,
     CreatedResource,
     ProgressReport,
     Repository,
     TaskGroup,
 )
+
 from pulpcore.plugin.tasking import enqueue_with_reservation
 
 from pulp_2to3_migration.app.models import (
@@ -320,6 +325,105 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
         pulp2_repo(Pulp2Repository): a pre-migrated repository to create a repo version for
         pulp3_remote(remote): a pulp3 remote
     """
+    def detect_path_overlap(paths):
+        """
+        Check for valid POSIX paths (ie ones that aren't duplicated and don't overlap).
+
+        Overlapping paths are where one path terminates inside another (e.g. a/b and a/b/c).
+
+        NOTE: The logic is copied from pulpcore.app.files.validate_file_paths().
+
+        This function returns the first dupe or overlap it detects. We use a trie (or
+        prefix tree) to keep track of which paths we've already seen.
+
+        Args:
+            paths (iterable of str): An iterable of strings each representing a relative path
+
+        Returns:
+            str: a path which overlaps or duplicates another
+
+        """
+        path_trie = StringTrie(separator="/")
+        for path in paths:
+            if path in path_trie:
+                # path duplicates a path already in the trie
+                return path
+
+            if path_trie.has_subtrie(path):
+                # overlap where path is 'a/b' and trie has 'a/b/c'
+                return path
+
+            prefixes = list(path_trie.prefixes(path))
+            if prefixes:
+                # overlap where path is 'a/b/c' and trie has 'a/b'
+                return path
+
+            # if there are no overlaps, add it to our trie and continue
+            path_trie[path] = True
+
+    def resolve_path_overlap(version):
+        """
+        Remove content for which path overlaps some other.
+
+        If it's a duplicated path, remove the older content.
+
+        If something is absolutely wrong and we were not able to resolve conflicts,
+        repo version creation will fail later.
+
+        Paths can be overlapping because of an old Pulp 2 bug.
+
+        Args:
+            version(pulpcore.app.model.RepositoryVersion): incomplete version which needs path
+                overlap resolution
+
+        """
+        paths = ContentArtifact.objects.filter(content__pk__in=version.content).values_list(
+            "relative_path", flat=True
+        )
+        paths = list(paths)
+        max_conflicts = version.content.count() - 1
+
+        # Making it a for loop and not a while loop, just to be on the safe side.
+        # It will loop only as many times as there are conflicts in paths.
+        for i in range(max_conflicts):
+            bad_path = detect_path_overlap(paths)
+            if not bad_path:
+                # no path overlaps, we are good
+                break
+
+            # Content Artifacts with conflicting relative paths ordered by pulp2 creation time
+            cas_with_conflicts = ContentArtifact.objects.filter(
+                content__pk__in=version.content, relative_path=bad_path
+            ).order_by('-content__pulp2content__pulp2_last_updated')
+
+            conflict_count = cas_with_conflicts.count()
+            if conflict_count > 1:
+                # There are duplicated paths and we need to keep the newest content in the version.
+                # The query result is ordered desc by time so we remove all but the first content.
+                content_to_remove = [ca.content.pk for ca in cas_with_conflicts[1:]]
+                version.remove_content(Content.objects.filter(pk__in=content_to_remove))
+                # exclude the duplicated paths from further search
+                removed_count = conflict_count - 1
+                _logger.info(
+                    _(
+                        'Duplicated paths have been found in Pulp 3 repo `{repo}`: {path}. '
+                        'Removed: {num}.'
+                    ).format(repo=version.repository.name, path=bad_path, num=removed_count)
+                )
+                for j in range(removed_count):
+                    paths.remove(bad_path)
+            else:
+                # It's not a duplicated path but it overlaps with some other in the version,
+                # it should be removed from the version to resolve the conflict.
+                version.remove_content(cas_with_conflicts[0].content)
+                _logger.info(
+                    _(
+                        'Overlapping paths have been found in Pulp 3 repo `{repo}`: Removed '
+                        'content with {path} path.'
+                    ).format(repo=version.repository.name, path=bad_path)
+                )
+                # exclude the resolved path from further search
+                paths.remove(bad_path)
 
     if pulp3_remote:
         pulp2_repo.pulp3_repository_remote = pulp3_remote
@@ -344,6 +448,7 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
         to_delete = repo_content - incoming_content
         new_version.add_content(Content.objects.filter(pk__in=to_add))
         new_version.remove_content(Content.objects.filter(pk__in=to_delete))
+        resolve_path_overlap(new_version)
 
     is_empty_repo = not pulp2_repo.pulp3_repository_version
     if new_version.complete:
