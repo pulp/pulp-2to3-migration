@@ -1,1 +1,0 @@
-Stopped migrating unsupported metadata, like .zck, which could have been imported into some old Pulp 2 version.

@@ -13,6 +13,31 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.1 (2021-05-04)
+===================
+
+Bugfixes
+--------
+
+- Stopped migrating unsupported metadata, like .zck, which could have been imported into some old Pulp 2 version.
+  `#8400 <https://pulp.plan.io/issues/8400>`_
+- Handled overlapping paths which might come from old pulp2 repositories.
+  `#8582 <https://pulp.plan.io/issues/8582>`_
+- Handled properly skipping of corrupted or missing docker content.
+  `#8594 <https://pulp.plan.io/issues/8594>`_
+- Fixed a bug in the deb pipeline that was preventing successfull skipping of corrupted content for migrations with ``skip_corrupted=True``.
+  `#8612 <https://pulp.plan.io/issues/8612>`_
+- Fixed migration of Pulp 2 deb importers without configured components or architectures
+  `#8613 <https://pulp.plan.io/issues/8613>`_
+- Fixed `total` counters for content migration.
+  `#8621 <https://pulp.plan.io/issues/8621>`_
+- Fixed Debian importer migration on a re-run.
+  `#8653 <https://pulp.plan.io/issues/8653>`_
+
+
+----
+
+
 0.11.0 (2021-04-12)
 ===================
 
