@@ -1,1 +1,0 @@
-Fixed a bug in the deb pipeline that was preventing successfull skipping of corrupted content for migrations with ``skip_corrupted=True``.
