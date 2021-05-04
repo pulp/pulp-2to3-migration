@@ -2,3 +2,4 @@ pulpcore>=3.6,<3.13
 mongoengine
 semantic_version
 jsonschema>=3.0
+django>=2.2.14,<=2.2.20
