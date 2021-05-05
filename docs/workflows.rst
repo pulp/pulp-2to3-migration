@@ -21,7 +21,7 @@ All the commands should be run on Pulp 3 machine.
 .. code:: bash
 
     $ # migrate content for Pulp 2 ISO plugin
-    $ pulp migration plan create plan='{"plugins": [{"type": "iso"}]}'
+    $ pulp migration plan create --plan='{"plugins": [{"type": "iso"}]}'
     {
       "pulp_href": "/pulp/api/v3/migration-plans/8d8d49ee-a754-4a6a-aa7a-d8de4d1039c2/",
       "pulp_created": "2021-02-13T14:20:15.678368Z",
