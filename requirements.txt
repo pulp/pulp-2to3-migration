@@ -2,3 +2,4 @@ pulpcore>=3.6
 mongoengine
 semantic_version
 jsonschema>=3.0
+Django @ git+https://github.com/bmbouter/django.git@2.2.21-patched
