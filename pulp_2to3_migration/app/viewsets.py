@@ -14,7 +14,7 @@ from pulpcore.app.viewsets.custom_filters import (
 
 from pulpcore.plugin.models import Task
 from pulpcore.plugin.serializers import AsyncOperationResponseSerializer
-from pulpcore.plugin.tasking import enqueue_with_reservation
+from pulpcore.plugin.tasking import dispatch
 from pulpcore.plugin.viewsets import (
     BaseFilterSet,
     NamedModelViewSet,
@@ -94,7 +94,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
         if is_migration_plan_running():
             raise ValidationError(_("Only one migration plan can run or be reset at a time"))
 
-        result = enqueue_with_reservation(
+        result = dispatch(
             migrate_from_pulp2,
             [PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
@@ -120,7 +120,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
         if is_migration_plan_running():
             raise ValidationError(_("Only one migration plan can run or be reset at a time"))
 
-        result = enqueue_with_reservation(
+        result = dispatch(
             reset_pulp3_data,
             [PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
