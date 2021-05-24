@@ -764,8 +764,14 @@ class Pulp2Distribution(Pulp2to3Content):
                 if variant['repository'] == '.':
                     variants[name] = variant
             treeinfo_serialized['variants'] = variants
-            # Reset build_timestamp so Pulp will fetch all the addons during the next sync
-            treeinfo_serialized['distribution_tree']['build_timestamp'] = 0
+            # Set older timestamp so Pulp will fetch all the addons during the next sync
+            # We can't reset it to 0, some creative repository providers use the same
+            # name/release in many distribution trees and the only way to distinguish tem is by
+            # the build timestamp. e.g. CentOS 8 BaseOs, Appstream, PowerTools, HighAvailability.
+            orig_build_timestamp = int(
+                float(treeinfo_serialized['distribution_tree']['build_timestamp'])
+            )
+            treeinfo_serialized['distribution_tree']['build_timestamp'] = orig_build_timestamp - 1
             return treeinfo_serialized
 
         return None
