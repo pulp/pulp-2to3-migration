@@ -389,18 +389,22 @@ class RepoSetup(BaseModel):
         ]
 
     @classmethod
-    def finalize(cls):
+    def finalize(cls, plugins):
         """
         Finalize RepoSetup process.
 
         For that the following needs to be performed in specified order:
-         - remove records that are marked as old ones (they are leftovers from the old run)
+         - remove records that are marked as old ones for the plugins in the plan (they are
+         leftovers from the old run)
          - set status for all records to `old`, as a sign of completion of the RepoSetup process.
 
         It is only safe to do after the premigration step is done.
         If premigration was interrupted, all records should stay as they are.
+
+        Args:
+            plugins(list): List of plugin names specified in the Migration Plan
         """
-        cls.objects.filter(status=cls.OLD).delete()
+        cls.objects.filter(pulp2_repo_type__in=plugins, status=cls.OLD).delete()
         cls.objects.filter().update(status=cls.OLD)
 
     @classmethod
@@ -486,11 +490,14 @@ class RepoSetup(BaseModel):
                 pass
 
     @classmethod
-    def mark_changed_relations(cls):
+    def mark_changed_relations(cls, plugins):
         """
         Set is_migrated to False for any relations which changed and no longer up to date.
+
+        Args:
+            plugins(list): List of plugin names specified in the Migration Plan
         """
-        changed_relations_repo_ids = RepoSetup.objects.exclude(
+        changed_relations_repo_ids = RepoSetup.objects.filter(pulp2_repo_type__in=plugins).exclude(
             status=cls.UP_TO_DATE
         ).only('pulp2_repo_id').values_list('pulp2_repo_id', flat=True)
         Pulp2Repository.objects.filter(
