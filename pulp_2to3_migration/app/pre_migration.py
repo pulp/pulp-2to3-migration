@@ -716,8 +716,9 @@ def handle_outdated_resources(plan):
     Args:
         plan(MigrationPlan): A Migration Plan
     """
-    RepoSetup.mark_changed_relations()
-    RepoSetup.finalize()
+    plugins = plan.get_plugins()
+    RepoSetup.mark_changed_relations(plugins)
+    RepoSetup.finalize(plugins)
 
     for plugin_plan in plan.get_plugin_plans():
         inplan_repos = plugin_plan.get_repositories()
