@@ -6,7 +6,7 @@ additional_repos:
   name: pulp_file
 - branch: '2.5'
   name: pulp_container
-- branch: '3.10'
+- branch: '3.11'
   name: pulp_rpm
 - branch: '2.11'
   name: pulp_deb
@@ -14,6 +14,7 @@ black: false
 check_commit_message: true
 check_gettext: true
 check_manifest: true
+check_openapi_schema: true
 check_stray_pulpcore_imports: false
 coverage: false
 deploy_client_to_pypi: true
@@ -56,4 +57,5 @@ travis_notifications:
     on_failure: always
     on_success: change
 update_redmine: true
+upgrade_range: []
 
