@@ -27,6 +27,18 @@ else
   BRANCH="${GITHUB_REF##refs/tags/}"
 fi
 
+if [[ "$TEST" == "upgrade" ]]; then
+  git checkout -b ci_upgrade_test
+  cp -R .github /tmp/.github
+  cp -R .ci /tmp/.ci
+  git checkout $FROM_PULP_2TO3_MIGRATION_BRANCH
+  rm -rf .ci .github
+  cp -R /tmp/.github .
+  cp -R /tmp/.ci .
+  # Pin deps
+  sed -i "s/~/=/g" requirements.txt
+fi
+
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   COMPONENT_VERSION=$(http https://pypi.org/pypi/pulp-2to3-migration/json | jq -r '.info.version')
 else
@@ -76,45 +88,8 @@ else
   export CI_BASE_IMAGE=
 fi
 
+
 cd ..
-
-git clone --depth=1 https://github.com/pulp/pulp-openapi-generator.git
-if [ -n "$PULP_OPENAPI_GENERATOR_PR_NUMBER" ]; then
-  cd pulp-openapi-generator
-  git fetch origin pull/$PULP_OPENAPI_GENERATOR_PR_NUMBER/head:$PULP_OPENAPI_GENERATOR_PR_NUMBER
-  git checkout $PULP_OPENAPI_GENERATOR_PR_NUMBER
-  cd ..
-fi
-
-cd pulp-openapi-generator
-sed -i -e 's/localhost:24817/pulp/g' generate.sh
-sed -i -e 's/:24817/pulp/g' generate.sh
-cd ..
-
-
-git clone --depth=1 https://github.com/pulp/pulp-cli.git
-if [ -n "$PULP_CLI_PR_NUMBER" ]; then
-  cd pulp-cli
-  git fetch origin pull/$PULP_CLI_PR_NUMBER/head:$PULP_CLI_PR_NUMBER
-  git checkout $PULP_CLI_PR_NUMBER
-  cd ..
-fi
-
-cd pulp-cli
-pip install -e .
-pulp config create --base-url http://pulp --location tests/settings.toml
-cd ..
-
-
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.11
-
-cd pulpcore
-if [ -n "$PULPCORE_PR_NUMBER" ]; then
-  git fetch --depth=1 origin pull/$PULPCORE_PR_NUMBER/head:$PULPCORE_PR_NUMBER
-  git checkout $PULPCORE_PR_NUMBER
-fi
-cd ..
-
 
 
 git clone --depth=1 https://github.com/pulp/pulp-smash.git
@@ -127,6 +102,41 @@ if [ -n "$PULP_SMASH_PR_NUMBER" ]; then
 fi
 
 pip install --upgrade --force-reinstall ./pulp-smash
+
+
+git clone --depth=1 https://github.com/pulp/pulp-openapi-generator.git
+if [ -n "$PULP_OPENAPI_GENERATOR_PR_NUMBER" ]; then
+  cd pulp-openapi-generator
+  git fetch origin pull/$PULP_OPENAPI_GENERATOR_PR_NUMBER/head:$PULP_OPENAPI_GENERATOR_PR_NUMBER
+  git checkout $PULP_OPENAPI_GENERATOR_PR_NUMBER
+  cd ..
+fi
+
+
+git clone --depth=1 https://github.com/pulp/pulp-cli.git
+if [ -n "$PULP_CLI_PR_NUMBER" ]; then
+  cd pulp-cli
+  git fetch origin pull/$PULP_CLI_PR_NUMBER/head:$PULP_CLI_PR_NUMBER
+  git checkout $PULP_CLI_PR_NUMBER
+  cd ..
+fi
+
+cd pulp-cli
+pip install -e .
+pulp config create --base-url http://pulp --location tests/settings.toml --no-verify-ssl
+mkdir ~/.config/pulp
+cp tests/settings.toml ~/.config/pulp/settings.toml
+cd ..
+
+
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.11
+
+cd pulpcore
+if [ -n "$PULPCORE_PR_NUMBER" ]; then
+  git fetch --depth=1 origin pull/$PULPCORE_PR_NUMBER/head:$PULPCORE_PR_NUMBER
+  git checkout $PULPCORE_PR_NUMBER
+fi
+cd ..
 
 
 git clone --depth=1 https://github.com/pulp/pulp_file.git --branch 1.6
@@ -145,7 +155,7 @@ if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch 3.10
+git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch 3.11
 if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd pulp_rpm
   git fetch --depth=1 origin pull/$PULP_RPM_PR_NUMBER/head:$PULP_RPM_PR_NUMBER
@@ -160,6 +170,8 @@ if [ -n "$PULP_DEB_PR_NUMBER" ]; then
   git checkout $PULP_DEB_PR_NUMBER
   cd ..
 fi
+
+
 
 # Intall requirements for ansible playbooks
 pip install docker netaddr boto3 ansible
