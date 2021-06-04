@@ -258,11 +258,14 @@ class ContentMigrationFirstStage(Stage):
                     )
 
                     if not pulp2content.downloaded and not pulp2lazycatalog:
-                        _logger.warn(_(
-                            'On_demand content cannot be migrated without an entry in the '
-                            'lazy catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
-                        )
-                        continue
+                        # A distribution tree can be from an on_demand repo but without any images,
+                        # e.g. CentOS 8 High Availability. Do not skip in that case.
+                        if not is_multi_artifact:
+                            _logger.warn(_(
+                                'On_demand content cannot be migrated without an entry in the '
+                                'lazy catalog, pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
+                            )
+                            continue
 
                 if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
                     # find already created pulp3 content
@@ -349,7 +352,10 @@ class ContentMigrationFirstStage(Stage):
                                 deferred_download=False)
                             d_artifacts.append(da)
 
-                    if missing_artifact:
+                    # Only skip the rest of the steps if there are any images that are expected
+                    # to be downloaded. There are distribution trees without images in the wild,
+                    # e.g. CentOS 8 High Availability.
+                    if missing_artifact and extra_info['download']['images']:
                         _logger.warn(_(
                             'On_demand content cannot be migrated without a remote '
                             'pulp2 unit_id: {}'.format(pulp2content.pulp2_id))
