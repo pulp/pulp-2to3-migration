@@ -12,7 +12,7 @@ from mongoengine.queryset.visitor import Q as mongo_Q
 
 from pulpcore.plugin.constants import TASK_STATES
 from pulpcore.plugin.models import (
-    BaseDistribution,
+    Distribution,
     Publication,
     ProgressReport,
 )
@@ -793,7 +793,7 @@ def handle_outdated_resources(plan):
             pulp2distributor__in=pulp2distributors_with_old_distributions_qs).delete()
 
         # Delete outdated distributions
-        BaseDistribution.objects.filter(
+        Distribution.objects.filter(
             pulp2distributor__in=pulp2distributors_with_old_distributions_qs).delete()
 
         # Remove relations to the pulp2repository in case the relation changed.
