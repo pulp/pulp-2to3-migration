@@ -186,7 +186,10 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2detail_pb.total -= 1
                 continue
 
-        downloaded = record.downloaded if hasattr(record, 'downloaded') else False
+        # very old pulp2 content will not have downloaded field set (prior to lazy sync)
+        downloaded = hasattr(record, 'downloaded') and (
+            record.downloaded or record.downloaded is None
+        )
 
         if set_pulp2_repo:
             # This content requires to set pulp 2 repo. E.g. for errata, because 1 pulp2
@@ -299,7 +302,10 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
 
         for relation in content_relations:
             record = pulp2_content_by_id[relation.pulp2_unit_id]
-            downloaded = record.downloaded if hasattr(record, 'downloaded') else False
+            # very old pulp2 content will not have downloaded field set (prior to lazy sync)
+            downloaded = hasattr(record, 'downloaded') and (
+                record.downloaded or record.downloaded is None
+            )
             specific_content_q = Q(
                 pulp2_content_type_id=record._content_type_id,
                 pulp2_id=record.id,
