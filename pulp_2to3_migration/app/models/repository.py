@@ -6,7 +6,7 @@ from pulpcore.app.models import (  # it has to be imported directly from pulpcor
 )
 from pulpcore.plugin.models import (
     BaseModel,
-    BaseDistribution,
+    Distribution,
     Repository,
     RepositoryVersion,
     Publication,
@@ -175,7 +175,7 @@ class Pulp2Distributor(BaseModel):
 
     # due to base_path overlap restriction, a distribution can't correspond to multiple pulp 2
     # distributors, thus one-to-one relationship.
-    pulp3_distribution = models.OneToOneField(BaseDistribution,
+    pulp3_distribution = models.OneToOneField(Distribution,
                                               on_delete=models.SET_NULL,
                                               null=True)
 
