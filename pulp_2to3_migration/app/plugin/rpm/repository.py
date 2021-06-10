@@ -71,8 +71,21 @@ class RpmDistributor(Pulp2to3Distributor):
             pulp2_checksum_type = pulp2_config.get('checksum_type')
             checksum_types = None
             if pulp2_checksum_type:
-                checksum_types = {'metadata': pulp2_checksum_type,
-                                  'package': pulp2_checksum_type}
+                checksum_types = {
+                    'metadata': pulp2_checksum_type,
+                    'package': pulp2_checksum_type
+                }
+            else:
+                # Set the checksum type based on content in a repo, pulp 2 supports only one
+                # checksum type for packages in a repo. It is important to set checksum type for
+                # Pulp 3 to Pulp 2 sync use case.
+                package_qs = repo_version.content.filter(pulp_type='rpm.package')
+                if package_qs.count():
+                    pkg_checksum_type = package_qs.first().cast().checksum_type
+                    checksum_types = {
+                        'metadata': pkg_checksum_type,
+                        'package': pkg_checksum_type
+                    }
             sqlite = pulp2_config.get('generate_sqlite', False)
             try:
                 publish(repo_version.pk, checksum_types=checksum_types, sqlite_metadata=sqlite)
