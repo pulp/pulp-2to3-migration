@@ -129,7 +129,7 @@ cp tests/settings.toml ~/.config/pulp/settings.toml
 cd ..
 
 
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.11
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch master
 
 cd pulpcore
 if [ -n "$PULPCORE_PR_NUMBER" ]; then
@@ -139,7 +139,7 @@ fi
 cd ..
 
 
-git clone --depth=1 https://github.com/pulp/pulp_file.git --branch 1.6
+git clone --depth=1 https://github.com/pulp/pulp_file.git --branch master
 if [ -n "$PULP_FILE_PR_NUMBER" ]; then
   cd pulp_file
   git fetch --depth=1 origin pull/$PULP_FILE_PR_NUMBER/head:$PULP_FILE_PR_NUMBER
@@ -147,7 +147,7 @@ if [ -n "$PULP_FILE_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_container.git --branch 2.5
+git clone --depth=1 https://github.com/pulp/pulp_container.git --branch master
 if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd pulp_container
   git fetch --depth=1 origin pull/$PULP_CONTAINER_PR_NUMBER/head:$PULP_CONTAINER_PR_NUMBER
@@ -155,7 +155,7 @@ if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch 3.11
+git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch master
 if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd pulp_rpm
   git fetch --depth=1 origin pull/$PULP_RPM_PR_NUMBER/head:$PULP_RPM_PR_NUMBER
@@ -163,7 +163,7 @@ if [ -n "$PULP_RPM_PR_NUMBER" ]; then
   cd ..
 fi
 
-git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch 2.11
+git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch main
 if [ -n "$PULP_DEB_PR_NUMBER" ]; then
   cd pulp_deb
   git fetch --depth=1 origin pull/$PULP_DEB_PR_NUMBER/head:$PULP_DEB_PR_NUMBER
