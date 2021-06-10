@@ -1,0 +1,4 @@
+Ensure a checksum type of a package is used for publications when a checksum type was not explicitly configured in Pulp 2.
+
+If you plan to perform sync from the migrated Pulp 3 to a Pulp 2 instance, this fix is important, otherwise you can ignore it.
+If you've already started migration of the RPM plugin to Pulp 3, reset the migration for it and start again.
