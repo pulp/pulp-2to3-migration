@@ -1,1 +1,0 @@
-Fixed a problem when migrating one plugin after another will remove publications/distributions of the first one.
