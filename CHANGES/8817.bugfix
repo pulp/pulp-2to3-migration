@@ -1,1 +1,0 @@
-Fix migration of on_demand distribution (kickstart) trees when they do no have any images, e.g. CentOS 8 High Availability repo.
