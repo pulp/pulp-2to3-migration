@@ -1,6 +1,7 @@
 from django_filters.rest_framework import filters
 from gettext import gettext as _
 
+from django.core.exceptions import FieldError
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
 from rest_framework.decorators import action
@@ -43,18 +44,35 @@ def is_migration_plan_running():
          bool: True, if any related to the migration plan tasks are running; False, otherwise.
 
     """
-    qs = Task.objects.filter(state__in=['waiting', 'running'],
-                             reserved_resources_record__resource='pulp_2to3_migration')
+    try:
+        # old way, for pulpcore<=3.13
+        qs = Task.objects.filter(state__in=['waiting', 'running'],
+                                 reserved_resources_record__resource='pulp_2to3_migration')
+    except FieldError:
+        # new way, for pulpcore 3.14+
+        qs = Task.objects.filter(state__in=['waiting', 'running'],
+                                 reserved_resources_record=['pulp_2to3_migration'])
+
     if qs:
         return True
 
     groups_with_running_tasks = Task.objects.filter(
         state__in=['waiting', 'running'],
         task_group__isnull=False).values_list('task_group_id', flat=True)
-    groups_with_migration_tasks = Task.objects.filter(
-        task_group__isnull=False,
-        reserved_resources_record__resource='pulp_2to3_migration').values_list(
-        'task_group_id', flat=True)
+
+    try:
+        # old way, for pulpcore<=3.13
+        groups_with_migration_tasks = Task.objects.filter(
+            task_group__isnull=False,
+            reserved_resources_record__resource='pulp_2to3_migration').values_list(
+            'task_group_id', flat=True)
+    except FieldError:
+        # new way, for pulpcore 3.14+
+        groups_with_migration_tasks = Task.objects.filter(
+            task_group__isnull=False,
+            reserved_resources_record=['pulp_2to3_migration']).values_list(
+            'task_group_id', flat=True)
+
     if groups_with_running_tasks.intersection(groups_with_migration_tasks):
         return True
 
