@@ -13,6 +13,28 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.2 (2021-06-14)
+Bugfixes
+--------
+
+- Fixed migration of CentOS8 distribution trees.
+  `#8566 <https://pulp.plan.io/issues/8566>`_
+- Fixed a problem when migrating one plugin after another will remove publications/distributions of the first one.
+  `#8686 <https://pulp.plan.io/issues/8686>`_
+- Ensure a checksum type of a package is used for publications when a checksum type was not explicitly configured in Pulp 2.
+
+  If you plan to perform sync from the migrated Pulp 3 to a Pulp 2 instance, this fix is important, otherwise you can ignore it.
+  If you've already started migration of the RPM plugin to Pulp 3, reset the migration for it and start again.
+  `#8725 <https://pulp.plan.io/issues/8725>`_
+- Fix migration of on_demand distribution (kickstart) trees when they do no have any images, e.g. CentOS 8 High Availability repo.
+  `#8817 <https://pulp.plan.io/issues/8817>`_
+- Pulp2 Content that does not have downloaded flag is marked as downloaded.
+  `#8863 <https://pulp.plan.io/issues/8863>`_
+
+
+----
+
+
 0.11.1 (2021-05-04)
 ===================
 
