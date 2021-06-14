@@ -6,7 +6,7 @@ additional_repos:
   name: pulp_file
 - branch: '2.5'
   name: pulp_container
-- branch: '3.10'
+- branch: '3.11'
   name: pulp_rpm
 - branch: '2.11'
   name: pulp_deb

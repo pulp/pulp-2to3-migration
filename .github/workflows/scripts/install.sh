@@ -48,7 +48,7 @@ fi
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.10
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.11
 fi
 
 if [ -e $REPO_ROOT/../pulp_deb ]; then
