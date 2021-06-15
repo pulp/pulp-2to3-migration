@@ -29,9 +29,9 @@ then
   exit
 fi
 
-twine check dist/pulp-2to3-migration_client-$VERSION-py3-none-any.whl || exit 1
-twine check dist/pulp-2to3-migration-client-$VERSION.tar.gz || exit 1
-twine upload dist/pulp-2to3-migration_client-$VERSION-py3-none-any.whl -u pulp -p $PYPI_PASSWORD
-twine upload dist/pulp-2to3-migration-client-$VERSION.tar.gz -u pulp -p $PYPI_PASSWORD
+twine check dist/pulp_2to3_migration_client-$VERSION-py3-none-any.whl || exit 1
+twine check dist/pulp_2to3_migration-client-$VERSION.tar.gz || exit 1
+twine upload dist/pulp_2to3_migration_client-$VERSION-py3-none-any.whl -u pulp -p $PYPI_PASSWORD
+twine upload dist/pulp_2to3_migration-client-$VERSION.tar.gz -u pulp -p $PYPI_PASSWORD
 
 exit $?
