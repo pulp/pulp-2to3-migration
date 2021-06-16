@@ -218,7 +218,9 @@ def create_tag_and_build_package(repo, desired_tag, commit_sha, plugin_path):
 
     # Check if Package is available on PyPI
     loop = asyncio.get_event_loop()  # noqa
-    package_found = asyncio.run(get_package_from_pypi("pulp-2to3-migration=={tag.name}", plugin_path))  # noqa
+    package_found = asyncio.run(
+        get_package_from_pypi("pulp-2to3-migration=={tag.name}", plugin_path)
+    )  # noqa
 
     if not package_found:
         os.system("python3 setup.py sdist bdist_wheel --python-tag py3")
