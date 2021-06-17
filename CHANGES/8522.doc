@@ -1,5 +1,0 @@
-Taught 2to3 migration about changes in task-dispatching and Distributions.
-
-**NOTE**: To minimize any potential impact from this change, please make sure
-you've done a 2to3 migration after any Pulp2 changes to distributors **before**
-upgrading to this release.
