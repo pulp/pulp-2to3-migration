@@ -13,6 +13,28 @@ Changelog
 
 .. towncrier release notes start
 
+0.12.0 (2021-06-17)
+Features
+--------
+
+- Started migrating relationship between repo and importer to Pulp 3.
+  `#8626 <https://pulp.plan.io/issues/8626>`_
+
+
+Improved Documentation
+----------------------
+
+- Taught 2to3 migration about changes in task-dispatching and Distributions.
+
+  **NOTE**: To minimize any potential impact from this change, please make sure
+  you've done a 2to3 migration after any Pulp2 changes to distributors **before**
+  upgrading to this release.
+  `#8522 <https://pulp.plan.io/issues/8522>`_
+
+
+----
+
+
 0.11.2 (2021-06-14)
 Bugfixes
 --------
