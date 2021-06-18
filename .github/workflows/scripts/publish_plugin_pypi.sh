@@ -23,9 +23,9 @@ fi
 
 pip install twine
 
-twine check dist/pulp-2to3-migration-$1-py3-none-any.whl || exit 1
+twine check dist/pulp_2to3_migration-$1-py3-none-any.whl || exit 1
 twine check dist/pulp-2to3-migration-$1.tar.gz || exit 1
-twine upload dist/pulp-2to3-migration-$1-py3-none-any.whl -u pulp -p $PYPI_PASSWORD
+twine upload dist/pulp_2to3_migration-$1-py3-none-any.whl -u pulp -p $PYPI_PASSWORD
 twine upload dist/pulp-2to3-migration-$1.tar.gz -u pulp -p $PYPI_PASSWORD
 
 exit $?
