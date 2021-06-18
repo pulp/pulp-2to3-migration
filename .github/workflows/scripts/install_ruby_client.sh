@@ -28,7 +28,7 @@ export response=$(curl --write-out %{http_code} --silent --output /dev/null http
 if [ "$response" == "200" ];
 then
   echo "pulp-2to3-migration client $VERSION has already been released. Installing from RubyGems.org."
-  gem install pulp-2to3-migration_client -v $VERSION
+  gem install pulp_2to3_migration_client -v $VERSION
   touch pulp_2to3_migration_client-$VERSION.gem
   tar cvf ruby-client.tar ./pulp_2to3_migration_client-$VERSION.gem
   exit
