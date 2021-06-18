@@ -14,7 +14,7 @@ cd "$(dirname "$(realpath -e "$0")")"/../../..
 
 pip install twine
 
-export VERSION=$(ls dist | sed -rn 's/pulp-2to3-migration-client-(.*)\.tar.gz/\1/p')
+export VERSION=$(ls dist | sed -rn 's/pulp_2to3_migration-client-(.*)\.tar.gz/\1/p')
 
 if [[ -z "$VERSION" ]]; then
   echo "No client package found."
