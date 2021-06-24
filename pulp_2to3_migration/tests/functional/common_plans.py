@@ -5,6 +5,55 @@ Migration plans which are used by many different tests.
 import json
 
 
+DEB_COMPLEX_PLAN = json.dumps({
+    "plugins": [{
+        "type": "deb",
+        "repositories": [
+            {
+                "name": "debian-empty",
+                "pulp2_importer_repository_id": "debian-empty",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "debian-empty",  # content count: 0
+                        "pulp2_distributor_repository_ids": ["debian-empty"]
+                    }
+                ]
+            },
+            {
+                "name": "debian",
+                "pulp2_importer_repository_id": "debian",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "debian",
+                        "pulp2_distributor_repository_ids": ["debian"]
+                    }
+                ]
+            },
+            {
+                "name": "debian-complex-dists",
+                "pulp2_importer_repository_id": "debian-complex-dists",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "debian-complex-dists",
+                        "pulp2_distributor_repository_ids": ["debian-complex-dists"]
+                    }
+                ]
+            },
+            {
+                "name": "debian_update",
+                "pulp2_importer_repository_id": "debian_update",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "debian_update",
+                        "pulp2_distributor_repository_ids": ["debian_update"]
+                    }
+                ]
+            },
+        ],
+
+    }]
+})
+
 FILE_COMPLEX_PLAN = json.dumps({
     "plugins": [{
         "type": "iso",
@@ -116,6 +165,7 @@ RPM_COMPLEX_PLAN = json.dumps({
 
 FILE_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "iso"}]})
 RPM_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "rpm"}]})
+DEB_SIMPLE_PLAN = json.dumps({"plugins": [{"type": "deb"}]})
 
 FILE_DISTRIBUTOR_DIFF_PLAN = json.dumps({
     "plugins": [{
