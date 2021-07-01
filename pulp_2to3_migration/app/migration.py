@@ -149,18 +149,21 @@ def migrate_importers(plan):
                 pb.save()
 
 
-def complex_repo_migration(plugin, pulp3_repo_setup, repo_name):
+def complex_repo_migration(plugin_type, pulp3_repo_setup, repo_name):
     """Perform a complex migration for a particular repo using the repo setup config.
 
     Create all repository versions, publications, distributions.
 
     Args:
-        plugin: Plugin object
+        plugin_type(str): Plugin type
         pulp3_repo_setup: Pulp 3 repo setup config for a plugin
         repo_name: Name of the repo to be migrated
     """
-    distributor_migrators = plugin.migrator.distributor_migrators
-    distributor_types = list(plugin.migrator.distributor_migrators.keys())
+    from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
+    migrator = PLUGIN_MIGRATORS.get(plugin_type)
+
+    distributor_migrators = migrator.distributor_migrators
+    distributor_types = list(distributor_migrators.keys())
     repo_versions_setup = pulp3_repo_setup[repo_name]['repository_versions']
 
     # importer might not be migrated, e.g. config is empty or it's not specified in a MP
@@ -283,7 +286,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                 if needs_a_task:
                     repo_ver_to_create += len(repo_versions)
                     repo = Repository.objects.get(name=repo_name).cast()
-                    task_args = [plugin, pulp3_repo_setup, repo_name]
+                    task_args = [plugin.type, pulp3_repo_setup, repo_name]
                     dispatch(
                         complex_repo_migration,
                         [repo],
@@ -301,7 +304,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     if repos.intersection(repos_ids_to_check):
                         needs_a_task = True
                 if needs_a_task:
-                    task_args = [plugin, pulp3_repo_setup, repo_name]
+                    task_args = [plugin.type, pulp3_repo_setup, repo_name]
                     complex_repo_migration(*task_args)
 
         task_group = TaskGroup.current()
