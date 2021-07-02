@@ -77,7 +77,8 @@ if [[ "$TEST" = 'bindings' ]]; then
   ./generate.sh pulp_file ruby 0
   cd pulp_file-client
   gem build pulp_file_client.gemspec
-  gem install --bot ./pulp_file_client-0.gem
+  gem install --both ./pulp_file_client-0.gem
+  cd ..
 fi
 ./generate.sh pulp_container python
 pip install ./pulp_container-client
@@ -86,7 +87,8 @@ if [[ "$TEST" = 'bindings' ]]; then
   ./generate.sh pulp_container ruby 0
   cd pulp_container-client
   gem build pulp_container_client.gemspec
-  gem install --bot ./pulp_container_client-0.gem
+  gem install --both ./pulp_container_client-0.gem
+  cd ..
 fi
 ./generate.sh pulp_rpm python
 pip install ./pulp_rpm-client
@@ -95,7 +97,8 @@ if [[ "$TEST" = 'bindings' ]]; then
   ./generate.sh pulp_rpm ruby 0
   cd pulp_rpm-client
   gem build pulp_rpm_client.gemspec
-  gem install --bot ./pulp_rpm_client-0.gem
+  gem install --both ./pulp_rpm_client-0.gem
+  cd ..
 fi
 ./generate.sh pulp_deb python
 pip install ./pulp_deb-client
@@ -104,7 +107,8 @@ if [[ "$TEST" = 'bindings' ]]; then
   ./generate.sh pulp_deb ruby 0
   cd pulp_deb-client
   gem build pulp_deb_client.gemspec
-  gem install --bot ./pulp_deb_client-0.gem
+  gem install --both ./pulp_deb_client-0.gem
+  cd ..
 fi
 cd $REPO_ROOT
 
