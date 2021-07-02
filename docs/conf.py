@@ -27,14 +27,14 @@ except ImportError:
 # -- Project information -----------------------------------------------------
 
 project = 'pulp-2to3-migration'
-copyright = '2019, Pulp Team'
+copyright = '2021, Pulp Team'
 author = 'Pulp Team'
 
 
 # The short X.Y version
-version = "0.12.0.dev"
+version = "0.13.0.dev"
 # The full version, including alpha/beta/rc tags
-release = "0.12.0.dev"
+release = "0.13.0.dev"
 
 
 # -- General configuration ---------------------------------------------------
