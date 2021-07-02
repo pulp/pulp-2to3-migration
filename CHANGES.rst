@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.12.1 (2021-07-02)
+===================
+
+Bugfixes
+--------
+
+- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers withou a releases field.
+  `#8928 <https://pulp.plan.io/issues/8928>`_
+
+
+----
+
+
 0.12.0 (2021-06-17)
 Features
 --------
