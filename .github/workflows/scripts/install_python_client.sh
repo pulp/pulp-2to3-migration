@@ -37,7 +37,7 @@ then
 fi
 
 cd ../pulp-openapi-generator
-
+rm -rf pulp_2to3_migration-client
 ./generate.sh pulp_2to3_migration python $VERSION
 cd pulp_2to3_migration-client
 python setup.py sdist bdist_wheel --python-tag py3

@@ -35,7 +35,7 @@ then
 fi
 
 cd ../pulp-openapi-generator
-
+rm -rf pulp_2to3_migration-client
 ./generate.sh pulp_2to3_migration ruby $VERSION
 cd pulp_2to3_migration-client
 gem build pulp_2to3_migration_client
