@@ -43,6 +43,7 @@ pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
 redmine_project: migration
+release_user: pulpbot
 test_bindings: false
 test_cli: true
 test_performance: false
@@ -57,4 +58,5 @@ travis_notifications:
     on_failure: always
     on_success: change
 update_redmine: true
+upgrade_range: []
 
