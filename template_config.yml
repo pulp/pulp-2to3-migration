@@ -36,6 +36,7 @@ plugin_default_branch: master
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 publish_docs_to_pulpprojectdotorg: true
+pulp_scheme: https
 pulp_settings: null
 pulpcore_branch: master
 pulpcore_pip_version_specifier: null

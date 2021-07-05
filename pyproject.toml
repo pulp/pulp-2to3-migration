@@ -24,6 +24,7 @@ ignore = [
     "docs/**",
     "flake8.cfg",
     "template_config.yml",
+    "pulp-2to3-migration-test-fixtures",
     ".travis/**",
     ".travis.yml",
     ".pep8speaks.yml",
