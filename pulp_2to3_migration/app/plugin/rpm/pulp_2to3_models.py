@@ -1,6 +1,6 @@
 import os
 
-from bson import BSON
+import bson
 from collections import defaultdict
 
 import createrepo_c as cr
@@ -649,14 +649,6 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
 
         """
 
-        def _get_profiles(profiles):
-            """
-            Out of incoming string create a bson string and decode it
-            """
-
-            bson_string = BSON(profiles, encoding='utf8')
-            return bson_string.decode()
-
         pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_content_batch = pulp2_models.ModulemdDefaults.objects.filter(id__in=pulp2_ids)
@@ -672,7 +664,14 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
             if defaults.stream:
                 kwargs['stream'] = defaults.stream
             if defaults.profiles:
-                kwargs['profiles'] = _get_profiles(defaults.profiles)
+                if isinstance(defaults.profiles, str):
+                    # "normal path" - the data was BSON-encoded and then saved into MongoDB
+                    # as a utf-8 encoded string
+                    kwargs['profiles'] = bson.decode(bytes(defaults.profiles, encoding='utf-8'))
+                elif isinstance(defaults.profiles, bytes):
+                    # "hotfix path" (#8893) - the data was BSON-encoded and then saved into MongoDB
+                    # as raw binary data
+                    kwargs['profiles'] = bson.decode(defaults.profiles)
             pulp2defaults_to_save.append(cls(**kwargs))
         cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True,
                                 batch_size=DEFAULT_BATCH_SIZE)
