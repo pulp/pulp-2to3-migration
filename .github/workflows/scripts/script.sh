@@ -46,7 +46,7 @@ if [[ "$TEST" = "docs" ]]; then
 fi
 
 if [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
-  REPORTED_VERSION=$(http pulp/pulp/api/v3/status/ | jq --arg plugin pulp_2to3_migration --arg legacy_plugin pulp_2to3_migration -r '.versions[] | select(.component == $plugin or .component == $legacy_plugin) | .version')
+  REPORTED_VERSION=$(http $PULP_URL/pulp/api/v3/status/ | jq --arg plugin pulp_2to3_migration --arg legacy_plugin pulp_2to3_migration -r '.versions[] | select(.component == $plugin or .component == $legacy_plugin) | .version')
   response=$(curl --write-out %{http_code} --silent --output /dev/null https://pypi.org/project/pulp-2to3-migration/$REPORTED_VERSION/)
   if [ "$response" == "200" ];
   then
@@ -133,7 +133,7 @@ echo "Checking for uncommitted migrations..."
 cmd_prefix bash -c "django-admin makemigrations --check --dry-run"
 
 # Run unit tests.
-cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres django-admin test --noinput /usr/local/lib/python3.6/site-packages/pulp_2to3_migration/tests/unit/"
+cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres django-admin test --noinput /usr/local/lib/python3.8/site-packages/pulp_2to3_migration/tests/unit/"
 
 # Run functional tests
 export PYTHONPATH=$REPO_ROOT:$REPO_ROOT/../pulpcore${PYTHONPATH:+:${PYTHONPATH}}

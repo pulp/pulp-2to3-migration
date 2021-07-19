@@ -110,6 +110,8 @@ fi
 
 cat >> vars/main.yaml << VARSYAML
 pulp_settings: null
+pulp_scheme: http
+pulp_container_tag: latest
 VARSYAML
 
 ansible-playbook build_container.yaml
