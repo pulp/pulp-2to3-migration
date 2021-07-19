@@ -132,18 +132,6 @@ class TestMigrationPlanReset(BaseTestFile, unittest.TestCase):
         self.assertEqual(self.file_content_api.list().count,
                          PULP_2_ISO_FIXTURE_DATA['content'])
 
-    def test_run_only_one_reset(self):
-        """Test that only one reset can be run at a time."""
-        mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
-
-        # run twice
-        mp_run_response = self.migration_plans_api.reset(mp.pulp_href)
-        with self.assertRaises(ApiException):
-            self.migration_plans_api.reset(mp.pulp_href)
-
-        # make sure the first task is completed not to interfere with further tests
-        monitor_task(mp_run_response.task)
-
     def test_no_reset_when_migration(self):
         """Test that reset is not run when migration is."""
         mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
