@@ -1,7 +1,7 @@
 BINDINGS_CONFIGURATION = {
     'username': 'admin',
     'password': 'password',
-    'host': 'http://pulp',
+    'host': 'https://pulp',
 }
 
 TABLES_TO_KEEP = (
