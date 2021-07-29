@@ -410,7 +410,13 @@ class Pulp2Erratum(Pulp2to3Content):
             col.name = collection.get('name')
             module = collection.get('module')
             if module:
-                col.module = cr.UpdateCollectionModule(**module)
+                cr_module = cr.UpdateCollectionModule()
+                cr_module.name = module['name']
+                cr_module.stream = module['stream']
+                cr_module.version = int(module['version'])
+                cr_module.context = module['context']
+                cr_module.arch = module['arch']
+                col.module = cr_module
 
             for package in collection.get('packages', []):
                 pkg = cr.UpdateCollectionPackage()
