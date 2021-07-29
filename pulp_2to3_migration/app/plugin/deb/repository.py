@@ -40,6 +40,7 @@ class DebImporter(Pulp2to3Importer):
         architectures = pulp2_config.get('architectures')
         if architectures:
             base_config['architectures'] = architectures.replace(',', ' ')
+        base_config['gpgkey'] = pulp2_config.get('gpg_keys')
         return AptRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
