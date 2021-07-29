@@ -1,0 +1,2 @@
+Fixed a bug causing deb migrations to fail if there are Pulp 2 importers withou a releases field.
+(backported from #8928)
