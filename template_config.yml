@@ -1,6 +1,8 @@
 # This config represents the latest values used when running the plugin-template. Any settings that
 # were not present before running plugin-template have been added with their default values.
 
+# generated with plugin_template@2021.04.08-87-g2136629
+
 additional_repos:
 - branch: '1.6'
   name: pulp_file
@@ -23,7 +25,8 @@ deploy_daily_client_to_pypi: true
 deploy_daily_client_to_rubygems: true
 deploy_to_pypi: true
 docker_fixtures: false
-docs_test: false
+docs_test: true 
+flake8: true
 issue_tracker: redmine
 plugin_app_label: pulp_2to3_migration
 plugin_camel: Pulp-2To3-Migration
@@ -36,14 +39,17 @@ plugin_default_branch: master
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
 publish_docs_to_pulpprojectdotorg: true
+pulp_scheme: http
 pulp_settings: null
 pulpcore_branch: '3.11'
 pulpcore_pip_version_specifier: ~=3.11.0
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
+python_version: '3.6'
 redmine_project: migration
 release_user: pulpbot
+sync_ci: true
 test_bindings: false
 test_cli: true
 test_performance: false
