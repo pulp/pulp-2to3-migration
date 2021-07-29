@@ -1,0 +1,2 @@
+Fix migration for any clients that have applied the fix for #8893.
+(backported from #8982)
