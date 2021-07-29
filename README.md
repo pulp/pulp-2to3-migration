@@ -8,4 +8,4 @@ Supported plugins:
  - Pulp 2 Deb can be migrated into Pulp 3 Deb (tech preview).
 
 
-For more information, please see the [documentation](https://pulp-2to3-migration.readthedocs.io/en/latest/).
+For more information, please see the [documentation](https://docs.pulpproject.org/pulp_2to3_migration/).
