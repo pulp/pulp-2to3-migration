@@ -2,8 +2,33 @@
 
 set -euv
 
-sudo sed -i  "s/bindIp: 127.0.0.1/bindIp: 127.0.0.1,$(ip address show dev docker0 | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*")/g" /etc/mongod.conf
+export MONGODB_IP=$(ip address show dev docker0 | grep -o "inet [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" | grep -o "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*")
+
+sudo sed -i  "s/bindIp: 127.0.0.1/bindIp: 127.0.0.1,$MONGODB_IP/g" /etc/mongod.conf
 sudo systemctl restart mongod
+
+# update settings to configure our mongo install
+cmd_prefix bash -c "cat >> /etc/pulp/settings.py <<EOF
+PULP2_MONGODB = {
+  'name': 'pulp_database',
+  'seeds': '$MONGODB_IP:27017',
+  'username': 'ci_cd',
+  'password': 'ci_cd',
+  'replica_set': '',
+  'ssl': False,
+  'ssl_keyfile': '',
+  'ssl_certfile': '',
+  'verify_ssl': True,
+  'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+}
+EOF"
+
+# Restarting single container services
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-api"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-content"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-resource-manager"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-worker@1"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-worker@2"
 
 # install mongo and copy a script which we need to use for func tests to roll out a pulp 2 snapshot
 cmd_prefix bash -c "cat > /etc/yum.repos.d/mongodb-org-3.6.repo <<EOF
