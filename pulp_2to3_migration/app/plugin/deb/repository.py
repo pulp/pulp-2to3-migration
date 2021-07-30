@@ -79,7 +79,7 @@ class DebDistributor(Pulp2to3Distributor):
         pulp2_config = pulp2distributor.pulp2_config
         distribution_data = cls.parse_base_config(pulp2distributor, pulp2_config)
         base_path = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
-        distribution_data['base_path'] = base_path.rstrip('/')
+        distribution_data['base_path'] = base_path.strip('/')
         distribution_data['publication'] = publication
         distribution, created = AptDistribution.objects.update_or_create(
             name=distribution_data['name'],
