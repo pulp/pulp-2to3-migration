@@ -19,7 +19,7 @@ Changelog
 Bugfixes
 --------
 
-- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers withou a releases field.
+- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers without a releases field.
   `#8928 <https://pulp.plan.io/issues/8928>`_
 
 
@@ -27,6 +27,8 @@ Bugfixes
 
 
 0.12.0 (2021-06-17)
+===================
+
 Features
 --------
 
@@ -44,6 +46,29 @@ Improved Documentation
   upgrading to this release.
   `#8522 <https://pulp.plan.io/issues/8522>`_
 
+----
+
+0.11.3 (2021-08-02)
+===================
+
+Bugfixes
+--------
+
+- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers without a releases field. 
+  (backported from #8928)
+  `#8945 <https://pulp.plan.io/issues/8945>`_
+- Added migration of gpgkeys-field for verification of debian-repos.
+  (backported from #8970)
+  `#9017 <https://pulp.plan.io/issues/9017>`_
+- Fixed migration for any clients that have applied the fix for #8893.
+  (backported from #8982)
+  `#9109 <https://pulp.plan.io/issues/9109>`_
+- Fixed modular errata migration.
+  (backported from #8874)
+  `#9173 <https://pulp.plan.io/issues/9173>`_
+- Strip leading slashes from Relative URL for deb-migrations.
+  (backported from #9184)
+  `#9188 <https://pulp.plan.io/issues/9188>`_
 
 ----
 
