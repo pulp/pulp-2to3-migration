@@ -1,2 +1,0 @@
-Add migration of gpgkeys-field for verification of debian-repos.
-(backported from #8970)

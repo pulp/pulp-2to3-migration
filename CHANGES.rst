@@ -13,6 +13,32 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.3 (2021-08-02)
+===================
+
+Bugfixes
+--------
+
+- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers withou a releases field.
+  (backported from #8928)
+  `#8945 <https://pulp.plan.io/issues/8945>`_
+- Add migration of gpgkeys-field for verification of debian-repos.
+  (backported from #8970)
+  `#9017 <https://pulp.plan.io/issues/9017>`_
+- Fix migration for any clients that have applied the fix for #8893.
+  (backported from #8982)
+  `#9109 <https://pulp.plan.io/issues/9109>`_
+- Fixed modular errata migration.
+  (backported from #8874)
+  `#9173 <https://pulp.plan.io/issues/9173>`_
+- Strip leading slashes from Relative URL for deb-migrations.
+  (backported from #9184)
+  `#9188 <https://pulp.plan.io/issues/9188>`_
+
+
+----
+
+
 0.11.2 (2021-06-14)
 Bugfixes
 --------
