@@ -4,13 +4,13 @@
 # generated with plugin_template@2021.04.08-90-ga1a995f
 
 additional_repos:
-- branch: master
+- branch: 1.8
   name: pulp_file
-- branch: master
+- branch: 2.7
   name: pulp_container
-- branch: master
+- branch: 3.14
   name: pulp_rpm
-- branch: main
+- branch: 2.13
   name: pulp_deb
 black: false
 check_commit_message: true
@@ -45,8 +45,8 @@ pre_job_template: null
 publish_docs_to_pulpprojectdotorg: true
 pulp_scheme: https
 pulp_settings: null
-pulpcore_branch: master
-pulpcore_pip_version_specifier: null
+pulpcore_branch: 3.14
+pulpcore_pip_version_specifier: '~=3.14.0'
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
