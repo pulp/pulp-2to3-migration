@@ -13,6 +13,38 @@ Changelog
 
 .. towncrier release notes start
 
+0.13.0 (2021-08-06)
+===================
+
+Bugfixes
+--------
+
+- Fixed modular errata migration.
+  `#8874 <https://pulp.plan.io/issues/8874>`_
+- Add migration of gpgkeys-field for verification of debian-repos.
+  `#8970 <https://pulp.plan.io/issues/8970>`_
+- Fix migration for any clients that have applied the fix for #8893.
+  `#8982 <https://pulp.plan.io/issues/8982>`_
+- Strip leading slashes from Relative URL for deb-migrations.
+  `#9184 <https://pulp.plan.io/issues/9184>`_
+
+
+Deprecations and Removals
+-------------------------
+
+- Dropped support for Python 3.6 and 3.7.
+  `#9038 <https://pulp.plan.io/issues/9038>`_
+
+
+Misc
+----
+
+- `#9185 <https://pulp.plan.io/issues/9185>`_
+
+
+----
+
+
 0.12.1 (2021-07-02)
 ===================
 
