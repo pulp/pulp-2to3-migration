@@ -4,7 +4,7 @@
 # generated with plugin_template@2021.04.08-95-gbf7866c
 
 additional_repos:
-- branch: master
+- branch: main
   name: pulp_file
 - branch: master
   name: pulp_container
