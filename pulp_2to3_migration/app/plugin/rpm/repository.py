@@ -11,6 +11,8 @@ from pulp_rpm.app.models import (
 )
 from pulp_rpm.app.tasks.publishing import publish
 
+from urllib.parse import urlparse, urlunparse
+
 
 class RpmImporter(Pulp2to3Importer):
     """
@@ -35,6 +37,11 @@ class RpmImporter(Pulp2to3Importer):
         sles_auth_token = pulp2_config.get('query_auth_token')
         if sles_auth_token:
             base_config['sles_auth_token'] = sles_auth_token
+        else:
+            url = urlparse(pulp2_config.get('feed', ''))
+            if url.query and '=' not in url.query and '&' not in url.query:
+                base_config['sles_auth_token'] = url.query
+                base_config['url'] = urlunparse(url._replace(query=''))
         return RpmRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
