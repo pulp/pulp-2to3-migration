@@ -1,4 +1,4 @@
-pulpcore>=3.13
+pulpcore>=3.15.0.dev
 mongoengine
 semantic_version
 jsonschema>=3.0
