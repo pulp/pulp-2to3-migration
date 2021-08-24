@@ -232,7 +232,7 @@ class ContentMigrationFirstStage(Stage):
         if content_model.set_pulp2_repo:
             pulp_2to3_detail_qs = pulp_2to3_detail_qs.order_by('repo_id')
 
-        with ProgressReport(
+        async with ProgressReport(
             message='Migrating {} content to Pulp 3'.format(content_type),
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
             total=pulp_2to3_detail_qs.count()
@@ -413,7 +413,7 @@ class ContentMigrationFirstStage(Stage):
                     )
                     if artifact is None:
                         if pb:
-                            pb.increment()
+                            await pb.aincrement()
                         continue
 
                     if is_lazy_type and pulp2lazycatalog:
@@ -467,7 +467,7 @@ class ContentMigrationFirstStage(Stage):
                         await self.put(dc)
 
                 if pb:
-                    pb.increment()
+                    await pb.aincrement()
 
                 if has_future and dc:
                     futures.append(dc)

@@ -249,7 +249,7 @@ class DockerContentSaver(ContentSaver):
     Stage for saving DC.
     """
 
-    async def _pre_save(self, batch):
+    def _pre_save(self, batch):
         """
         Relate manifest to tag before saving tag.
         We need to do it in the pre_save hook because of Tag's uniqueness constraint.
@@ -268,7 +268,7 @@ class DockerContentSaver(ContentSaver):
                 man = Manifest.objects.filter(digest=related_man_id).first()
                 dc.content.tagged_manifest = man
 
-    async def _post_save(self, batch):
+    def _post_save(self, batch):
         """
         Remove tag if it  points to a tagged_manifest=null
 
