@@ -63,11 +63,11 @@ class IsoDistributor(Pulp2to3Distributor):
         if not repo_version:
             repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
-        publication = repo_version.publication_set.first()
+        publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
             # create publication
             publish('PULP_MANIFEST', repo_version.pk)
-            publication = repo_version.publication_set.first()
+            publication = repo_version.publication_set.filter(complete=True).first()
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)

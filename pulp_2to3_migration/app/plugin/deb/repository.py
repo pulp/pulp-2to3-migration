@@ -69,11 +69,11 @@ class DebDistributor(Pulp2to3Distributor):
         if not repo_version:
             repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
-        publication = repo_version.publication_set.first()
+        publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
             # create publication
             publish(repo_version.pk, simple=True, structured=True)
-            publication = repo_version.publication_set.first()
+            publication = repo_version.publication_set.filter(complete=True).first()
 
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
