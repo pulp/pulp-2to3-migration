@@ -233,7 +233,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
         """
         rv = obj.pulp3_repository_version
         if rv:
-            return get_pulp_href(rv.publication_set.first())
+            return get_pulp_href(rv.publication_set.filter(complete=True).first())
 
     @extend_schema_field(field=serializers.ListField(child=serializers.CharField()))
     def get_pulp3_distribution_hrefs(self, obj):
