@@ -66,7 +66,7 @@ class RpmDistributor(Pulp2to3Distributor):
         if not repo_version:
             repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
-        publication = repo_version.publication_set.first()
+        publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
             pulp2_checksum_type = pulp2_config.get('checksum_type')
             checksum_types = None
@@ -92,7 +92,7 @@ class RpmDistributor(Pulp2to3Distributor):
             except TypeError:
                 # hack, pulp_rpm <3.9 doesn't support sqlite_metadata kwarg
                 publish(repo_version.pk, checksum_types=checksum_types)
-            publication = repo_version.publication_set.first()
+            publication = repo_version.publication_set.filter(complete=True).first()
 
         # create distribution
         distribution_data = cls.parse_base_config(pulp2distributor, pulp2_config)
