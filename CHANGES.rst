@@ -13,6 +13,29 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.4 (2021-08-26)
+===================
+
+Bugfixes
+--------
+
+- Fixed remigration of publications after an unsuccessful or interrupted run.
+  (backported from #9295)
+  `#9296 <https://pulp.plan.io/issues/9296>`_
+- Filtered out incomplete publications for the pulp2repositories/ endpoint.
+  (backported from #9242)
+  `#9297 <https://pulp.plan.io/issues/9297>`_
+
+
+Misc
+----
+
+- `#9194 <https://pulp.plan.io/issues/9194>`_
+
+
+----
+
+
 0.11.3 (2021-08-02)
 ===================
 
