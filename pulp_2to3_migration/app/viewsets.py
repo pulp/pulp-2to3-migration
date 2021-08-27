@@ -43,18 +43,24 @@ def is_migration_plan_running():
          bool: True, if any related to the migration plan tasks are running; False, otherwise.
 
     """
-    qs = Task.objects.filter(state__in=['waiting', 'running'],
-                             reserved_resources_record__resource='pulp_2to3_migration')
+    qs = Task.objects.filter(
+        state__in=['waiting', 'running'],
+        reserved_resources_record=['pulp_2to3_migration']
+    )
+
     if qs:
         return True
 
     groups_with_running_tasks = Task.objects.filter(
         state__in=['waiting', 'running'],
-        task_group__isnull=False).values_list('task_group_id', flat=True)
+        task_group__isnull=False
+    ).values_list('task_group_id', flat=True)
+
     groups_with_migration_tasks = Task.objects.filter(
         task_group__isnull=False,
-        reserved_resources_record__resource='pulp_2to3_migration').values_list(
-        'task_group_id', flat=True)
+        reserved_resources_record=['pulp_2to3_migration']
+    ).values_list('task_group_id', flat=True)
+
     if groups_with_running_tasks.intersection(groups_with_migration_tasks):
         return True
 
