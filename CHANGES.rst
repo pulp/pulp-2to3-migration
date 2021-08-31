@@ -13,6 +13,31 @@ Changelog
 
 .. towncrier release notes start
 
+0.14.0 (2021-08-31)
+===================
+
+Bugfixes
+--------
+
+- Filtered out incomplete publications for the pulp2repositories/ endpoint.
+  `#9242 <https://pulp.plan.io/issues/9242>`_
+- Fixed migration of sles_auth_token
+  `#9254 <https://pulp.plan.io/issues/9254>`_
+- Fixed bug where sync tasks would open a lot of DB connections
+  `#9283 <https://pulp.plan.io/issues/9283>`_
+- Fixed remigration of publications after an unsuccessful or interrupted run.
+  `#9295 <https://pulp.plan.io/issues/9295>`_
+
+
+Misc
+----
+
+- `#8895 <https://pulp.plan.io/issues/8895>`_
+
+
+----
+
+
 0.13.0 (2021-08-06)
 ===================
 
