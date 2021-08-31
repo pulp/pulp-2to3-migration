@@ -77,6 +77,16 @@ the migration is done and remove those two checksum types from the allowed list.
 the setting, you likely will need to run ``pulpcore-manager handle-artifact-checksums`` to remove
 unsupported checksums from the database, or Pulp will refuse to start.
 
+.. note::
+
+    If you'd like to run Pulp 3 on a machine where FIPS is enabled, you will need to patch
+    Django and Pulp at your own risk https://hackmd.io/@pulp/Pulp3-FIPS-matrix#Patches. The
+    patches will go away when Django project starts supporting FIPS mode (see
+    https://code.djangoproject.com/ticket/28401 for details).
+    Recommendations for the `ALLOWED_CONTENT_CHECKSUMS` configuration are the same as for
+    the non-FIPS mode.
+
+
 4. Configure `CONTENT_PREMIGRATION_BATCH_SIZE` if needed.
 If your Pulp 2 setup is large and your system is relatively slow in terms of I/O (e.g. you have
 HDD), consider adjusting the batch size for content premigration. The default is 1000.
