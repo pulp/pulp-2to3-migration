@@ -65,7 +65,7 @@ image:
   tag: "${TAG}"
 plugins:
   - name: pulpcore
-    source: pulpcore
+    source: pulpcore~=3.15.0
   - name: pulp-2to3-migration
     source:  "${PLUGIN_NAME}"
   - name: pulp_file
