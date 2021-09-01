@@ -305,8 +305,10 @@ class ContentMigrationFirstStage(Stage):
                     base_path = pulp2content.pulp2_storage_path
                     remotes = set()
                     missing_artifact = False
+                    remote_declarative_artifacts = []
 
                     for image_relative_path in extra_info['download']['images']:
+                        remote_url_tuples = []
                         image_path = os.path.join(base_path, image_relative_path)
                         downloaded = os.path.exists(image_path)
                         if downloaded:
@@ -320,30 +322,34 @@ class ContentMigrationFirstStage(Stage):
                             artifact = Artifact()
 
                         lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
-                        if lces:
-                            remote_declarative_artifacts = []
 
-                            for lce in lces:
-                                remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                        if not lces and not downloaded:
+                            continue
 
-                                if not remote and not downloaded:
-                                    continue
-
+                        # collect all urls and respective migrated remotes for the image
+                        for lce in lces:
+                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            if remote:
                                 remotes.add(remote)
-                                da = DeclarativeArtifact(
-                                    artifact=artifact,
-                                    url=lce.pulp2_url,
-                                    relative_path=image_relative_path,
-                                    remote=remote,
-                                    deferred_download=not downloaded)
-                                remote_declarative_artifacts.append(da)
+                                remote_url_tuples.append((remote, lce.pulp2_url))
 
-                            if not remote_declarative_artifacts:
+                        for remote, url in remote_url_tuples:
+                            da = DeclarativeArtifact(
+                                artifact=artifact,
+                                url=lce.pulp2_url,
+                                relative_path=image_relative_path,
+                                remote=remote,
+                                deferred_download=not downloaded)
+                            remote_declarative_artifacts.append(da)
+
+                        if not remote_url_tuples:
+                            # either no LCEs existed but it's a downloaded content (and we can
+                            # proceed), or remotes for any of LCEs haven't been migrated (and
+                            # nothing can be done at this point)
+                            if not downloaded:
                                 missing_artifact = True
                                 break
 
-                            d_artifacts.extend(remote_declarative_artifacts)
-                        else:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
                                 url=NOT_USED,
@@ -351,6 +357,8 @@ class ContentMigrationFirstStage(Stage):
                                 remote=None,
                                 deferred_download=False)
                             d_artifacts.append(da)
+
+                        d_artifacts.extend(remote_declarative_artifacts)
 
                     # Only skip the rest of the steps if there are any images that are expected
                     # to be downloaded. There are distribution trees without images in the wild,
@@ -416,23 +424,27 @@ class ContentMigrationFirstStage(Stage):
                             pb.increment()
                         continue
 
+                    relative_path = (
+                        pulp_2to3_detail_content.relative_path_for_content_artifact
+                    )
+                    remote_lce_tuples = []
+                    deferred_download = not pulp2content.downloaded
+
                     if is_lazy_type and pulp2lazycatalog:
+                        for lce in pulp2lazycatalog:
+                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            if remote:
+                                remote_lce_tuples.append((remote, lce))
+
                         # handle DA and RA creation for content that supports on_demand
                         # Downloaded or on_demand content with LCEs.
                         #
                         # To create multiple remote artifacts, create multiple instances of
                         # declarative content which will differ by url/remote in their
                         # declarative artifacts
-                        at_least_one_lce_migrated = False
-                        for lce in pulp2lazycatalog:
-                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
-                            deferred_download = not pulp2content.downloaded
-                            if not remote and deferred_download:
-                                continue
 
-                            relative_path = (
-                                pulp_2to3_detail_content.relative_path_for_content_artifact
-                            )
+                    if remote_lce_tuples:
+                        for remote, lce in remote_lce_tuples:
                             da = DeclarativeArtifact(
                                 artifact=artifact,
                                 url=lce.pulp2_url,
@@ -440,22 +452,27 @@ class ContentMigrationFirstStage(Stage):
                                 remote=remote,
                                 deferred_download=deferred_download)
                             lce.is_migrated = True
-                            at_least_one_lce_migrated = True
                             dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
+
+                            # yes, all LCEs are assigned for each dc to be resolved at a later
+                            # stage. Some LCEs might be "bad" and not have a migrated importer
+                            # but we still need to resolved such. It creates some duplicated LCEs
+                            # to process later but ensures that all are resolved if at least one
+                            # valid one is migrated.
+                            future_relations.update({'lces': list(pulp2lazycatalog)})
                             dc.extra_data = future_relations
                             await self.put(dc)
 
-                        if not at_least_one_lce_migrated:
+                    else:
+                        # No migratable LCE available
+                        if deferred_download:
                             _logger.warn(
                                 _('On_demand content cannot be migrated without a remote '
                                   'pulp2 unit_id: {}'.format(pulp2content.pulp2_id)
                                   )
                             )
-                        future_relations.update({'lces': list(pulp2lazycatalog)})
-                    else:
-                        relative_path = (
-                            pulp_2to3_detail_content.relative_path_for_content_artifact
-                        )
+                            continue
+
                         da = DeclarativeArtifact(
                             artifact=artifact,
                             url=NOT_USED,

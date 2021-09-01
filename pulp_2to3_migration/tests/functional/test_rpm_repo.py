@@ -1,10 +1,29 @@
+import json
 import os
 import unittest
+
 from pulp_2to3_migration.tests.functional.util import set_pulp2_snapshot
 
 from .common_plans import RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
 from .constants import FIXTURES_BASE_URL
 from .rpm_base import BaseTestRpm, RepoInfo
+
+RPM_KICKSTART_NO_IMPORTER_PLAN = json.dumps({
+    "plugins": [{
+        "type": "rpm",
+        "repositories": [
+            {
+                "name": "c8base",
+                "repository_versions": [
+                    {
+                        "pulp2_repository_id": "c8base",
+                        "pulp2_distributor_repository_ids": ["c8base"]
+                    },
+                ]
+            }
+        ]
+    }]
+})
 
 PULP_2_RPM_DATA = {
     'remotes': 3,
@@ -132,3 +151,26 @@ class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
     """
     plan_initial = RPM_COMPLEX_PLAN
     repo_info = RepoInfo(PULP_2_RPM_DATA)
+
+
+@unittest.skip('The image files of a kickstart repo are too large for github, need to find '
+               'smaller ones.')
+class TestRpmKickstartImmediateNoImporterPlan(unittest.TestCase):
+    """
+    Test RPM repo migration when a kickstart tree is downloaded but its importer is not migrated.
+    """
+    @classmethod
+    def setUpClass(cls):
+        """
+        Create all the client instances needed to communicate with Pulp and run a migration.
+        """
+        super().setUpClass()
+
+        set_pulp2_snapshot(name='rpm_kickstart_immediate_no_rpm')
+
+    def test_rpm_repo_migration(self):
+        """
+        Make sure no-importer migration is successful for a downloaded kickstart tree.
+        """
+        self.run_migration(RPM_KICKSTART_NO_IMPORTER_PLAN)
+        self.assertEqual(self.rpm_distribution_api.list().count, 1)
