@@ -1,0 +1,2 @@
+Fixed distibution tree migration issue "‘NoneType’ object has no attribute ‘url’".
+(backported from #8862)
