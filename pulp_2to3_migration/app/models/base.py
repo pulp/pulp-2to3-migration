@@ -1,7 +1,6 @@
 import itertools
 from collections import defaultdict
 
-from django.contrib.postgres.fields import JSONField
 from django.db import IntegrityError, models
 
 from pulpcore.plugin.models import BaseModel
@@ -89,7 +88,7 @@ class MigrationPlan(BaseModel):
     Fields:
         plan (models.JSONField): The migration plan in the JSON format
     """
-    plan = JSONField()
+    plan = models.JSONField()
     _real_plan = None
 
     # A mapping from a pulp 2 repo_id to pulp 2 repo type
