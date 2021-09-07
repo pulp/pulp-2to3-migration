@@ -5,7 +5,6 @@ from collections import defaultdict
 
 import createrepo_c as cr
 
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
@@ -201,7 +200,7 @@ class Pulp2Erratum(Pulp2to3Content):
     status = models.TextField(null=True)
     description = models.TextField(null=True)
     pushcount = models.TextField(null=True)
-    references = JSONField()
+    references = models.JSONField()
     reboot_suggested = models.BooleanField()
     relogin_suggested = models.BooleanField()
     restart_suggested = models.BooleanField()
@@ -211,7 +210,7 @@ class Pulp2Erratum(Pulp2to3Content):
     version = models.TextField(null=True)
     release = models.TextField(null=True)
     errata_type = models.TextField(null=True)
-    pkglist = JSONField()
+    pkglist = models.JSONField()
     title = models.TextField(null=True)
     solution = models.TextField(null=True)
     summary = models.TextField(null=True)
@@ -545,9 +544,9 @@ class Pulp2Modulemd(Pulp2to3Content):
     context = models.TextField()
     arch = models.TextField()
 
-    artifacts = JSONField()
+    artifacts = models.JSONField()
     checksum = models.TextField()
-    dependencies = JSONField(default=list)
+    dependencies = models.JSONField(default=list)
 
     pulp2_type = 'modulemd'
 
@@ -618,7 +617,7 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
     # Unit key fields
     module = models.TextField()
     stream = models.TextField()
-    profiles = JSONField(default=dict)
+    profiles = models.JSONField(default=dict)
     digest = models.TextField()
     repo_id = models.TextField()
 
@@ -804,7 +803,7 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 package_langpacks
     content details for Pulp 3 content creation.
     """
-    matches = JSONField()
+    matches = models.JSONField()
     repo_id = models.TextField()
 
     pulp2_type = 'package_langpacks'
@@ -857,9 +856,9 @@ class Pulp2PackageGroup(Pulp2to3Content):
     name = models.TextField()
     description = models.TextField()
     # This field contains mandatory, default, optional, conditional packages
-    packages = JSONField()
-    desc_by_lang = JSONField(default=dict)
-    name_by_lang = JSONField(default=dict)
+    packages = models.JSONField()
+    desc_by_lang = models.JSONField(default=dict)
+    name_by_lang = models.JSONField(default=dict)
     biarch_only = models.BooleanField(default=False)
 
     pulp2_type = 'package_group'
@@ -927,9 +926,9 @@ class Pulp2PackageCategory(Pulp2to3Content):
     display_order = models.IntegerField(null=True)
     name = models.TextField()
     description = models.TextField()
-    packagegroupids = JSONField()
-    desc_by_lang = JSONField(default=dict)
-    name_by_lang = JSONField(default=dict)
+    packagegroupids = models.JSONField()
+    desc_by_lang = models.JSONField(default=dict)
+    name_by_lang = models.JSONField(default=dict)
 
     pulp2_type = 'package_category'
 
@@ -984,10 +983,10 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
     display_order = models.IntegerField(null=True)
     name = models.TextField()
     description = models.TextField()
-    group_ids = JSONField()
-    option_ids = JSONField()
-    desc_by_lang = JSONField(default=dict)
-    name_by_lang = JSONField(default=dict)
+    group_ids = models.JSONField()
+    option_ids = models.JSONField()
+    desc_by_lang = models.JSONField(default=dict)
+    name_by_lang = models.JSONField(default=dict)
 
     pulp2_type = 'package_environment'
 

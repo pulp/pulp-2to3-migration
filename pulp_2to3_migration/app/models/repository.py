@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from pulpcore.app.models import (  # it has to be imported directly from pulpcore see #5353
@@ -108,7 +107,7 @@ class Pulp2Importer(BaseModel):
     Fields:
         pulp2_object_id (models.CharField): Object id of an importer in Pulp 2
         pulp2_type_id (models.CharField): Id of importer type in Pulp 2
-        pulp2_config (JSONField): Pulp 2 importer config in JSON format
+        pulp2_config (models.JSONField): Pulp 2 importer config in JSON format
         pulp2_last_updated (models.DateTimeField): Last time the importer was updated
         pulp2_repo_id (models.TextField): Id of a repo in Pulp 2 an importer belongs to
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
@@ -120,7 +119,7 @@ class Pulp2Importer(BaseModel):
     """
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_type_id = models.CharField(max_length=255)
-    pulp2_config = JSONField()
+    pulp2_config = models.JSONField()
     pulp2_last_updated = models.DateTimeField()
     pulp2_repo_id = models.TextField()
     is_migrated = models.BooleanField(default=False)
@@ -144,7 +143,7 @@ class Pulp2Distributor(BaseModel):
         pulp2_object_id (models.CharField): Object id of a distributor in Pulp 2
         pulp2_id (models.TextField): Id of distributor in Pulp 2
         pulp2_type_id (models.CharField): Id of distributor type in Pulp 2
-        pulp2_config (JSONField): Pulp 2 distributor config in JSON format
+        pulp2_config (models.JSONField): Pulp 2 distributor config in JSON format
         pulp2_last_updated (models.DateTimeField): Last time the distributor was updated
         pulp2_repo_id (models.TextField): Id of a repo in Pulp 2 a distributor belongs to
         is_migrated (models.BooleanField): True if a resource has been migrated to Pulp 3; False
@@ -161,7 +160,7 @@ class Pulp2Distributor(BaseModel):
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_id = models.TextField()
     pulp2_type_id = models.CharField(max_length=255)
-    pulp2_config = JSONField()
+    pulp2_config = models.JSONField()
     pulp2_last_updated = models.DateTimeField()
     pulp2_repo_id = models.TextField()
     is_migrated = models.BooleanField(default=False)
