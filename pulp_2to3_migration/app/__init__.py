@@ -6,4 +6,4 @@ class Pulp2To3MigrationPluginAppConfig(PulpPluginAppConfig):
 
     name = 'pulp_2to3_migration.app'
     label = 'pulp_2to3_migration'
-    version = '0.11.5'
+    version = '0.11.6.dev'
