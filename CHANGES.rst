@@ -13,6 +13,20 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.5 (2021-09-10)
+===================
+
+Bugfixes
+--------
+
+- Fixed distibution tree migration issue "‘NoneType’ object has no attribute ‘url’".
+  (backported from #8862)
+  `#9372 <https://pulp.plan.io/issues/9372>`_
+
+
+----
+
+
 0.11.4 (2021-08-26)
 ===================
 
