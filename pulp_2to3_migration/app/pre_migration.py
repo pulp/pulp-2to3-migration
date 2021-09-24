@@ -296,10 +296,10 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
 
         mongo_content_qs = content_model.pulp2.objects(
             id__in=content_relations.values_list('pulp2_unit_id', flat=True))
+        batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(batch_size)
         pulp2_content_by_id = {
-            record.id: record for record in mongo_content_qs.only(*mongo_fields).no_cache()
+            record.id: record for record in batched_mongo_content_qs.no_cache()
         }
-
         for relation in content_relations:
             record = pulp2_content_by_id[relation.pulp2_unit_id]
             # very old pulp2 content will not have downloaded field set (prior to lazy sync)
