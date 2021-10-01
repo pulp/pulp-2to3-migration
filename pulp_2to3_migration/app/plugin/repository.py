@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from pulp_2to3_migration.app.constants import PULP_2TO3_POLICIES
 
@@ -44,14 +44,27 @@ class Pulp2to3Importer:
         remote_name = '{}-{}'.format(pulp2importer.pulp2_object_id,
                                      pulp2importer.pulp2_repo_id)
         base_config['proxy_url'] = proxy_url
-        base_config['url'] = pulp2_config.get('feed', '')  # what to do if there is no feed?
+        username = pulp2_config.get('basic_auth_username')
+        password = pulp2_config.get('basic_auth_password')
+        feed = pulp2_config.get('feed', '')  # what to do if there is no feed?
+        if feed and '@' in feed:
+            # move out the credentials from the feed
+            parsed_feed = urlparse(feed)
+            if not username:
+                username = parsed_feed.username
+            if not password:
+                password = parsed_feed.password
+            _, netloc_split = parsed_feed.netloc.rsplit('@', maxsplit=1)
+            feed = urlunparse(parsed_feed._replace(netloc=netloc_split))
+        base_config['url'] = feed
+        base_config['username'] = username
+        base_config['password'] = password
+
         base_config['ca_cert'] = pulp2_config.get('ssl_ca_cert')
         base_config['client_cert'] = pulp2_config.get('ssl_client_cert')
         base_config['client_key'] = pulp2_config.get('ssl_client_key')
         # True by default?
         base_config['tls_validation'] = pulp2_config.get('ssl_validation', True)
-        base_config['username'] = pulp2_config.get('basic_auth_username')
-        base_config['password'] = pulp2_config.get('basic_auth_password')
         base_config['download_concurrency'] = pulp2_config.get('max_downloads') or 20
         policy = PULP_2TO3_POLICIES.get(pulp2_config.get('download_policy', 'immediate'))
         base_config['policy'] = policy
