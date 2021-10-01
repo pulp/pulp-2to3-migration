@@ -102,7 +102,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
 
         result = dispatch(
             migrate_from_pulp2,
-            [PULP_2TO3_MIGRATION_RESOURCE],
+            exclusive_resources=[PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
                 'migration_plan_pk': str(migration_plan.pk),
                 'validate': validate,
@@ -128,7 +128,7 @@ class MigrationPlanViewSet(NamedModelViewSet,
 
         result = dispatch(
             reset_pulp3_data,
-            [PULP_2TO3_MIGRATION_RESOURCE],
+            exclusive_resources=[PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
                 'migration_plan_pk': str(migration_plan.pk),
             }

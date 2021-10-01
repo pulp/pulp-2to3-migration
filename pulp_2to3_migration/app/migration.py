@@ -289,7 +289,7 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     task_args = [plugin.type, pulp3_repo_setup, repo_name]
                     dispatch(
                         complex_repo_migration,
-                        [repo],
+                        exclusive_resources=[repo],
                         args=task_args,
                         task_group=TaskGroup.current()
                     )
