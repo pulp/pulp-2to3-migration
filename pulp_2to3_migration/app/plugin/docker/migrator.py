@@ -3,6 +3,8 @@ import asyncio
 import json
 from collections import OrderedDict
 
+from asgiref.sync import sync_to_async
+
 from django.db import transaction
 
 from . import pulp2_models
@@ -145,32 +147,34 @@ class InterrelateContent(Stage):
         Relate each item in the input queue to objects specified on the DeclarativeContent.
         """
         async for batch in self.batches():
-            manifestlist_manifest_batch = []
-            blob_manifest_batch = []
-            manifest_batch = []
-            with transaction.atomic():
-                for dc in batch:
-                    if dc.extra_data.get('man_rel'):
-                        thru = self.relate_manifest_to_list(dc)
-                        manifestlist_manifest_batch.extend(thru)
-                    elif dc.extra_data.get('blob_rel'):
-                        thru = self.relate_blob(dc)
-                        blob_manifest_batch.extend(thru)
+            def process_batch():
+                manifestlist_manifest_batch = []
+                blob_manifest_batch = []
+                manifest_batch = []
+                with transaction.atomic():
+                    for dc in batch:
+                        if dc.extra_data.get('man_rel'):
+                            thru = self.relate_manifest_to_list(dc)
+                            manifestlist_manifest_batch.extend(thru)
+                        elif dc.extra_data.get('blob_rel'):
+                            thru = self.relate_blob(dc)
+                            blob_manifest_batch.extend(thru)
 
-                    if dc.extra_data.get('config_blob_rel'):
-                        manifest_to_update = self.relate_config_blob(dc)
-                        manifest_batch.append(manifest_to_update)
+                        if dc.extra_data.get('config_blob_rel'):
+                            manifest_to_update = self.relate_config_blob(dc)
+                            manifest_batch.append(manifest_to_update)
 
-                ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
-                                                         ignore_conflicts=True,
-                                                         batch_size=DEFAULT_BATCH_SIZE)
-                BlobManifest.objects.bulk_create(objs=blob_manifest_batch,
-                                                 ignore_conflicts=True,
+                    ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
+                                                             ignore_conflicts=True,
+                                                             batch_size=DEFAULT_BATCH_SIZE)
+                    BlobManifest.objects.bulk_create(objs=blob_manifest_batch,
+                                                     ignore_conflicts=True,
+                                                     batch_size=DEFAULT_BATCH_SIZE)
+
+                    Manifest.objects.bulk_update(objs=manifest_batch,
+                                                 fields=['config_blob'],
                                                  batch_size=DEFAULT_BATCH_SIZE)
-
-                Manifest.objects.bulk_update(objs=manifest_batch,
-                                             fields=['config_blob'],
-                                             batch_size=DEFAULT_BATCH_SIZE)
+            await sync_to_async(process_batch)()
             for dc in batch:
                 await self.put(dc)
 
