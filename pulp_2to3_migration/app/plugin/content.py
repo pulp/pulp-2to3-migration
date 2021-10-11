@@ -6,6 +6,8 @@ import shutil
 
 from gettext import gettext as _
 
+from asgiref.sync import sync_to_async
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -29,12 +31,14 @@ from pulpcore.plugin.stages import (
     RemoteArtifactSaver,
     Stage,
 )
+from pulpcore.plugin.sync import sync_to_async_iterable
 
 from pulp_2to3_migration.app.constants import (
     DEFAULT_BATCH_SIZE,
     NOT_USED,
 )
 from pulp_2to3_migration.app.models import (
+    Pulp2Content,
     Pulp2Importer,
     Pulp2LazyCatalog,
 )
@@ -235,7 +239,7 @@ class ContentMigrationFirstStage(Stage):
         async with ProgressReport(
             message='Migrating {} content to Pulp 3'.format(content_type),
             code='migrating.{}.content'.format(self.migrator.pulp2_plugin),
-            total=pulp_2to3_detail_qs.count()
+            total=await sync_to_async(pulp_2to3_detail_qs.count)()
         ) as pb:
             select_extra = [
                 'pulp2content',
@@ -246,9 +250,14 @@ class ContentMigrationFirstStage(Stage):
                 select_extra.append('pulp2content__pulp2_repo')
 
             pulp_2to3_detail_qs = pulp_2to3_detail_qs.select_related(*select_extra)
-            for pulp_2to3_detail_content in pulp_2to3_detail_qs.iterator(chunk_size=800):
+            async for pulp_2to3_detail_content in sync_to_async_iterable(
+                    pulp_2to3_detail_qs.iterator(chunk_size=800)
+            ):
                 dc = None
-                pulp2content = pulp_2to3_detail_content.pulp2content
+                pulp2content = await sync_to_async(Pulp2Content.objects.get)(
+                    pk=pulp_2to3_detail_content.pulp2content.pk
+                )
+
                 # only content that supports on_demand download can have entries in LCE
                 if is_lazy_type:
                     # get all Lazy Catalog Entries (LCEs) for this content
@@ -256,6 +265,7 @@ class ContentMigrationFirstStage(Stage):
                         pulp2_unit_id=pulp2content.pulp2_id,
                         is_migrated=False,
                     )
+                    await sync_to_async(bool)(pulp2lazycatalog)  # force queryset to evaluate
 
                     if not pulp2content.downloaded and not pulp2lazycatalog:
                         # A distribution tree can be from an on_demand repo but without any images,
@@ -284,7 +294,9 @@ class ContentMigrationFirstStage(Stage):
                             continue
                 else:
                     # create pulp3 content and assign relations if present
-                    pulp3content, extra_info = pulp_2to3_detail_content.create_pulp3_content()
+                    pulp3content, extra_info = await sync_to_async(
+                        pulp_2to3_detail_content.create_pulp3_content
+                    )()
 
                 # If we can't find/create the Distribution, warn and skip
                 if pulp3content is None:
@@ -321,14 +333,18 @@ class ContentMigrationFirstStage(Stage):
                         else:
                             artifact = Artifact()
 
-                        lces = pulp2lazycatalog.filter(pulp2_storage_path=image_path)
+                        lces = await sync_to_async(list)(
+                            pulp2lazycatalog.filter(pulp2_storage_path=image_path)
+                        )
 
                         if not lces and not downloaded:
                             continue
 
                         # collect all urls and respective migrated remotes for the image
                         for lce in lces:
-                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            remote = await sync_to_async(get_remote_by_importer_id)(
+                                lce.pulp2_importer_id
+                            )
                             if remote:
                                 remotes.add(remote)
                                 remote_url_tuples.append((remote, lce.pulp2_url))
@@ -432,7 +448,9 @@ class ContentMigrationFirstStage(Stage):
 
                     if is_lazy_type and pulp2lazycatalog:
                         for lce in pulp2lazycatalog:
-                            remote = get_remote_by_importer_id(lce.pulp2_importer_id)
+                            remote = await sync_to_async(get_remote_by_importer_id)(
+                                lce.pulp2_importer_id
+                            )
                             if remote:
                                 remote_lce_tuples.append((remote, lce))
 
@@ -510,17 +528,19 @@ class UpdateLCEs(Stage):
         Find LCEs in the extra_data and flip the is_migrated flag to True
         """
         async for batch in self.batches():
-            pulp2lces_batch = []
-            with transaction.atomic():
-                for d_content in batch:
-                    lces = d_content.extra_data.get('lces')
-                    if lces:
-                        pulp2lces_batch.extend(lces)
+            def process_batch():
+                pulp2lces_batch = []
+                with transaction.atomic():
+                    for d_content in batch:
+                        lces = d_content.extra_data.get('lces')
+                        if lces:
+                            pulp2lces_batch.extend(lces)
 
-                Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lces_batch,
-                                                     fields=['is_migrated'],
-                                                     batch_size=DEFAULT_BATCH_SIZE)
+                    Pulp2LazyCatalog.objects.bulk_update(objs=pulp2lces_batch,
+                                                         fields=['is_migrated'],
+                                                         batch_size=DEFAULT_BATCH_SIZE)
 
+            await sync_to_async(process_batch)()
             for d_content in batch:
                 await self.put(d_content)
 
@@ -540,16 +560,17 @@ class RelatePulp2to3Content(Stage):
         of a declarative Pulp 3 content.
         """
         async for batch in self.batches():
-            pulp2content_batch = []
-            with transaction.atomic():
-                for d_content in batch:
-                    pulp2content = d_content.extra_data.get('pulp2content')
-                    pulp2content.pulp3_content = d_content.content.master
-                    pulp2content_batch.append(pulp2content)
+            def process_batch():
+                pulp2content_batch = []
+                with transaction.atomic():
+                    for d_content in batch:
+                        pulp2content = d_content.extra_data.get('pulp2content')
+                        pulp2content.pulp3_content = d_content.content.master
+                        pulp2content_batch.append(pulp2content)
 
-                pulp2content.__class__.objects.bulk_update(objs=pulp2content_batch,
-                                                           fields=['pulp3_content'],
-                                                           batch_size=DEFAULT_BATCH_SIZE)
-
+                    pulp2content.__class__.objects.bulk_update(objs=pulp2content_batch,
+                                                               fields=['pulp3_content'],
+                                                               batch_size=DEFAULT_BATCH_SIZE)
+            await sync_to_async(process_batch)()
             for d_content in batch:
                 await self.put(d_content)

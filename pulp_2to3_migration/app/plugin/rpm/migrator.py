@@ -1,5 +1,7 @@
 import asyncio
 
+from asgiref.sync import sync_to_async
+
 from django.db import transaction
 from django.db.models import Q
 
@@ -191,19 +193,20 @@ class InterrelateContent(Stage):
         Relate each item in the input queue to objects specified on the DeclarativeContent.
         """
         async for batch in self.batches():
-            modulemd_packages_batch = []
+            def process_batch():
+                modulemd_packages_batch = []
+                with transaction.atomic():
+                    for dc in batch:
+                        if type(dc.content) == Modulemd:
+                            thru = self.relate_packages_to_module(dc)
+                            modulemd_packages_batch.extend(thru)
 
-            with transaction.atomic():
-                for dc in batch:
-                    if type(dc.content) == Modulemd:
-                        thru = self.relate_packages_to_module(dc)
-                        modulemd_packages_batch.extend(thru)
+                    ModulemdPackages = Modulemd.packages.through
+                    ModulemdPackages.objects.bulk_create(objs=modulemd_packages_batch,
+                                                         ignore_conflicts=True,
+                                                         batch_size=DEFAULT_BATCH_SIZE)
 
-                ModulemdPackages = Modulemd.packages.through
-                ModulemdPackages.objects.bulk_create(objs=modulemd_packages_batch,
-                                                     ignore_conflicts=True,
-                                                     batch_size=DEFAULT_BATCH_SIZE)
-
+            await sync_to_async(process_batch)()
             for dc in batch:
                 await self.put(dc)
 
