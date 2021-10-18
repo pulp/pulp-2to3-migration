@@ -11,6 +11,7 @@ from pulpcore.plugin.models import (
     CreatedResource,
     ProgressReport,
     Repository,
+    SigningService,
     TaskGroup,
 )
 
@@ -166,6 +167,20 @@ def complex_repo_migration(plugin_type, pulp3_repo_setup, repo_name):
     distributor_types = list(distributor_migrators.keys())
     repo_versions_setup = pulp3_repo_setup[repo_name]['repository_versions']
 
+    signing_service = None
+    signing_service_name = pulp3_repo_setup[repo_name].get("signing_service")
+    if signing_service_name:
+        _logger.info(
+            "Signing Service %r requested for %r", signing_service_name, repo_name
+        )
+        try:
+            signing_service = SigningService.objects.get(name=signing_service_name)
+        except SigningService.DoesNotExist:
+            _logger.warning(
+                "Could not find signing-service named %r", signing_service_name
+            )
+            raise
+
     # importer might not be migrated, e.g. config is empty or it's not specified in a MP
     pulp3_remote = None
     pulp2_importer_repo_id = pulp3_repo_setup[repo_name].get('pulp2_importer_repository_id')
@@ -231,7 +246,7 @@ def complex_repo_migration(plugin_type, pulp3_repo_setup, repo_name):
                 dist_migrator = distributor_migrators.get(dist.pulp2_type_id)
                 migrate_repo_distributor(
                     dist_migrator, progress_dist, dist,
-                    migrated_repo.pulp3_repository_version
+                    migrated_repo.pulp3_repository_version, signing_service
                 )
                 # add distirbutors specified in the complex plan
                 # these can be native and not native distributors
@@ -469,7 +484,9 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
     pulp2_repo.save()
 
 
-def migrate_repo_distributor(dist_migrator, progress_dist, pulp2dist, repo_version=None):
+def migrate_repo_distributor(
+    dist_migrator, progress_dist, pulp2dist, repo_version=None, signing_service=None
+):
     """
     Migrate repo distributor.
 
@@ -481,7 +498,7 @@ def migrate_repo_distributor(dist_migrator, progress_dist, pulp2dist, repo_versi
     """
 
     publication, distribution, created = dist_migrator.migrate_to_pulp3(
-        pulp2dist, repo_version)
+        pulp2dist, repo_version, signing_service)
     if publication:
         pulp2dist.pulp3_publication = publication
     pulp2dist.pulp3_distribution = distribution

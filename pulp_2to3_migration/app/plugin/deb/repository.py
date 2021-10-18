@@ -52,12 +52,12 @@ class DebDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [AptDistribution]
 
     @classmethod
-    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version, signing_service):
         """
         Migrate distributor to Pulp 3.
 
         Args:
-            pulp2distributor(Pulp2ditributor): Pre-migrated pulp2 distributor to migrate
+            pulp2distributor(Pulp2distributor): Pre-migrated pulp2 distributor to migrate
 
         Return:
             publication(AptPublication): publication in Pulp3
@@ -65,6 +65,7 @@ class DebDistributor(Pulp2to3Distributor):
             created(bool): True if Distribution has just been created;
                            False if Distribution is an existing one;
         """
+        signing_service_pk = signing_service.pk if signing_service else None
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
             repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
@@ -72,7 +73,12 @@ class DebDistributor(Pulp2to3Distributor):
         publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
             # create publication
-            publish(repo_version.pk, simple=True, structured=True)
+            publish(
+                repo_version.pk,
+                simple=True,
+                structured=True,
+                signing_service_pk=signing_service_pk
+            )
             publication = repo_version.publication_set.filter(complete=True).first()
 
         # create distribution

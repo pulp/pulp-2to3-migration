@@ -39,6 +39,9 @@ SCHEMA = '''{
                                         "required": ["pulp2_repository_id"],
                                         "additionalProperties": false
                                     }
+                                },
+                                "signing_service": {
+                                    "type": "string"
                                 }
                             },
                             "required": ["name", "repository_versions"],

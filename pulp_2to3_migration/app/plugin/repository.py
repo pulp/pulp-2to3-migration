@@ -115,12 +115,13 @@ class Pulp2to3Distributor:
         return base_config
 
     @classmethod
-    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version, signing_service):
         """
         Migrate pre-migrated Pulp 2 distributor.
 
         Args:
             pulp2distributor(Pulp2Distributor): Pre-migrated pulp2 distributor to migrate
+            signing_service(SigningService): as specified in plan's repository-section
 
         Return:
             publication/distribution: Corresponding plugin's object in Pulp3

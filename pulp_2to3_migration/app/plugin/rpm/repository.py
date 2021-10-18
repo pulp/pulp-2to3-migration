@@ -53,7 +53,7 @@ class RpmDistributor(Pulp2to3Distributor):
     pulp3_distribution_models = [RpmDistribution]
 
     @classmethod
-    def migrate_to_pulp3(cls, pulp2distributor, repo_version):
+    def migrate_to_pulp3(cls, pulp2distributor, repo_version, signing_service):
         """
         Migrate distributor to Pulp 3.
 
