@@ -336,12 +336,15 @@ class PluginMigrationPlan:
                         {'repo_id': pulp2_repository_id, 'dist_repo_ids': distributor_repo_ids}
                     )
 
+                    signing_service = repository.get("signing_service")
+
                     RepoSetup.set_importer(pulp2_repository_id, self.type, importer_repo_id)
                     RepoSetup.set_distributors(pulp2_repository_id, self.type, distributor_repo_ids)
 
                 self.repositories_to_create[name] = {
                     "pulp2_importer_repository_id": importer_repo_id,
-                    "repository_versions": repository_versions
+                    "repository_versions": repository_versions,
+                    "signing_service": signing_service,
                 }
 
 
