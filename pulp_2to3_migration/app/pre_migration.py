@@ -104,7 +104,14 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2_id__in=content_ids_to_delete
             ).delete()
 
-    batch_size = settings.CONTENT_PREMIGRATION_BATCH_SIZE or DEFAULT_BATCH_SIZE
+    batch_size = (
+        settings.DEB_COMPONENT_BATCH_SIZE
+        if content_model.pulp2.TYPE_ID == "deb_component"
+        else settings.CONTENT_PREMIGRATION_BATCH_SIZE or DEFAULT_BATCH_SIZE
+    )
+    message = 'Pre-migrate is using batch size "{}" for Pulp 2 content type "{}".'
+    _logger.debug(message.format(batch_size, content_model.pulp2.TYPE_ID))
+
     pulp2content = []
     pulp2mutatedcontent = []
     content_type = content_model.pulp2.TYPE_ID

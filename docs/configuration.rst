@@ -98,6 +98,12 @@ setups only.
 
 The main sign that `CONTENT_PREMIGRATION_BATCH_SIZE` needs to go down is the ``pymongo.errors.CursorNotFound: Cursor not found`` errors in logs.
 
+In addition you may also configure `DEB_COMPONENT_BATCH_SIZE` which starts with a default of 50.
+Since each `deb_component` creates a large number of Pulp2to3Content during pre_migration, it is
+appropriate to set a significantly lower batch size, as compared to other types! You can identify
+``CursorNotFound`` errors, caused by `deb_component` migration, by checking if the backtrace passes
+through the ``pulp_2to3_migration/app/plugin/deb/pulp_2to3_models.py`` file.
+
 .. note::
 
     If you experience Pulp 3 workers timing out during the migration, consider making them more

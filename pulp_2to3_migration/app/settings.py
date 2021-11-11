@@ -14,3 +14,7 @@ PULP2_MONGODB = {
 ALLOWED_CONTENT_CHECKSUMS = ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
 CONTENT_PREMIGRATION_BATCH_SIZE = 1000
+
+# Since each deb_component creates a large number of Pulp2to3Content we need a much lower batch size
+# for this type, in order to avoid CursorNotFound errors!
+DEB_COMPONENT_BATCH_SIZE = 50
