@@ -13,6 +13,41 @@ Changelog
 
 .. towncrier release notes start
 
+0.15.0 (2021-11-11)
+===================
+
+Features
+--------
+
+- Added ``signing_service`` for (apt-)repository in Complex-MigrationPlan. This allows for a signing-service created before the migration to automatically be attached to the migrated repositories.
+  `#9517 <https://pulp.plan.io/issues/9517>`_
+
+
+Bugfixes
+--------
+
+- Fixed distibution tree migration issue "‘NoneType’ object has no attribute ‘url’".
+  `#8862 <https://pulp.plan.io/issues/8862>`_
+- Add batch_size to a pulp 2 query for content pre-migration of errata.
+  `#9451 <https://pulp.plan.io/issues/9451>`_
+
+
+Improved Documentation
+----------------------
+
+- Added a note about migration when Pulp 3 runs on a FIPS-enabled machine.
+  `#7992 <https://pulp.plan.io/issues/7992>`_
+
+
+Misc
+----
+
+- `#9209 <https://pulp.plan.io/issues/9209>`_, `#9458 <https://pulp.plan.io/issues/9458>`_
+
+
+----
+
+
 0.14.0 (2021-08-31)
 ===================
 
