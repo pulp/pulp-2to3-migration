@@ -605,7 +605,8 @@ def pre_migrate_importer(repo_id, importer_types):
         if last_updated != importer.pulp2_last_updated:
             # remove Remote in case of feed change
             if importer.pulp2_config.get('feed') != importer_data.config.get('feed'):
-                importer.pulp3_remote.delete()
+                if importer.pulp3_remote:
+                    importer.pulp3_remote.delete()
                 importer.pulp3_remote = None
                 # do not flip is_migrated to False for LCE for at least once migrated importer
 
