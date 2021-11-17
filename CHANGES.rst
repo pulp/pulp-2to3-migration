@@ -13,6 +13,22 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.6 (2021-11-17)
+===================
+
+Bugfixes
+--------
+
+- Fixed migration of sles_auth_token (backported from #9254)
+  `#9456 <https://pulp.plan.io/issues/9456>`_
+- Add batch_size to a pulp 2 query for content pre-migration of errata.
+  (backported from #9451)
+  `#9482 <https://pulp.plan.io/issues/9482>`_
+
+
+----
+
+
 0.11.5 (2021-09-10)
 ===================
 

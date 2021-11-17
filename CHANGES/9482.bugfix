@@ -1,2 +1,0 @@
-Add batch_size to a pulp 2 query for content pre-migration of errata.
-(backported from #9451)
