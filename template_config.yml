@@ -1,7 +1,7 @@
 # This config represents the latest values used when running the plugin-template. Any settings that
 # were not present before running plugin-template have been added with their default values.
 
-# generated with plugin_template@2021.04.08-87-g2136629
+# generated with plugin_template@2021.08.26-37-gf062376
 
 additional_repos:
 - branch: '1.6'
@@ -20,8 +20,11 @@ black: false
 check_commit_message: true
 check_gettext: true
 check_manifest: true
-check_openapi_schema: true
+check_openapi_schema: false
 check_stray_pulpcore_imports: false
+ci_env: {}
+ci_trigger: '{pull_request: {branches: [''*'']}}'
+core_import_allowed: []
 coverage: false
 deploy_client_to_pypi: true
 deploy_client_to_rubygems: true
@@ -29,9 +32,10 @@ deploy_daily_client_to_pypi: true
 deploy_daily_client_to_rubygems: true
 deploy_to_pypi: true
 docker_fixtures: false
-docs_test: true 
+docs_test: true
 flake8: true
 issue_tracker: redmine
+noissue_marker: '[noissue]'
 plugin_app_label: pulp_2to3_migration
 plugin_camel: Pulp-2To3-Migration
 plugin_camel_short: 2To3-Migration
@@ -39,21 +43,28 @@ plugin_caps: PULP-2TO3-MIGRATION
 plugin_caps_short: 2TO3-MIGRATION
 plugin_dash: pulp-2to3-migration
 plugin_dash_short: 2to3-migration
-plugin_default_branch: master
+plugin_default_branch: main
 plugin_name: pulp-2to3-migration
 plugin_snake: pulp_2to3_migration
+post_job_template: null
+pre_job_template: null
 publish_docs_to_pulpprojectdotorg: true
 pulp_scheme: http
 pulp_settings: null
 pulpcore_branch: '3.7'
 pulpcore_pip_version_specifier: ~=3.7.0
+pulpcore_revision: null
 pulpprojectdotorg_key_id: null
 pydocstyle: false
 pypi_username: pulp
 python_version: '3.6'
 redmine_project: migration
+release_email: pulp-infra@redhat.com
 release_user: pulpbot
+single_commit_check: true
 sync_ci: true
+tasking_allow_async_unsafe: true
+test_azure: false
 test_bindings: false
 test_cli: true
 test_performance: false
