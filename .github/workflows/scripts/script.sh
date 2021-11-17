@@ -34,11 +34,6 @@ if [[ "$TEST" = "docs" ]]; then
   tar -cvf docs.tar ./_build
   cd ..
 
-  echo "Validating OpenAPI schema..."
-  cat $PWD/.ci/scripts/schema.py | cmd_stdin_prefix bash -c "cat > /tmp/schema.py"
-  cmd_prefix bash -c "python3 /tmp/schema.py"
-  cmd_prefix bash -c "pulpcore-manager spectacular --file pulp_schema.yml --validate"
-
   if [ -f $POST_DOCS_TEST ]; then
     source $POST_DOCS_TEST
   fi
@@ -113,16 +108,13 @@ fi
 cd $REPO_ROOT
 
 if [[ "$TEST" = 'bindings' ]]; then
-  python $REPO_ROOT/.ci/assets/bindings/test_bindings.py
-fi
-
-if [[ "$TEST" = 'bindings' ]]; then
-  if [ ! -f $REPO_ROOT/.ci/assets/bindings/test_bindings.rb ]; then
-    exit
-  else
-    ruby $REPO_ROOT/.ci/assets/bindings/test_bindings.rb
-    exit
+  if [ -f $REPO_ROOT/.ci/assets/bindings/test_bindings.py ]; then
+    python $REPO_ROOT/.ci/assets/bindings/test_bindings.py
   fi
+  if [ -f $REPO_ROOT/.ci/assets/bindings/test_bindings.rb ]; then
+    ruby $REPO_ROOT/.ci/assets/bindings/test_bindings.rb
+  fi
+  exit
 fi
 
 cat unittest_requirements.txt | cmd_stdin_prefix bash -c "cat > /tmp/unittest_requirements.txt"
@@ -132,11 +124,18 @@ cmd_prefix pip3 install -r /tmp/unittest_requirements.txt
 echo "Checking for uncommitted migrations..."
 cmd_prefix bash -c "django-admin makemigrations --check --dry-run"
 
-# Run unit tests.
-cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres django-admin test --noinput /usr/local/lib/python3.6/site-packages/pulp_2to3_migration/tests/unit/"
+if [[ "$TEST" != "upgrade" ]]; then
+  # Run unit tests.
+  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres django-admin test --noinput /usr/local/lib/python3.6/site-packages/pulp_2to3_migration/tests/unit/"
+fi
 
 # Run functional tests
-export PYTHONPATH=$REPO_ROOT:$REPO_ROOT/../pulpcore${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT/../pulp_file${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT/../pulp_container${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT/../pulp_rpm${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT/../pulp_deb${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT/../pulpcore${PYTHONPATH:+:${PYTHONPATH}}
+export PYTHONPATH=$REPO_ROOT${PYTHONPATH:+:${PYTHONPATH}}
 
 
 
