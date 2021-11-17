@@ -13,6 +13,7 @@ Changelog
 
 .. towncrier release notes start
 
+
 0.15.0 (2021-11-11)
 ===================
 
@@ -136,6 +137,21 @@ Improved Documentation
   you've done a 2to3 migration after any Pulp2 changes to distributors **before**
   upgrading to this release.
   `#8522 <https://pulp.plan.io/issues/8522>`_
+
+----
+
+
+0.11.6 (2021-11-17)
+===================
+
+Bugfixes
+--------
+
+- Fixed migration of sles_auth_token (backported from #9254)
+  `#9456 <https://pulp.plan.io/issues/9456>`_
+- Add batch_size to a pulp 2 query for content pre-migration of errata.
+  (backported from #9451)
+  `#9482 <https://pulp.plan.io/issues/9482>`_
 
 ----
 
