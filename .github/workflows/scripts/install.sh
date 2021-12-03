@@ -35,13 +35,13 @@ fi
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@master
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@main
 fi
 
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@master
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@main
 fi
 
 if [ -e $REPO_ROOT/../pulp_deb ]; then
