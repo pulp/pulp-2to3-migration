@@ -12,8 +12,13 @@ TABLES_TO_KEEP = (
     'auth_user',
 
     # not to be doomed by the lack of permissions
+    'auth_group',
     'auth_permission',
     'core_accesspolicy',
+    'core_role',
+    'core_role_permissions',
+    'core_userrole',
+    'core_grouprole',
 
     # 'auth_permission' references it, so it should not be truncated
     'django_content_type',
