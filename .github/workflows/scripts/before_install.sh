@@ -128,7 +128,7 @@ cp tests/cli.toml ~/.config/pulp/cli.toml
 cd ..
 
 
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch master
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch main
 
 cd pulpcore
 
@@ -149,7 +149,7 @@ fi
 
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulp_container.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_container.git --branch main
 cd pulp_container
 
 if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
@@ -159,7 +159,7 @@ fi
 
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch master
+git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch main
 cd pulp_rpm
 
 if [ -n "$PULP_RPM_PR_NUMBER" ]; then
@@ -193,8 +193,6 @@ then
   echo "Failed to install amazon.aws"
   exit $s
 fi
-
-sed -i -e 's/DEBUG = False/DEBUG = True/' pulpcore/pulpcore/app/settings.py
 
 cd pulp-2to3-migration
 
