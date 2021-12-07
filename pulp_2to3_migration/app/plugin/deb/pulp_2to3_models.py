@@ -202,10 +202,11 @@ class Pulp2DebRelease(Pulp2to3Content):
     distribution = django_models.TextField()
     codename = django_models.TextField()
     suite = django_models.TextField(null=True)
+    repoid = django_models.TextField()
 
     class Meta:
         default_related_name = 'deb_release_detail_model'
-        unique_together = ('codename', 'suite', 'distribution')
+        unique_together = ('codename', 'suite', 'distribution', 'repoid')
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -221,6 +222,7 @@ class Pulp2DebRelease(Pulp2to3Content):
         units_to_save = [Pulp2DebRelease(distribution=release.distribution,
                                          codename=release.codename,
                                          suite=release.suite,
+                                         repoid=release.repoid,
                                          pulp2content=pulp2_unit_map[release.id],)
                          for release in pulp2_unit_batch]
 
@@ -255,10 +257,11 @@ class Pulp2DebComponent(Pulp2to3Content):
     codename = django_models.TextField()
     component = django_models.TextField()
     suite = django_models.TextField()
+    repoid = django_models.TextField()
 
     class Meta:
         default_related_name = 'deb_component_detail_model'
-        unique_together = ('component', 'codename', 'suite', 'distribution')
+        unique_together = ('component', 'codename', 'suite', 'distribution', 'repoid')
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -291,8 +294,9 @@ class Pulp2DebComponent(Pulp2to3Content):
             distribution = component_unit.distribution
             codename = component_unit.release
             component = component_unit.name
+            repoid = component_unit.repoid
             release = pulp2_models.DebRelease.objects.filter(
-                repoid=component_unit.repoid,
+                repoid=repoid,
                 distribution=distribution,
             ).first()
             suite = release.suite
@@ -301,6 +305,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                 codename=codename,
                 component=component,
                 suite=suite,
+                repoid=repoid,
                 pulp2content=pulp2_base_record,
             ))
             architectures = set()
@@ -310,7 +315,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                 package_sha256 = package_unit.checksum
 
                 # We are using the sha256 of the concatenated unique_together fields for the subid:
-                pulp2_subid_string = (suite + codename + distribution + component
+                pulp2_subid_string = (component + codename + suite + distribution + repoid
                                       + package_relative_path + package_sha256)
                 pulp2_subid = sha256(pulp2_subid_string.encode('utf-8')).hexdigest()
 
@@ -332,6 +337,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                     distribution=distribution,
                     codename=codename,
                     suite=suite,
+                    repoid=repoid,
                     pulp2content=pulp2_sub_record,
                 ))
                 architectures.add(package_unit.architecture)
@@ -339,7 +345,7 @@ class Pulp2DebComponent(Pulp2to3Content):
             architectures.discard('all')
             for architecture in architectures:
                 # We are using the sha256 of the concatenated unique_together fields for the subid:
-                pulp2_subid_string = architecture + distribution + codename + suite
+                pulp2_subid_string = architecture + distribution + codename + suite + repoid
                 pulp2_subid = sha256(pulp2_subid_string.encode('utf-8')).hexdigest()
 
                 pulp2_sub_record = Pulp2Content(
@@ -358,6 +364,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                     distribution=distribution,
                     codename=codename,
                     suite=suite,
+                    repoid=repoid,
                     pulp2content=pulp2_sub_record,
                 ))
 
@@ -412,6 +419,7 @@ class Pulp2DebComponentPackage(Pulp2to3Content):
     distribution = django_models.TextField()
     codename = django_models.TextField()
     suite = django_models.TextField()
+    repoid = django_models.TextField()
 
     class Meta:
         default_related_name = 'deb_component_package_detail_model'
@@ -422,6 +430,7 @@ class Pulp2DebComponentPackage(Pulp2to3Content):
             'distribution',
             'codename',
             'suite',
+            'repoid',
         )
 
     @classmethod
@@ -471,10 +480,11 @@ class Pulp2DebReleaseArchitecture(Pulp2to3Content):
     distribution = django_models.TextField()
     codename = django_models.TextField()
     suite = django_models.TextField()
+    repoid = django_models.TextField()
 
     class Meta:
         default_related_name = 'deb_release_architecture_detail_model'
-        unique_together = ('architecture', 'distribution', 'codename', 'suite')
+        unique_together = ('architecture', 'distribution', 'codename', 'suite', 'repoid')
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
