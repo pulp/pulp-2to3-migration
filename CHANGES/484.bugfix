@@ -1,0 +1,1 @@
+Fixed a bug in the deb migration that caused migrated repos to lack content needed for structured publications in some circumstances.
