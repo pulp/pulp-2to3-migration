@@ -1,2 +1,0 @@
-Fixed ``'NoneType' object has no attribute 'delete'`` error during migration re-runs.
-(backported from #8968)

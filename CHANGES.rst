@@ -13,6 +13,20 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.7 (2021-12-07)
+===================
+
+Bugfixes
+--------
+
+- Fixed ``'NoneType' object has no attribute 'delete'`` error during migration re-runs.
+  (backported from #8968)
+  `#9612 <https://pulp.plan.io/issues/9612>`_
+
+
+----
+
+
 0.11.6 (2021-11-17)
 ===================
 
