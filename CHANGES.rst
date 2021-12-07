@@ -13,7 +13,6 @@ Changelog
 
 .. towncrier release notes start
 
-
 0.15.0 (2021-11-11)
 ===================
 
@@ -114,7 +113,6 @@ Bugfixes
 - Fixed a bug causing deb migrations to fail if there are Pulp 2 importers without a releases field.
   `#8928 <https://pulp.plan.io/issues/8928>`_
 
-
 ----
 
 
@@ -137,6 +135,19 @@ Improved Documentation
   you've done a 2to3 migration after any Pulp2 changes to distributors **before**
   upgrading to this release.
   `#8522 <https://pulp.plan.io/issues/8522>`_
+
+----
+
+
+0.11.7 (2021-12-07)
+===================
+
+Bugfixes
+--------
+
+- Fixed ``'NoneType' object has no attribute 'delete'`` error during migration re-runs.
+  (backported from #8968)
+  `#9612 <https://pulp.plan.io/issues/9612>`_
 
 ----
 
