@@ -47,8 +47,8 @@ class DebMigrator(Pulp2to3PluginMigrator):
         ('deb_release', pulp_2to3_models.Pulp2DebRelease),
         ('deb', pulp_2to3_models.Pulp2DebPackage),
         ('deb_component', pulp_2to3_models.Pulp2DebComponent),
-        ('deb_component2', pulp_2to3_models.Pulp2DebComponentPackage),
-        ('deb_component3', pulp_2to3_models.Pulp2DebReleaseArchitecture),
+        ('deb_component_package', pulp_2to3_models.Pulp2DebComponentPackage),
+        ('deb_component_architecture', pulp_2to3_models.Pulp2DebReleaseArchitecture),
     ])
     importer_migrators = {
         'deb_importer': repository.DebImporter,
@@ -64,8 +64,8 @@ class DebMigrator(Pulp2to3PluginMigrator):
     artifactless_types = {
         'deb_release': pulp_2to3_models.Pulp2DebRelease,
         'deb_component': pulp_2to3_models.Pulp2DebComponent,
-        'deb_component2': pulp_2to3_models.Pulp2DebComponentPackage,
-        'deb_component3': pulp_2to3_models.Pulp2DebReleaseArchitecture,
+        'deb_component_package': pulp_2to3_models.Pulp2DebComponentPackage,
+        'deb_component_architecture': pulp_2to3_models.Pulp2DebReleaseArchitecture,
     }
 
     @classmethod
