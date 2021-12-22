@@ -19,7 +19,10 @@ from pulp_rpm.app.models import (
     Package,
     RpmRepository,
 )
-from pulp_rpm.app.tasks.synchronizing import RpmContentSaver
+from pulp_rpm.app.tasks.synchronizing import (
+    RpmContentSaver,
+    RpmQueryExistingContents,
+)
 
 from pulpcore.plugin.stages import (
     ArtifactSaver,
@@ -27,7 +30,6 @@ from pulpcore.plugin.stages import (
     ResolveContentFutures,
     Stage,
     QueryExistingArtifacts,
-    QueryExistingContents,
 )
 
 from . import pulp2_models
@@ -169,7 +171,7 @@ class RpmDeclarativeContentMigration(DeclarativeContentMigration):
             self.first_stage,
             QueryExistingArtifacts(),
             ArtifactSaver(),
-            QueryExistingContents(),
+            RpmQueryExistingContents(),
             RpmContentSaver(),
             RemoteArtifactSaver(),
             UpdateLCEs(),
