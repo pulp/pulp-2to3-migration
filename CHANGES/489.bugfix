@@ -1,0 +1,1 @@
+Fixed distribution tree migration for repositories with partial .treeinfo (e.g. most of CentOS 8 repositories).
