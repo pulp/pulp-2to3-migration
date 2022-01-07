@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.8 (2022-01-07)
+===================
+
+Bugfixes
+--------
+
+- Fixed distribution tree migration for repositories with partial .treeinfo (e.g. most of CentOS 8 repositories).
+  `#489 <https://pulp.plan.io/issues/489>`_
+
+
+----
+
+
 0.11.7 (2021-12-07)
 ===================
 
