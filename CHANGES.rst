@@ -139,6 +139,18 @@ Improved Documentation
 ----
 
 
+0.11.8 (2022-01-07)
+===================
+
+Bugfixes
+--------
+
+- Fixed distribution tree migration for repositories with partial .treeinfo (e.g. most of CentOS 8 repositories).
+  `#489 <https://github.com/pulp/pulp-2to3-migration/issues/489>`_
+
+----
+
+
 0.11.7 (2021-12-07)
 ===================
 
