@@ -19,7 +19,8 @@ from django.template.defaulttags import TemplateTagNode
 
 ESCAPE_TEMPLATE_VARS_TAGS = {
     'primary': ('description', 'summary'),
-    'other': ('changelog',)
+    'other': ('changelog',),
+    'filelists': ('file',)
 }
 METADATA_TYPES = ('primary', 'other', 'filelists')
 
@@ -141,6 +142,8 @@ def render_filelists(template, checksum):
         str: a rendered filelists.xml snippet
 
     """
+    for tag in ESCAPE_TEMPLATE_VARS_TAGS['filelists']:
+        template = _escape_django_syntax_chars(template, tag)
     context = Context({'pkgid': checksum})
     return Template(template).render(context)
 
