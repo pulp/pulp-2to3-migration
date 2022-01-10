@@ -233,18 +233,17 @@ class InterrelateContent(Stage):
             digest = manifest['digest']
             for item in man_list:
                 if item.digest == digest:
+                    platform = manifest['platform']
+                    thru = ManifestListManifest(manifest_list=item, image_manifest=dc.content,
+                                                architecture=platform['architecture'],
+                                                os=platform['os'],
+                                                features=platform.get('features', ''),
+                                                variant=platform.get('variant', ''),
+                                                os_version=platform.get('os.version', ''),
+                                                os_features=platform.get('os.features', '')
+                                                )
+                    mlm.append(thru)
                     break
-            platform = manifest['platform']
-            thru = ManifestListManifest(manifest_list=item, image_manifest=dc.content,
-                                        architecture=platform['architecture'],
-                                        os=platform['os'],
-                                        features=platform.get('features', ''),
-                                        variant=platform.get('variant', ''),
-                                        os_version=platform.get('os.version', ''),
-                                        os_features=platform.get('os.features', '')
-                                        )
-            mlm.append(thru)
-
         return mlm
 
 
