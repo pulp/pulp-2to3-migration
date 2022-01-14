@@ -7,7 +7,7 @@ with open("requirements.txt") as requirements:
 
 setup(
     name='pulp-2to3-migration',
-    version='0.11.9',
+    version='0.11.10.dev',
     description='Pulp 2 to Pulp 3 migration tool',
     license='GPLv2+',
     author='Pulp Team',
