@@ -178,7 +178,8 @@ def get_datetime(datetime_str):
         datetime_str: value of errata field which contains datetime
 
     Returns:
-        datetime.datetime: datetime in the Django-acceptable format
+        datetime.datetime: datetime in the Django-acceptable format, OR
+        int: datetime in unix timestamp format
 
     """
     # remove UTC part
@@ -191,6 +192,13 @@ def get_datetime(datetime_str):
 
     datetime_obj = parse_datetime(datetime_str)
     if not datetime_obj:
+        try:
+            # try to parse it as a unix timestamp (integer)
+            return int(datetime_str)
+        except ValueError:
+            pass
+
+        # We don't know what else to do with it
         _logger.warn(f'Unsupported datetime format {datetime_str}, resetting to 1970-01-01 00:00')
         datetime_obj = datetime.datetime(1970, 1, 1, 0, 0)
 
