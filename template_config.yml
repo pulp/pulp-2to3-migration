@@ -1,7 +1,7 @@
 # This config represents the latest values used when running the plugin-template. Any settings that
 # were not present before running plugin-template have been added with their default values.
 
-# generated with plugin_template@2021.08.26-49-g3fa3da6
+# generated with plugin_template@2021.08.26-65-g3505809
 
 additional_repos:
 - branch: main
@@ -34,6 +34,7 @@ docs_test: true
 flake8: true
 issue_tracker: github
 noissue_marker: '[noissue]'
+parallel_test_workers: 8
 plugin_app_label: pulp_2to3_migration
 plugin_camel: Pulp-2To3-Migration
 plugin_camel_short: 2To3-Migration
@@ -65,6 +66,7 @@ tasking_allow_async_unsafe: true
 test_azure: false
 test_bindings: false
 test_cli: true
+test_deprecations: true
 test_performance: false
 test_released_plugin_with_next_pulpcore_release: false
 test_s3: false
@@ -76,6 +78,7 @@ travis_notifications:
     - chat.freenode.net#pulp-build
     on_failure: always
     on_success: change
+update_github: true
 update_redmine: false
 upgrade_range: []
 
