@@ -234,8 +234,13 @@ def parse_repodata(primary_xml, filelists_xml, other_xml):
     cr.xml_parse_primary_snippet(primary_xml, pkgcb=pkgcb, do_files=False)
     cr.xml_parse_filelists_snippet(filelists_xml, newpkgcb=newpkgcb)
     cr.xml_parse_other_snippet(other_xml, newpkgcb=newpkgcb)
+
+    changelogs = package.changelogs
+    # make sure the changelogs are sorted by date
+    changelogs.sort(key=lambda t: t[1])
     # keep only the last 10 changelogs
-    package.changelogs = package.changelogs[-10:]
+    package.changelogs = changelogs[-10:]
+
     return package
 
 
