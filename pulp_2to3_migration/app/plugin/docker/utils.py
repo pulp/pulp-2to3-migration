@@ -14,7 +14,9 @@ def find_tags():
     group_stage1 = {'$group': {'_id': {'name': '$name', 'repo_id': '$repo_id'},
                     'tags_id': {'$first': '$_id'}}}
     group_stage2 = {'$group': {'_id': None, 'tags_ids': {'$addToSet': '$tags_id'}}}
-    result = pulp2_models.Tag.objects.aggregate([sort_stage, group_stage1, group_stage2])
+    result = pulp2_models.Tag.objects.aggregate(
+        [sort_stage, group_stage1, group_stage2], allowDiskUse=True
+    )
     if result._has_next():
         return result.next()['tags_ids']
     return []
