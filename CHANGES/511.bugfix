@@ -1,0 +1,3 @@
+Taught mongo-connection how to deal with Really Big Queries. This addresses the cause of
+exceptions like `pymongo.errors.OperationFailure: Sort exceeded memory limit of 104857600 bytes`
+when migrating large collections.
