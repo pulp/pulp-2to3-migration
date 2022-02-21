@@ -26,9 +26,8 @@ EOF"
 # Restarting single container services
 cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-api"
 cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-content"
-cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-resource-manager"
-cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-worker@1"
-cmd_prefix bash -c "s6-svc -r /var/run/s6/services/new-pulpcore-worker@2"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-worker@1"
+cmd_prefix bash -c "s6-svc -r /var/run/s6/services/pulpcore-worker@2"
 
 # install mongo and copy a script which we need to use for func tests to roll out a pulp 2 snapshot
 cmd_prefix bash -c "cat > /etc/yum.repos.d/mongodb-org-3.6.repo <<EOF
