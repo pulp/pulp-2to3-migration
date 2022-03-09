@@ -1,6 +1,7 @@
 import os
 
 import bson
+import hashlib
 from collections import defaultdict
 
 import createrepo_c as cr
@@ -751,10 +752,14 @@ class Pulp2Distribution(Pulp2to3Content):
         namespaces = [".treeinfo", "treeinfo"]
         for namespace in namespaces:
             treeinfo = PulpTreeInfo()
+            treeinfo_path = os.path.join(self.pulp2content.pulp2_storage_path, namespace)
             try:
-                treeinfo.load(f=os.path.join(self.pulp2content.pulp2_storage_path, namespace))
+                treeinfo.load(f=treeinfo_path)
             except FileNotFoundError:
                 continue
+
+            with open(treeinfo_path, 'rb') as treeinfo_fd:
+                treeinfo_digest = hashlib.sha256(treeinfo_fd.read()).hexdigest()
             self.filename = namespace
             treeinfo_parsed = treeinfo.parsed_sections()
             treeinfo_serialized = TreeinfoData(treeinfo_parsed).to_dict(filename=namespace)
@@ -776,6 +781,7 @@ class Pulp2Distribution(Pulp2to3Content):
                 float(treeinfo_serialized['distribution_tree']['build_timestamp'])
             )
             treeinfo_serialized['distribution_tree']['build_timestamp'] = orig_build_timestamp - 1
+            treeinfo_serialized['distribution_tree']['digest'] = treeinfo_digest
             return treeinfo_serialized
 
         return None
