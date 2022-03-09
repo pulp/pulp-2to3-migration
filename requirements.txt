@@ -1,4 +1,4 @@
-pulpcore>=3.15.0
+pulpcore>=3.18.0
 pymongo<4.0
 mongoengine
 semantic_version
