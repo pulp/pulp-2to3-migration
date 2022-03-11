@@ -139,6 +139,21 @@ Improved Documentation
 ----
 
 
+0.11.9 (2022-01-14)
+===================
+
+Bugfixes
+--------
+
+- Escape django template syntax in xml when rendering filelist
+  `#496 <https://pulp.plan.io/issues/496>`_
+- Fixed local variable 'item' referenced before assignment
+  `#497 <https://pulp.plan.io/issues/497>`_
+
+
+----
+
+
 0.11.8 (2022-01-07)
 ===================
 
