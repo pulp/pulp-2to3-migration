@@ -13,6 +13,45 @@ Changelog
 
 .. towncrier release notes start
 
+0.16.0 (2022-03-15)
+===================
+
+Features
+--------
+
+- Added the `DEB_COMPONENT_BATCH_SIZE` setting, so users can individually control the batch size for this one to many type.
+  `#9564 <https://github.com/pulp/pulp-2to3-migration/issues/9564>`__
+
+
+Bugfixes
+--------
+
+- Try parsing advisory dates as unix timestamps before giving up.
+  `#483 <https://github.com/pulp/pulp-2to3-migration/issues/483>`__
+- Fixed a bug in the deb migration that caused migrated repos to lack content needed for structured publications in some circumstances.
+  `#484 <https://github.com/pulp/pulp-2to3-migration/issues/484>`__
+- Fixed DistributionTree (kickstart tree) migration for pulp_rpm 3.17+.
+
+  Alma Linux 8 or CentOS 8 repos migration will no longer fail with:
+  No declared artifact with relative path "images/boot.iso" (or ".treeinfo").
+  `#491 <https://github.com/pulp/pulp-2to3-migration/issues/491>`__
+- Escape django template syntax in xml when rendering filelist
+  `#496 <https://github.com/pulp/pulp-2to3-migration/issues/496>`__
+- Fixed local variable 'item' referenced before assignment
+  `#497 <https://github.com/pulp/pulp-2to3-migration/issues/497>`__
+- Taught mongo-connection how to deal with Really Big Queries. This addresses the cause of
+  exceptions like `pymongo.errors.OperationFailure: Sort exceeded memory limit of 104857600 bytes`
+  when migrating large collections.
+  `#511 <https://github.com/pulp/pulp-2to3-migration/issues/511>`__
+- Fixed ``'NoneType' object has no attribute 'delete'`` error during migration re-runs.
+  `#8968 <https://github.com/pulp/pulp-2to3-migration/issues/8968>`__
+- deb_components now use a default batch size of 50 to avoid CursorNotFound errors during pre_migration for this one to many type.
+  `#9564 <https://github.com/pulp/pulp-2to3-migration/issues/9564>`__
+
+
+----
+
+
 0.15.0 (2021-11-11)
 ===================
 
