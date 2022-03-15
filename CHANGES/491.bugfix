@@ -1,4 +1,0 @@
-Fixed DistributionTree (kickstart tree) migration for pulp_rpm 3.17+.
-
-Alma Linux 8 or CentOS 8 repos migration will no longer fail with:
-No declared artifact with relative path "images/boot.iso" (or ".treeinfo").
