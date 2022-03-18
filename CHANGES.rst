@@ -178,6 +178,21 @@ Improved Documentation
 ----
 
 
+0.11.10 (2022-03-18)
+====================
+
+Bugfixes
+--------
+
+- Taught mongo-connection how to deal with Really Big Queries. This addresses the cause of
+  exceptions like `pymongo.errors.OperationFailure: Sort exceeded memory limit of 104857600 bytes`
+  when migrating large collections.
+  `#511 <https://pulp.plan.io/issues/511>`_
+
+
+----
+
+
 0.11.9 (2022-01-14)
 ===================
 
@@ -273,7 +288,7 @@ Misc
 Bugfixes
 --------
 
-- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers without a releases field. 
+- Fixed a bug causing deb migrations to fail if there are Pulp 2 importers without a releases field.
   (backported from #8928)
   `#8945 <https://pulp.plan.io/issues/8945>`__
 - Added migration of gpgkeys-field for verification of debian-repos.
