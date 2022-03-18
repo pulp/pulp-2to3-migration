@@ -13,6 +13,21 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.10 (2022-03-18)
+====================
+
+Bugfixes
+--------
+
+- Taught mongo-connection how to deal with Really Big Queries. This addresses the cause of
+  exceptions like `pymongo.errors.OperationFailure: Sort exceeded memory limit of 104857600 bytes`
+  when migrating large collections.
+  `#511 <https://pulp.plan.io/issues/511>`_
+
+
+----
+
+
 0.11.9 (2022-01-14)
 ===================
 
