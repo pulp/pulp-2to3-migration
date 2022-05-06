@@ -140,7 +140,7 @@ cmd_prefix bash -c "django-admin makemigrations --check --dry-run"
 
 if [[ "$TEST" != "upgrade" ]]; then
   # Run unit tests.
-  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.unit"
+  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres pytest -v -r sx --color=yes -p no:pulpcore --pyargs pulp_2to3_migration.tests.unit"
 fi
 
 # Run functional tests
@@ -148,7 +148,6 @@ export PYTHONPATH=$REPO_ROOT/../pulp_file${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_container${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_rpm${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_deb${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT/../pulpcore${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT${PYTHONPATH:+:${PYTHONPATH}}
 
 
