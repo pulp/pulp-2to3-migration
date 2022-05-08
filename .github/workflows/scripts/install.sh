@@ -20,6 +20,7 @@ if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r doc_requirements.txt
 fi
 
+pip install -e ../pulpcore
 pip install -r functest_requirements.txt
 
 cd .ci/ansible/
@@ -76,11 +77,6 @@ plugins:
     source: pulp_rpm
   - name: pulp_deb
     source: pulp_deb
-services:
-  - name: pulp
-    image: "pulp:${TAG}"
-    volumes:
-      - ./settings:/etc/pulp
 VARSYAML
 else
   cat >> vars/main.yaml << VARSYAML
@@ -100,13 +96,17 @@ plugins:
     source: $PULP_DEB
   - name: pulpcore
     source: ./pulpcore
+VARSYAML
+fi
+
+cat >> vars/main.yaml << VARSYAML
 services:
   - name: pulp
     image: "pulp:${TAG}"
     volumes:
       - ./settings:/etc/pulp
+      - ./ssh:/keys/
 VARSYAML
-fi
 
 cat >> vars/main.yaml << VARSYAML
 pulp_settings: null
@@ -115,6 +115,14 @@ pulp_scheme: https
 pulp_container_tag: https
 
 VARSYAML
+
+if [ "$TEST" = "upgrade" ]; then
+  sed -i "/^pulp_container_tag:.*/s//pulp_container_tag: upgrade-https/" vars/main.yaml
+fi
+
+if [ "${PULP_API_ROOT:-}" ]; then
+  sed -i -e '$a api_root: "'"$PULP_API_ROOT"'"' vars/main.yaml
+fi
 
 ansible-playbook build_container.yaml
 ansible-playbook start_container.yaml
@@ -125,7 +133,7 @@ sudo docker cp pulp:/etc/pulp/certs/pulp_webserver.crt /usr/local/share/ca-certi
 # Hack: adding pulp CA to certifi.where()
 CERTIFI=$(python -c 'import certifi; print(certifi.where())')
 cat /usr/local/share/ca-certificates/pulp_webserver.crt | sudo tee -a "$CERTIFI" > /dev/null
-if [ "$TEST" = "azure" ]; then
+if [[ "$TEST" = "azure" ]]; then
   cat /usr/local/share/ca-certificates/azcert.crt | sudo tee -a "$CERTIFI" > /dev/null
 fi
 
@@ -137,8 +145,9 @@ cat "$CERTIFI" | sudo tee -a "$CERT" > /dev/null
 sudo update-ca-certificates
 echo ::endgroup::
 
-if [ "$TEST" = "azure" ]; then
-  cat /usr/local/share/ca-certificates/azcert.crt >> /opt/az/lib/python3.6/site-packages/certifi/cacert.pem
+if [[ "$TEST" = "azure" ]]; then
+  AZCERTIFI=$(/opt/az/bin/python3 -c 'import certifi; print(certifi.where())')
+  cat /usr/local/share/ca-certificates/azcert.crt >> $AZCERTIFI
   cat /usr/local/share/ca-certificates/azcert.crt | cmd_stdin_prefix tee -a /usr/local/lib/python3.8/site-packages/certifi/cacert.pem > /dev/null
   cat /usr/local/share/ca-certificates/azcert.crt | cmd_stdin_prefix tee -a /etc/pki/tls/cert.pem > /dev/null
   AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=https;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=https://ci-azurite:10000/devstoreaccount1;'

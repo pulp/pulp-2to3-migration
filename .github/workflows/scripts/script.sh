@@ -29,15 +29,14 @@ export PULP_SETTINGS=$PWD/.ci/ansible/settings/settings.py
 export PULP_URL="https://pulp"
 
 if [[ "$TEST" = "docs" ]]; then
+  if [[ "$GITHUB_WORKFLOW" == "2To3-Migration CI" ]]; then
+    pip install towncrier==19.9.0
+    towncrier --yes --version 4.0.0.ci
+  fi
   cd docs
   make PULP_URL="$PULP_URL" diagrams html
   tar -cvf docs.tar ./_build
   cd ..
-
-  echo "Validating OpenAPI schema..."
-  cat $PWD/.ci/scripts/schema.py | cmd_stdin_prefix bash -c "cat > /tmp/schema.py"
-  cmd_prefix bash -c "python3 /tmp/schema.py"
-  cmd_prefix bash -c "pulpcore-manager spectacular --file pulp_schema.yml --validate"
 
   if [ -f $POST_DOCS_TEST ]; then
     source $POST_DOCS_TEST
@@ -46,7 +45,12 @@ if [[ "$TEST" = "docs" ]]; then
 fi
 
 if [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
-  REPORTED_VERSION=$(http $PULP_URL/pulp/api/v3/status/ | jq --arg plugin pulp_2to3_migration --arg legacy_plugin pulp_2to3_migration -r '.versions[] | select(.component == $plugin or .component == $legacy_plugin) | .version')
+  STATUS_ENDPOINT="${PULP_URL}/pulp/api/v3/status/"
+  if [ "${PULP_API_ROOT:-}" ]; then
+    STATUS_ENDPOINT="${PULP_URL}${PULP_API_ROOT}api/v3/status/"
+  fi
+  echo $STATUS_ENDPOINT
+  REPORTED_VERSION=$(http $STATUS_ENDPOINT | jq --arg plugin pulp_2to3_migration --arg legacy_plugin pulp_2to3_migration -r '.versions[] | select(.component == $plugin or .component == $legacy_plugin) | .version')
   response=$(curl --write-out %{http_code} --silent --output /dev/null https://pypi.org/project/pulp-2to3-migration/$REPORTED_VERSION/)
   if [ "$response" == "200" ];
   then
@@ -131,7 +135,7 @@ cmd_prefix bash -c "django-admin makemigrations --check --dry-run"
 
 if [[ "$TEST" != "upgrade" ]]; then
   # Run unit tests.
-  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres django-admin test --noinput /usr/local/lib/python3.8/site-packages/pulp_2to3_migration/tests/unit/"
+  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres pytest -v -r sx --color=yes -p no:pulpcore --pyargs pulp_2to3_migration.tests.unit"
 fi
 
 # Run functional tests
@@ -139,7 +143,6 @@ export PYTHONPATH=$REPO_ROOT/../pulp_file${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_container${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_rpm${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT/../pulp_deb${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT/../pulpcore${PYTHONPATH:+:${PYTHONPATH}}
 export PYTHONPATH=$REPO_ROOT${PYTHONPATH:+:${PYTHONPATH}}
 
 
@@ -156,7 +159,25 @@ fi
 if [ -f $FUNC_TEST_SCRIPT ]; then
   source $FUNC_TEST_SCRIPT
 else
-    pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional
+
+    if [[ "$GITHUB_WORKFLOW" == "2To3-Migration Nightly CI/CD" ]]; then
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m parallel -n 8
+        pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m "not parallel"
+
+    
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulpcore.tests.functional -m "from_pulpcore_for_all_plugins and parallel" -n  8
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulpcore.tests.functional -m "from_pulpcore_for_all_plugins and not parallel"
+    
+    else
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m "parallel and not nightly" -n 8
+        pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m "not parallel and not nightly"
+
+    
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulpcore.tests.functional -m "from_pulpcore_for_all_plugins and not nightly and parallel" -n  8
+        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulpcore.tests.functional -m "from_pulpcore_for_all_plugins and not nightly and not parallel"
+    
+    fi
+
 fi
 pushd ../pulp-cli
 pytest -v -m pulp_2to3_migration
