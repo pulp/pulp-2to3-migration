@@ -25,6 +25,7 @@ Table of Contents
    restapi
    changes
    plugin_writers_guide
+   plugin_removal
 
 
 Indices and tables

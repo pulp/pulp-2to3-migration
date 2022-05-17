@@ -1,5 +1,5 @@
 Migration Plan
---------------
+==============
 
 To configure what to migrate to Pulp 3, one needs to define a Migration Plan (MP).
 A MP defines which plugins to migrate and how.
