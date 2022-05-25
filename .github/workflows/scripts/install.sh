@@ -22,7 +22,7 @@ if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r doc_requirements.txt
 fi
 
-pip install -e ../pulpcore
+pip install -e ../pulpcore -e ../pulp_file -e ../pulp_container -e ../pulp_rpm -e ../pulp_deb
 pip install -r functest_requirements.txt
 
 cd .ci/ansible/
