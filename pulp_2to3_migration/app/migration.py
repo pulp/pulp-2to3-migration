@@ -433,7 +433,7 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
             else:
                 # It's not a duplicated path but it overlaps with some other in the version,
                 # it should be removed from the version to resolve the conflict.
-                version.remove_content(cas_with_conflicts[0].content)
+                version.remove_content(Content.objects.filter(pk__in=cas_with_conflicts[0].content.pk))
                 _logger.info(
                     _(
                         'Overlapping paths have been found in Pulp 3 repo `{repo}`: Removed '
