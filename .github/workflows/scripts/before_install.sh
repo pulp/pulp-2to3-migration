@@ -91,7 +91,16 @@ fi
 cd ..
 
 
-pip install pulp-smash==1!0.14.0
+git clone --depth=1 https://github.com/pulp/pulp-smash.git
+
+if [ -n "$PULP_SMASH_PR_NUMBER" ]; then
+  cd pulp-smash
+  git fetch --depth=1 origin pull/$PULP_SMASH_PR_NUMBER/head:$PULP_SMASH_PR_NUMBER
+  git checkout $PULP_SMASH_PR_NUMBER
+  cd ..
+fi
+
+pip install --upgrade --force-reinstall ./pulp-smash
 
 
 git clone --depth=1 https://github.com/pulp/pulp-openapi-generator.git
@@ -169,8 +178,6 @@ if [ -n "$PULP_DEB_PR_NUMBER" ]; then
 fi
 
 cd ..
-
-
 
 # Intall requirements for ansible playbooks
 pip install docker netaddr boto3 ansible

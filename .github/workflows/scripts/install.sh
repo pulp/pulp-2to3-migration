@@ -15,12 +15,14 @@ set -euv
 
 source .github/workflows/scripts/utils.sh
 
+export PULP_API_ROOT="/pulp/"
+
 if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
-  pip install "mistune<2.0.0"
   pip install -r ../pulpcore/doc_requirements.txt
   pip install -r doc_requirements.txt
 fi
 
+pip install -e ../pulpcore
 pip install -r functest_requirements.txt
 
 cd .ci/ansible/
@@ -77,11 +79,6 @@ plugins:
     source: pulp_rpm~=3.11.0
   - name: pulp_deb
     source: pulp_deb~=2.9.0
-services:
-  - name: pulp
-    image: "pulp:${TAG}"
-    volumes:
-      - ./settings:/etc/pulp
 VARSYAML
 else
   cat >> vars/main.yaml << VARSYAML
@@ -101,13 +98,17 @@ plugins:
     source: $PULP_DEB
   - name: pulpcore
     source: ./pulpcore
+VARSYAML
+fi
+
+cat >> vars/main.yaml << VARSYAML
 services:
   - name: pulp
     image: "pulp:${TAG}"
     volumes:
       - ./settings:/etc/pulp
+      - ./ssh:/keys/
 VARSYAML
-fi
 
 cat >> vars/main.yaml << VARSYAML
 pulp_settings: null
@@ -117,10 +118,20 @@ pulp_container_tag: python36
 
 VARSYAML
 
+if [ "$TEST" = "upgrade" ]; then
+  sed -i "/^pulp_container_tag:.*/s//pulp_container_tag: upgrade/" vars/main.yaml
+fi
+
+echo "PULP_API_ROOT=${PULP_API_ROOT}" >> "$GITHUB_ENV"
+
+if [ "${PULP_API_ROOT:-}" ]; then
+  sed -i -e '$a api_root: "'"$PULP_API_ROOT"'"' vars/main.yaml
+fi
+
 ansible-playbook build_container.yaml
 ansible-playbook start_container.yaml
 
-if [ "$TEST" = "azure" ]; then
+if [[ "$TEST" = "azure" ]]; then
   AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://ci-azurite:10000/devstoreaccount1;'
   az storage container create --name pulp-test --connection-string $AZURE_STORAGE_CONNECTION_STRING
 fi
