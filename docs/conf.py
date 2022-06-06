@@ -32,9 +32,9 @@ author = 'Pulp Team'
 
 
 # The short X.Y version
-version = "0.11.11.dev"
+version = "0.11.11"
 # The full version, including alpha/beta/rc tags
-release = "0.11.11.dev"
+release = "0.11.11"
 
 
 # -- General configuration ---------------------------------------------------
