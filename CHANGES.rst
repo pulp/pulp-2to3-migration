@@ -178,6 +178,24 @@ Improved Documentation
 ----
 
 
+0.11.11 (2022-06-06)
+====================
+
+Bugfixes
+--------
+
+- Fixed issue where migration.py passes a Content object to remove_content(),
+  which ends up breaking pulpcore's remove_content() further down the line with
+  a traceback stating, 'Content' object has no attribute 'count'.
+
+  Pulpcore's remove_content() will not face this issue anymore as it will now
+  always receive a QuerySet object from migration.py.
+  `#550 <https://pulp.plan.io/issues/550>`_
+
+
+----
+
+
 0.11.10 (2022-03-18)
 ====================
 
