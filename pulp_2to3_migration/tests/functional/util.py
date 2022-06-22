@@ -2,8 +2,6 @@ import logging
 import os
 import subprocess
 
-from .dynaconf_config import settings
-
 from pulp_smash import cli, utils
 from pulp_smash import config as smash_config
 
@@ -23,10 +21,13 @@ def get_psql_smash_cmd(sql_statement):
         tuple: a command in the format for  pulp smash cli client
 
     """
+    smash_cfg = smash_config.get_config()
+    smash_cli_client = cli.Client(smash_cfg)
     host = 'localhost'
-    user = settings.DATABASES['default']['USER']
-    password = settings.DATABASES['default']['PASSWORD']
-    dbname = settings.DATABASES['default']['NAME']
+    db = utils.get_pulp_setting(smash_cli_client, "DATABASES")
+    user = db['default']['USER']
+    password = db['default']['PASSWORD']
+    dbname = db['default']['NAME']
     return (
         'psql', '-c', sql_statement,
         f'postgresql://{user}:{password}@{host}/{dbname}'

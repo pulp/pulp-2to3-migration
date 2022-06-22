@@ -53,7 +53,13 @@ post_job_template: null
 pre_job_template: null
 publish_docs_to_pulpprojectdotorg: true
 pulp_scheme: https
-pulp_settings: null
+pulp_settings:
+  DATABASES:
+    default:
+      NAME: "pulp"
+      USER: "pulp"
+      PASSWORD: "pulp"
+      ENGINE: django.db.backends.postgresql_psycopg2
 pulpcore_branch: main
 pulpcore_pip_version_specifier: null
 pulpcore_revision: null

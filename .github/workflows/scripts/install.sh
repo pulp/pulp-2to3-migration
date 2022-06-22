@@ -111,7 +111,7 @@ services:
 VARSYAML
 
 cat >> vars/main.yaml << VARSYAML
-pulp_settings: null
+pulp_settings: {"DATABASES": {"default": {"NAME": "pulp", "PASSWORD": "pulp", "USER": "pulp", "ENGINE": "django.db.backends.postgresql_psycopg2"}}}
 pulp_scheme: https
 
 pulp_container_tag: https
