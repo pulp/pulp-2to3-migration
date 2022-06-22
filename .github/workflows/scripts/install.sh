@@ -22,36 +22,30 @@ if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r doc_requirements.txt
 fi
 
-pip install -e ../pulpcore
-pip install -r functest_requirements.txt
-
 cd .ci/ansible/
 
 TAG=ci_build
-
 if [ -e $REPO_ROOT/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
   PULP_FILE=git+https://github.com/pulp/pulp_file.git@main
 fi
-
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
   PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@main
 fi
-
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
   PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@main
 fi
-
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
   PULP_DEB=git+https://github.com/pulp/pulp_deb.git@main
 fi
+PULPCORE=./pulpcore
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
 elif [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
@@ -79,6 +73,8 @@ plugins:
     source: pulp_rpm
   - name: pulp_deb
     source: pulp_deb
+  - name: pulp-smash
+    source: ./pulp-smash
 VARSYAML
 else
   cat >> vars/main.yaml << VARSYAML
@@ -97,7 +93,9 @@ plugins:
   - name: pulp_deb
     source: $PULP_DEB
   - name: pulpcore
-    source: ./pulpcore
+    source: "${PULPCORE}"
+  - name: pulp-smash
+    source: ./pulp-smash
 VARSYAML
 fi
 
@@ -108,10 +106,12 @@ services:
     volumes:
       - ./settings:/etc/pulp
       - ./ssh:/keys/
+      - ~/.config:/root/.config
+      - ../../../pulp-openapi-generator:/root/pulp-openapi-generator
 VARSYAML
 
 cat >> vars/main.yaml << VARSYAML
-pulp_settings: {"DATABASES": {"default": {"NAME": "pulp", "PASSWORD": "pulp", "USER": "pulp", "ENGINE": "django.db.backends.postgresql_psycopg2"}}}
+pulp_settings: {"DATABASES": {"default": {"ENGINE": "django.db.backends.postgresql_psycopg2", "NAME": "pulp", "PASSWORD": "pulp", "USER": "pulp"}}}
 pulp_scheme: https
 
 pulp_container_tag: https
