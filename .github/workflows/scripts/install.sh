@@ -22,36 +22,33 @@ if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r doc_requirements.txt
 fi
 
-pip install -e ../pulpcore
+pip install -e ../pulpcore -e ../pulp_file -e ../pulp_container -e ../pulp_rpm -e ../pulp_deb
 pip install -r functest_requirements.txt
 
 cd .ci/ansible/
 
 TAG=ci_build
-
 if [ -e $REPO_ROOT/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
-  PULP_FILE=git+https://github.com/pulp/pulp_file.git@main
+  PULP_FILE=git+https://github.com/pulp/pulp_file.git@1.10
 fi
-
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
-  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@main
+  PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@2.12
 fi
-
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
-  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@main
+  PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.17
 fi
-
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
-  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@main
+  PULP_DEB=git+https://github.com/pulp/pulp_deb.git@2.18
 fi
+PULPCORE=./pulpcore
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
 elif [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
@@ -68,17 +65,17 @@ image:
   tag: "${TAG}"
 plugins:
   - name: pulpcore
-    source: pulpcore
+    source: pulpcore~=3.19.0
   - name: pulp-2to3-migration
     source:  "${PLUGIN_NAME}"
   - name: pulp_file
-    source: pulp_file
+    source: pulp_file~=1.10.0
   - name: pulp_container
-    source: pulp_container
+    source: pulp_container~=2.12.0
   - name: pulp_rpm
-    source: pulp_rpm
+    source: pulp_rpm~=3.17.0
   - name: pulp_deb
-    source: pulp_deb
+    source: pulp_deb~=2.18.0
 VARSYAML
 else
   cat >> vars/main.yaml << VARSYAML
@@ -97,7 +94,7 @@ plugins:
   - name: pulp_deb
     source: $PULP_DEB
   - name: pulpcore
-    source: ./pulpcore
+    source: "${PULPCORE}"
 VARSYAML
 fi
 

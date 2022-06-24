@@ -4,14 +4,18 @@
 # generated with plugin_template@2021.08.26-135-gf245075
 
 additional_repos:
-- branch: main
+- branch: '1.10'
   name: pulp_file
-- branch: main
+  pip_version_specifier: ~=1.10.0
+- branch: '2.12'
   name: pulp_container
-- branch: main
+  pip_version_specifier: ~=2.12.0
+- branch: '3.17'
   name: pulp_rpm
-- branch: main
+  pip_version_specifier: ~=3.17.0
+- branch: '2.18'
   name: pulp_deb
+  pip_version_specifier: ~=2.18.0
 aiohttp_fixtures_origin: 172.18.0.1
 api_root: /pulp/
 black: false
@@ -54,8 +58,8 @@ pre_job_template: null
 publish_docs_to_pulpprojectdotorg: true
 pulp_scheme: https
 pulp_settings: null
-pulpcore_branch: main
-pulpcore_pip_version_specifier: null
+pulpcore_branch: '3.19'
+pulpcore_pip_version_specifier: ~=3.19.0
 pulpcore_revision: null
 pulpprojectdotorg_key_id: null
 pydocstyle: false
