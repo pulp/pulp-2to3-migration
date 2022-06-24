@@ -128,7 +128,7 @@ cp tests/cli.toml ~/.config/pulp/cli.toml
 cd ..
 
 
-git clone --depth=1 https://github.com/pulp/pulpcore.git --branch main
+git clone --depth=1 https://github.com/pulp/pulpcore.git --branch 3.19
 
 cd pulpcore
 
@@ -139,7 +139,7 @@ fi
 cd ..
 
 
-git clone --depth=1 https://github.com/pulp/pulp_file.git --branch main
+git clone --depth=1 https://github.com/pulp/pulp_file.git --branch 1.10
 cd pulp_file
 
 if [ -n "$PULP_FILE_PR_NUMBER" ]; then
@@ -149,7 +149,7 @@ fi
 
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulp_container.git --branch main
+git clone --depth=1 https://github.com/pulp/pulp_container.git --branch 2.12
 cd pulp_container
 
 if [ -n "$PULP_CONTAINER_PR_NUMBER" ]; then
@@ -159,7 +159,7 @@ fi
 
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch main
+git clone --depth=1 https://github.com/pulp/pulp_rpm.git --branch 3.17
 cd pulp_rpm
 
 if [ -n "$PULP_RPM_PR_NUMBER" ]; then
@@ -169,7 +169,7 @@ fi
 
 cd ..
 
-git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch main
+git clone --depth=1 https://github.com/pulp/pulp_deb.git --branch 2.18
 cd pulp_deb
 
 if [ -n "$PULP_DEB_PR_NUMBER" ]; then
