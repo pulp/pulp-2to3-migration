@@ -58,6 +58,12 @@ def set_pulp2_snapshot(name):
 
     # needs to be done locally otherwise auth is required because password is provided in the
     # cleartext.
-    cmd = ('mongo', 'pulp_database', '--eval', 'db.createUser({user:"ci_cd",pwd:"ci_cd", '
-                                               'roles:["readWrite"]});')
+    cmd = (
+        "mongo",
+        "pulp_database",
+        "--eval",
+        'db.createUser({user:"ci_cd",pwd:"ci_cd",roles:["readWrite"],passwordDigestor:"server"});',
+        "--host",
+        mongodb_host,
+    )
     subprocess.run(cmd)
