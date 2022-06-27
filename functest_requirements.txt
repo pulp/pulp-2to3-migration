@@ -1,5 +1,7 @@
 dynaconf
 mongoengine
 semantic-version
+pulp-certguard
+pulp-certguard-client
 pulp-smash @ git+https://github.com/pulp/pulp-smash.git
 pytest
