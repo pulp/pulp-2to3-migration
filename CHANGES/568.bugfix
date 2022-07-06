@@ -1,0 +1,1 @@
+Migration may stuck for many days when migrating an environment with massive number of rpms. This commit fixed the issue.
