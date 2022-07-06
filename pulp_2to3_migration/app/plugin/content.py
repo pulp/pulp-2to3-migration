@@ -9,7 +9,7 @@ from gettext import gettext as _
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import Q
+from django.db.models.expressions import RawSQL
 
 from pulpcore.app.models import storage
 from pulpcore.plugin.exceptions import DigestValidationError, SizeValidationError
@@ -219,11 +219,23 @@ class ContentMigrationFirstStage(Stage):
         if is_lazy_type:
             # go through all of the content that haven't been migrated OR have been migrated
             # but have new lazy catalog entries.
-            units_with_new_lces = Pulp2LazyCatalog.objects.filter(
-                is_migrated=False).values('pulp2_unit_id').distinct()
-            already_migrated = ~Q(pulp2content__pulp3_content=None)
-            no_new_lces = ~Q(pulp2content__pulp2_id__in=units_with_new_lces)
-            pulp_2to3_detail_qs = content_model.objects.exclude(already_migrated & no_new_lces)
+            content_model_table = content_model._meta.db_table
+            query = f"""
+                SELECT DISTINCT {content_model_table}.pulp_id
+                  FROM {content_model_table}
+                  INNER JOIN pulp_2to3_migration_pulp2content ON
+                    ({content_model_table}.pulp2content_id =
+                     pulp_2to3_migration_pulp2content.pulp_id
+                    AND pulp_2to3_migration_pulp2content.pulp2_content_type_id = %s)
+                  LEFT JOIN pulp_2to3_migration_pulp2lazycatalog ON
+                    (pulp_2to3_migration_pulp2content.pulp2_id =
+                     pulp_2to3_migration_pulp2lazycatalog.pulp2_unit_id)
+                WHERE NOT (NOT (pulp_2to3_migration_pulp2content.pulp3_content_id IS NULL)
+                  AND NOT (pulp_2to3_migration_pulp2lazycatalog.is_migrated = false))
+            """
+            pulp_2to3_detail_qs = content_model.objects.filter(
+                pulp_id__in=RawSQL(query, (content_type,))
+            )
         else:
             # go through all of the content that haven't been migrated
             pulp_2to3_detail_qs = content_model.objects.filter(pulp2content__pulp3_content=None)
