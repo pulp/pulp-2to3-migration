@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Max, Q
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from mongoengine.queryset.visitor import Q as mongo_Q
 
@@ -320,13 +321,14 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         last_updated = datetime.utcfromtimestamp(last_updated)
 
         # Query all new relations for that content since the last run
+        base_content_relations = Pulp2RepoContent.objects.filter(
+            pulp2_content_type_id=content_type,
+            pulp2_repository__not_in_plan=False,
+            pulp2_created__gte=last_updated,
+        )
+
         content_relations = (
-            Pulp2RepoContent.objects.filter(
-                pulp2_content_type_id=content_type,
-                pulp2_repository__not_in_plan=False,
-                pulp2_created__gte=last_updated,
-            )
-            .select_related("pulp2_repository")
+            base_content_relations.select_related("pulp2_repository")
             .only(
                 "pulp2_repository",
                 "pulp2_created",
@@ -334,15 +336,21 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
             .order_by("pulp2_created")
         )
 
-        mongo_content_qs = content_model.pulp2.objects(
-            id__in=content_relations.values_list("pulp2_unit_id", flat=True)
+        pulp2_unit_id_qs = base_content_relations.order_by("pulp2_unit_id").values_list(
+            "pulp2_unit_id", flat=True
         )
-        batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(
-            batch_size
-        )
-        pulp2_content_by_id = {
-            record.id: record for record in batched_mongo_content_qs.no_cache()
-        }
+
+        pulp2_content_by_id = {}
+        paginator = Paginator(pulp2_unit_id_qs, batch_size)
+        for page in range(1, paginator.num_pages + 1):
+            mongo_content_qs = content_model.pulp2.objects(
+                id__in=paginator.page(page).object_list
+            )
+            batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(
+                batch_size
+            )
+            for record in batched_mongo_content_qs.no_cache():
+                pulp2_content_by_id[record.id] = record
 
         for relation in content_relations:
             record = pulp2_content_by_id[relation.pulp2_unit_id]
