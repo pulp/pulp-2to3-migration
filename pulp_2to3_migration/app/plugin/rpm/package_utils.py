@@ -26,9 +26,9 @@ def nevra(name):
         raise ValueError(msg)
 
     arch_dot_pos = name.rfind(".")
-    arch = name[arch_dot_pos + 1:]
+    arch = name[arch_dot_pos + 1 :]
 
-    return nevr(name[:arch_dot_pos]) + (arch, )
+    return nevr(name[:arch_dot_pos]) + (arch,)
 
 
 def nevr(name):
@@ -50,12 +50,12 @@ def nevr(name):
         raise ValueError(msg)
 
     release_dash_pos = name.rfind("-")
-    release = name[release_dash_pos + 1:]
+    release = name[release_dash_pos + 1 :]
     name_epoch_version = name[:release_dash_pos]
     name_dash_pos = name_epoch_version.rfind("-")
     package_name = name_epoch_version[:name_dash_pos]
 
-    epoch_version = name_epoch_version[name_dash_pos + 1:].split(":")
+    epoch_version = name_epoch_version[name_dash_pos + 1 :].split(":")
     if len(epoch_version) == 1:
         epoch = 0
         version = epoch_version[0]

@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0014_gzip_repodata'),
+        ("pulp_2to3_migration", "0014_gzip_repodata"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2repocontent',
-            name='pulp2_created',
+            model_name="pulp2repocontent",
+            name="pulp2_created",
             field=models.DateTimeField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2repocontent',
-            name='pulp2_updated',
+            model_name="pulp2repocontent",
+            name="pulp2_updated",
             field=models.DateTimeField(null=True),
         ),
     ]

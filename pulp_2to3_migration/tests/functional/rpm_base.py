@@ -38,6 +38,7 @@ class BaseTestRpm:
     """
     Test RPM migration re-runs.
     """
+
     smash_cfg = smash_config.get_config()
     smash_cli_client = cli.Client(smash_cfg)
     plan_initial = None
@@ -60,15 +61,15 @@ class BaseTestRpm:
         cls.rpm_distribution_api = DistributionsRpmApi(rpm_client)
         cls.rpm_publication_api = PublicationsRpmApi(rpm_client)
         cls.rpm_content_apis = {
-            'advisory': ContentAdvisoriesApi(rpm_client),
-            'disttree': ContentDistributionTreesApi(rpm_client),
-            'modulemd': ContentModulemdsApi(rpm_client),
-            'modulemd-defaults': ContentModulemdDefaultsApi(rpm_client),
-            'category': ContentPackagecategoriesApi(rpm_client),
-            'environment': ContentPackageenvironmentsApi(rpm_client),
-            'group': ContentPackagegroupsApi(rpm_client),
-            'langpack': ContentPackagelangpacksApi(rpm_client),
-            'package': ContentPackagesApi(rpm_client),
+            "advisory": ContentAdvisoriesApi(rpm_client),
+            "disttree": ContentDistributionTreesApi(rpm_client),
+            "modulemd": ContentModulemdsApi(rpm_client),
+            "modulemd-defaults": ContentModulemdDefaultsApi(rpm_client),
+            "category": ContentPackagecategoriesApi(rpm_client),
+            "environment": ContentPackageenvironmentsApi(rpm_client),
+            "group": ContentPackagegroupsApi(rpm_client),
+            "langpack": ContentPackagelangpacksApi(rpm_client),
+            "package": ContentPackagesApi(rpm_client),
         }
         cls.migration_plans_api = MigrationPlansApi(migration_client)
         cls.pulp2content_api = Pulp2ContentApi(migration_client)
@@ -87,7 +88,7 @@ class BaseTestRpm:
             task(pulpcore.app.models.Task): a migration task created for this plan
 
         """
-        mp = cls.migration_plans_api.create({'plan': plan})
+        mp = cls.migration_plans_api.create({"plan": plan})
         mp_run_response = cls.migration_plans_api.run(mp.pulp_href, run_params)
         task = monitor_task(mp_run_response.task)
         monitor_task_group(task.task_group)
@@ -121,9 +122,8 @@ class RepoInfo(dict):
 
     @property
     def repositories(self):
-        """Return dictionaries of content counts.
-        """
-        repositories = self.get('content_rerun', None) or self['content_initial']
+        """Return dictionaries of content counts."""
+        repositories = self.get("content_rerun", None) or self["content_initial"]
         if self.is_simple:
             return {k: v for k, v in repositories.items() if v}
         else:
@@ -131,43 +131,38 @@ class RepoInfo(dict):
 
     @property
     def new_repositories(self):
-        """Return the dictionaries for new repositories only.
-        """
+        """Return the dictionaries for new repositories only."""
         repos = []
-        for repo_name, new_content in self['content_rerun'].items():
+        for repo_name, new_content in self["content_rerun"].items():
             if self.is_simple:
-                initial_content = self['content_initial'].get(repo_name, None)
+                initial_content = self["content_initial"].get(repo_name, None)
                 if not initial_content and new_content:
                     repos.append(repo_name)
             else:
-                if repo_name not in self['content_initial']:
+                if repo_name not in self["content_initial"]:
                     repos.append(repo_name)
         return repos
 
     @property
     def content_total(self):
-        """Return content count dictionary.
-        """
+        """Return content count dictionary."""
         # we can't just sum up the content counts because the same content could be in
         # multiple repos
-        return self['content_total']
+        return self["content_total"]
 
     @property
     def remotes(self):
-        """Return the count of remotes.
-        """
+        """Return the count of remotes."""
         # for complex plans, you can use one remote for many repos, so we can't assume
         # the number of repos == the number of repositories
-        return self['remotes']
+        return self["remotes"]
 
     @property
     def publications(self):
-        """Return the count of publications.
-        """
+        """Return the count of publications."""
         return len(self.repositories)
 
     @property
     def distributions(self):
-        """Return the count of distributions.
-        """
+        """Return the count of distributions."""
         return len(self.repositories)

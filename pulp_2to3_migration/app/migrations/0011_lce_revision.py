@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0010_pulp2lazycatalog_is_migrated'),
+        ("pulp_2to3_migration", "0010_pulp2lazycatalog_is_migrated"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='pulp2lazycatalog',
-            name='pulp2_revision',
+            model_name="pulp2lazycatalog",
+            name="pulp2_revision",
             field=models.IntegerField(default=1),
         ),
     ]

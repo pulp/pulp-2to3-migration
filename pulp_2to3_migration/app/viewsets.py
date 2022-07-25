@@ -9,7 +9,7 @@ from rest_framework.serializers import ValidationError
 from pulpcore.app.viewsets.base import DATETIME_FILTER_OPTIONS
 from pulpcore.app.viewsets.custom_filters import (
     HyperlinkRelatedFilter,
-    IsoDateTimeFilter
+    IsoDateTimeFilter,
 )
 
 from pulpcore.plugin.models import Task
@@ -44,22 +44,20 @@ def is_migration_plan_running():
 
     """
     qs = Task.objects.filter(
-        state__in=['waiting', 'running'],
-        reserved_resources_record=['pulp_2to3_migration']
+        state__in=["waiting", "running"],
+        reserved_resources_record=["pulp_2to3_migration"],
     )
 
     if qs:
         return True
 
     groups_with_running_tasks = Task.objects.filter(
-        state__in=['waiting', 'running'],
-        task_group__isnull=False
-    ).values_list('task_group_id', flat=True)
+        state__in=["waiting", "running"], task_group__isnull=False
+    ).values_list("task_group_id", flat=True)
 
     groups_with_migration_tasks = Task.objects.filter(
-        task_group__isnull=False,
-        reserved_resources_record=['pulp_2to3_migration']
-    ).values_list('task_group_id', flat=True)
+        task_group__isnull=False, reserved_resources_record=["pulp_2to3_migration"]
+    ).values_list("task_group_id", flat=True)
 
     if groups_with_running_tasks.intersection(groups_with_migration_tasks):
         return True
@@ -67,71 +65,77 @@ def is_migration_plan_running():
     return False
 
 
-class MigrationPlanViewSet(NamedModelViewSet,
-                           mixins.CreateModelMixin,
-                           mixins.RetrieveModelMixin,
-                           mixins.DestroyModelMixin,
-                           mixins.ListModelMixin):
+class MigrationPlanViewSet(
+    NamedModelViewSet,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+):
     """
     MigrationPlan ViewSet.
     """
-    endpoint_name = 'migration-plans'
+
+    endpoint_name = "migration-plans"
     queryset = MigrationPlan.objects.all()
     serializer_class = MigrationPlanSerializer
 
     @extend_schema(
         summary="Run migration plan",
         description="Trigger an asynchronous task to run a migration from Pulp 2.",
-        responses={202: AsyncOperationResponseSerializer}
+        responses={202: AsyncOperationResponseSerializer},
     )
-    @action(detail=True, methods=('post',), serializer_class=MigrationPlanRunSerializer)
+    @action(detail=True, methods=("post",), serializer_class=MigrationPlanRunSerializer)
     def run(self, request, pk):
         """Run the migration plan."""
         migration_plan = self.get_object()
         serializer = MigrationPlanRunSerializer(
-            data=request.data,
-            context={'request': request}
+            data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        validate = serializer.validated_data.get('validate', False)
-        dry_run = serializer.validated_data.get('dry_run', False)
-        skip_corrupted = serializer.validated_data.get('skip_corrupted', False)
+        validate = serializer.validated_data.get("validate", False)
+        dry_run = serializer.validated_data.get("dry_run", False)
+        skip_corrupted = serializer.validated_data.get("skip_corrupted", False)
 
         if is_migration_plan_running():
-            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
+            raise ValidationError(
+                _("Only one migration plan can run or be reset at a time")
+            )
 
         result = dispatch(
             migrate_from_pulp2,
             exclusive_resources=[PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
-                'migration_plan_pk': str(migration_plan.pk),
-                'validate': validate,
-                'dry_run': dry_run,
-                'skip_corrupted': skip_corrupted
-            }
+                "migration_plan_pk": str(migration_plan.pk),
+                "validate": validate,
+                "dry_run": dry_run,
+                "skip_corrupted": skip_corrupted,
+            },
         )
         return OperationPostponedResponse(result, request)
 
     @extend_schema(
         summary="Reset Pulp 3 data for plugins specified in the migration plan",
         description="Trigger an asynchronous task to remove data from Pulp 3 related to the "
-                    "plugins specified in the migration plan.",
-        responses={202: AsyncOperationResponseSerializer}
+        "plugins specified in the migration plan.",
+        responses={202: AsyncOperationResponseSerializer},
     )
-    @action(detail=True, methods=('post',), serializer_class=None)
+    @action(detail=True, methods=("post",), serializer_class=None)
     def reset(self, request, pk):
         """Reset Pulp 3 data for plugins specified in the migration plan."""
         migration_plan = self.get_object()
 
         if is_migration_plan_running():
-            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
+            raise ValidationError(
+                _("Only one migration plan can run or be reset at a time")
+            )
 
         result = dispatch(
             reset_pulp3_data,
             exclusive_resources=[PULP_2TO3_MIGRATION_RESOURCE],
             kwargs={
-                'migration_plan_pk': str(migration_plan.pk),
-            }
+                "migration_plan_pk": str(migration_plan.pk),
+            },
         )
         return OperationPostponedResponse(result, request)
 
@@ -140,26 +144,30 @@ class Pulp2ContentFilter(BaseFilterSet):
     """
     Filter for Pulp2Content ViewSet.
     """
+
     pulp2_id = filters.CharFilter()
     pulp2_content_type_id = filters.CharFilter()
-    pulp2_last_updated = IsoDateTimeFilter(field_name='pulp2_last_updated')
+    pulp2_last_updated = IsoDateTimeFilter(field_name="pulp2_last_updated")
     pulp3_content = HyperlinkRelatedFilter()
 
     class Meta:
         model = Pulp2Content
         fields = {
-            'pulp2_id': ['exact', 'in'],
-            'pulp2_content_type_id': ['exact', 'in'],
-            'pulp2_last_updated': DATETIME_FILTER_OPTIONS,
-            'pulp3_content': ['exact']
+            "pulp2_id": ["exact", "in"],
+            "pulp2_content_type_id": ["exact", "in"],
+            "pulp2_last_updated": DATETIME_FILTER_OPTIONS,
+            "pulp3_content": ["exact"],
         }
 
 
-class Pulp2ContentViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class Pulp2ContentViewSet(
+    NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
+):
     """
     ViewSet for Pulp2Content model.
     """
-    endpoint_name = 'pulp2content'
+
+    endpoint_name = "pulp2content"
     queryset = Pulp2Content.objects.all()
     serializer_class = Pulp2ContentSerializer
     filterset_class = Pulp2ContentFilter
@@ -169,6 +177,7 @@ class Pulp2RepositoriesFilter(BaseFilterSet):
     """
     Filter for Pulp2Repositories ViewSet.
     """
+
     pulp2_repo_id = filters.CharFilter()
     is_migrated = filters.BooleanFilter()
     not_in_plan = filters.BooleanFilter()
@@ -176,17 +185,20 @@ class Pulp2RepositoriesFilter(BaseFilterSet):
     class Meta:
         model = Pulp2Repository
         fields = {
-            'pulp2_repo_id': ['exact', 'in'],
-            'is_migrated': ['exact'],
-            'not_in_plan': ['exact']
+            "pulp2_repo_id": ["exact", "in"],
+            "is_migrated": ["exact"],
+            "not_in_plan": ["exact"],
         }
 
 
-class Pulp2RepositoriesViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+class Pulp2RepositoriesViewSet(
+    NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
+):
     """
     ViewSet for Pulp2Repositories model.
     """
-    endpoint_name = 'pulp2repositories'
+
+    endpoint_name = "pulp2repositories"
     queryset = Pulp2Repository.objects.all()
     serializer_class = Pulp2RepositoriesSerializer
     filterset_class = Pulp2RepositoriesFilter

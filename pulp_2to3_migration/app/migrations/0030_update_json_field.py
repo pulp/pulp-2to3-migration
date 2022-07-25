@@ -6,103 +6,103 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0029_distribution_change'),
+        ("pulp_2to3_migration", "0029_distribution_change"),
     ]
 
-    operations = [ 
+    operations = [
         migrations.AlterField(
-            model_name='migrationplan',
-            name='plan',
+            model_name="migrationplan",
+            name="plan",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2distributor',
-            name='pulp2_config',
+            model_name="pulp2distributor",
+            name="pulp2_config",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2erratum',
-            name='pkglist',
+            model_name="pulp2erratum",
+            name="pkglist",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2erratum',
-            name='references',
+            model_name="pulp2erratum",
+            name="references",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2importer',
-            name='pulp2_config',
+            model_name="pulp2importer",
+            name="pulp2_config",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2modulemd',
-            name='artifacts',
+            model_name="pulp2modulemd",
+            name="artifacts",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2modulemd',
-            name='dependencies',
+            model_name="pulp2modulemd",
+            name="dependencies",
             field=models.JSONField(default=list),
         ),
         migrations.AlterField(
-            model_name='pulp2modulemddefaults',
-            name='profiles',
+            model_name="pulp2modulemddefaults",
+            name="profiles",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagecategory',
-            name='desc_by_lang',
+            model_name="pulp2packagecategory",
+            name="desc_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagecategory',
-            name='name_by_lang',
+            model_name="pulp2packagecategory",
+            name="name_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagecategory',
-            name='packagegroupids',
+            model_name="pulp2packagecategory",
+            name="packagegroupids",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2packageenvironment',
-            name='desc_by_lang',
+            model_name="pulp2packageenvironment",
+            name="desc_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packageenvironment',
-            name='group_ids',
+            model_name="pulp2packageenvironment",
+            name="group_ids",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2packageenvironment',
-            name='name_by_lang',
+            model_name="pulp2packageenvironment",
+            name="name_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packageenvironment',
-            name='option_ids',
+            model_name="pulp2packageenvironment",
+            name="option_ids",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2packagegroup',
-            name='desc_by_lang',
+            model_name="pulp2packagegroup",
+            name="desc_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagegroup',
-            name='name_by_lang',
+            model_name="pulp2packagegroup",
+            name="name_by_lang",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagegroup',
-            name='packages',
+            model_name="pulp2packagegroup",
+            name="packages",
             field=models.JSONField(),
         ),
         migrations.AlterField(
-            model_name='pulp2packagelangpacks',
-            name='matches',
+            model_name="pulp2packagelangpacks",
+            name="matches",
             field=models.JSONField(),
         ),
     ]

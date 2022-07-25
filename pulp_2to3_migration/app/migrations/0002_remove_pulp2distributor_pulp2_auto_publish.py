@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0001_initial'),
+        ("pulp_2to3_migration", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='pulp2distributor',
-            name='pulp2_auto_publish',
+            model_name="pulp2distributor",
+            name="pulp2_auto_publish",
         ),
     ]

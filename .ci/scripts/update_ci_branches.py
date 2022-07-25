@@ -11,8 +11,14 @@ except IndexError:
     initial_branch = None
 
 repo = Repo(os.getcwd())
-heads = repo.git.ls_remote("--heads", "https://github.com/pulp/pulp-2to3-migration.git").split("\n")
-branches = [h.split("/")[-1] for h in heads if re.search(r"^([0-9]+)\.([0-9]+)$", h.split("/")[-1])]
+heads = repo.git.ls_remote(
+    "--heads", "https://github.com/pulp/pulp-2to3-migration.git"
+).split("\n")
+branches = [
+    h.split("/")[-1]
+    for h in heads
+    if re.search(r"^([0-9]+)\.([0-9]+)$", h.split("/")[-1])
+]
 branches.sort(key=lambda ver: Version(ver))
 
 headers = {

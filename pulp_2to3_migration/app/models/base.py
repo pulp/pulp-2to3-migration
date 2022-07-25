@@ -66,10 +66,14 @@ def get_repo_types(plan):
         #  - This is a big query, paginate?
         #  - Filter by repos from the plan
         #  - Query any but one record for a repo
-        for rec in RepositoryContentUnit.objects().\
-                only('repo_id', 'unit_type_id').as_pymongo().no_cache():
-            repo_id = rec['repo_id']
-            unit_type_id = rec['unit_type_id']
+        for rec in (
+            RepositoryContentUnit.objects()
+            .only("repo_id", "unit_type_id")
+            .as_pymongo()
+            .no_cache()
+        ):
+            repo_id = rec["repo_id"]
+            unit_type_id = rec["unit_type_id"]
 
             # a type for a repo is already known or this content/repo type is not supported
             if repo_id in repo_id_to_type or unit_type_id not in content_type_to_plugin:
@@ -88,6 +92,7 @@ class MigrationPlan(BaseModel):
     Fields:
         plan (models.JSONField): The migration plan in the JSON format
     """
+
     plan = models.JSONField()
     _real_plan = None
 
@@ -114,12 +119,14 @@ class MigrationPlan(BaseModel):
                     # exists in pulp 2. This is really tricky and a little messy, because it needs
                     # to happen after the migration plan has been parsed.
                     repository_ids = self.type_to_repo_ids[plugin_plan.type]
-                    repositories = Repository.objects().filter(
-                        repo_id__in=repository_ids
-                    ).only("repo_id")
+                    repositories = (
+                        Repository.objects()
+                        .filter(repo_id__in=repository_ids)
+                        .only("repo_id")
+                    )
 
                     for repository in repositories.as_pymongo().no_cache():
-                        repo_id = repository['repo_id']
+                        repo_id = repository["repo_id"]
                         plugin_plan.repositories_to_create[repo_id] = {
                             "pulp2_importer_repository_id": repo_id,
                             "repository_versions": [
@@ -127,13 +134,15 @@ class MigrationPlan(BaseModel):
                                     "repo_id": repo_id,
                                     "dist_repo_ids": [repo_id],
                                 }
-                            ]
+                            ],
                         }
 
                         plugin_plan.repositories_importers_to_migrate.append(repo_id)
                         plugin_plan.repositories_to_migrate.append(repo_id)
                         plugin_plan.repositories_distributors_to_migrate.append(repo_id)
-                        RepoSetup.set_importer(repo_id, plugin_plan.type, importer_repo_id=repo_id)
+                        RepoSetup.set_importer(
+                            repo_id, plugin_plan.type, importer_repo_id=repo_id
+                        )
                         RepoSetup.set_distributors(
                             repo_id, plugin_plan.type, distributor_repo_ids=[repo_id]
                         )
@@ -162,13 +171,15 @@ class MigrationPlan(BaseModel):
         """
         ret = {}
         if self.plan_view.missing_repositories:
-            ret['repositories'] = self.plan_view.missing_repositories
+            ret["repositories"] = self.plan_view.missing_repositories
         if self.plan_view.repositories_missing_importers:
-            ret['repositories_missing_importers'] = \
-                self.plan_view.repositories_missing_importers
+            ret[
+                "repositories_missing_importers"
+            ] = self.plan_view.repositories_missing_importers
         if self.plan_view.repositories_missing_distributors:
-            ret['repositories_missing_distributors'] = \
-                self.plan_view.repositories_missing_distributors
+            ret[
+                "repositories_missing_distributors"
+            ] = self.plan_view.repositories_missing_distributors
         return ret
 
 
@@ -176,7 +187,7 @@ class _InternalMigrationPlan:
     def __init__(self, migration_plan):
         self._plugin_plans = []
 
-        for plugin_data in migration_plan.plan['plugins']:
+        for plugin_data in migration_plan.plan["plugins"]:
             self._plugin_plans.append(PluginMigrationPlan(plugin_data))
 
         self.repositories_missing_importers = []
@@ -190,41 +201,56 @@ class _InternalMigrationPlan:
     @property
     def all_repositories_importers_to_migrate(self):
         # flat list of all importers to migrate
-        return list(itertools.chain.from_iterable(
-            [plugin.repositories_importers_to_migrate for plugin in self._plugin_plans]
-        ))
+        return list(
+            itertools.chain.from_iterable(
+                [
+                    plugin.repositories_importers_to_migrate
+                    for plugin in self._plugin_plans
+                ]
+            )
+        )
 
     @property
     def all_repositories_to_migrate(self):
         # flat list of all repositories to migrate
-        return list(itertools.chain.from_iterable(
-            [plugin.repositories_to_migrate for plugin in self._plugin_plans]
-        ))
+        return list(
+            itertools.chain.from_iterable(
+                [plugin.repositories_to_migrate for plugin in self._plugin_plans]
+            )
+        )
 
     @property
     def all_repositories_distributors_to_migrate(self):
         # flat list of all distributors to migrate
-        return list(itertools.chain.from_iterable(
-            [plugin.repositories_distributors_to_migrate for plugin in self._plugin_plans]
-        ))
+        return list(
+            itertools.chain.from_iterable(
+                [
+                    plugin.repositories_distributors_to_migrate
+                    for plugin in self._plugin_plans
+                ]
+            )
+        )
 
     def _check_missing(self):
         importers = Importer.objects(
-            repo_id__in=self.all_repositories_importers_to_migrate).only('repo_id')
+            repo_id__in=self.all_repositories_importers_to_migrate
+        ).only("repo_id")
         present = set(importer.repo_id for importer in importers)
         expected = set(self.all_repositories_importers_to_migrate)
 
         self.repositories_missing_importers = list(expected - present)
 
         repositories = Repository.objects(
-            repo_id__in=self.all_repositories_to_migrate).only('repo_id')
+            repo_id__in=self.all_repositories_to_migrate
+        ).only("repo_id")
         present = set(repository.repo_id for repository in repositories)
         expected = set(self.all_repositories_to_migrate)
 
         self.missing_repositories = list(expected - present)
 
         distributors = Distributor.objects(
-            repo_id__in=self.all_repositories_distributors_to_migrate).only('repo_id')
+            repo_id__in=self.all_repositories_distributors_to_migrate
+        ).only("repo_id")
         present = set(distributor.repo_id for distributor in distributors)
         expected = set(self.all_repositories_distributors_to_migrate)
 
@@ -309,37 +335,46 @@ class PluginMigrationPlan:
         # Circular import avoidance
         from pulp_2to3_migration.app.plugin import PLUGIN_MIGRATORS
 
-        self.type = repository_data['type']
+        self.type = repository_data["type"]
         self.migrator = PLUGIN_MIGRATORS.get(self.type)
 
-        repositories = repository_data.get('repositories')
+        repositories = repository_data.get("repositories")
         if repositories:
             self.empty = False
             for repository in repositories:
-                name = repository['name']
+                name = repository["name"]
 
-                importer_repo_id = repository.get('pulp2_importer_repository_id')
+                importer_repo_id = repository.get("pulp2_importer_repository_id")
                 if importer_repo_id:
                     self.repositories_importers_to_migrate.append(importer_repo_id)
 
                 repository_versions = []
-                for repository_version in repository.get('repository_versions', []):
-                    pulp2_repository_id = repository_version['pulp2_repository_id']
+                for repository_version in repository.get("repository_versions", []):
+                    pulp2_repository_id = repository_version["pulp2_repository_id"]
                     self.repositories_to_migrate.append(pulp2_repository_id)
 
                     distributor_repo_ids = repository_version.get(
-                        'pulp2_distributor_repository_ids', []
+                        "pulp2_distributor_repository_ids", []
                     )
-                    self.repositories_distributors_to_migrate.extend(distributor_repo_ids)
+                    self.repositories_distributors_to_migrate.extend(
+                        distributor_repo_ids
+                    )
 
                     repository_versions.append(
-                        {'repo_id': pulp2_repository_id, 'dist_repo_ids': distributor_repo_ids}
+                        {
+                            "repo_id": pulp2_repository_id,
+                            "dist_repo_ids": distributor_repo_ids,
+                        }
                     )
 
                     signing_service = repository.get("signing_service")
 
-                    RepoSetup.set_importer(pulp2_repository_id, self.type, importer_repo_id)
-                    RepoSetup.set_distributors(pulp2_repository_id, self.type, distributor_repo_ids)
+                    RepoSetup.set_importer(
+                        pulp2_repository_id, self.type, importer_repo_id
+                    )
+                    RepoSetup.set_distributors(
+                        pulp2_repository_id, self.type, distributor_repo_ids
+                    )
 
                 self.repositories_to_create[name] = {
                     "pulp2_importer_repository_id": importer_repo_id,
@@ -361,21 +396,19 @@ class RepoSetup(BaseModel):
         status (models.SmallIntegerField): status of the record
 
     """
+
     OLD = 0
     UP_TO_DATE = 1
     NEW = 2
     STATUS_CHOICES = (
-        (OLD, 'old'),
-        (UP_TO_DATE, 'up to date'),
-        (NEW, 'new'),
+        (OLD, "old"),
+        (UP_TO_DATE, "up to date"),
+        (NEW, "new"),
     )
 
     IMPORTER = 0
     DISTRIBUTOR = 1
-    RESOURCE_TYPE_CHOICES = (
-        (IMPORTER, 'importer'),
-        (DISTRIBUTOR, 'distributor')
-    )
+    RESOURCE_TYPE_CHOICES = ((IMPORTER, "importer"), (DISTRIBUTOR, "distributor"))
 
     pulp2_repo_id = models.TextField()
     pulp2_repo_type = models.CharField(max_length=25)
@@ -384,10 +417,14 @@ class RepoSetup(BaseModel):
     status = models.SmallIntegerField(choices=STATUS_CHOICES)
 
     class Meta:
-        unique_together = ('pulp2_repo_id', 'pulp2_resource_repo_id', 'pulp2_resource_type')
+        unique_together = (
+            "pulp2_repo_id",
+            "pulp2_resource_repo_id",
+            "pulp2_resource_type",
+        )
         indexes = [
-            models.Index(fields=['pulp2_resource_type']),
-            models.Index(fields=['status'])
+            models.Index(fields=["pulp2_resource_type"]),
+            models.Index(fields=["status"]),
         ]
 
     @classmethod
@@ -440,8 +477,8 @@ class RepoSetup(BaseModel):
             pulp2_resource_type=cls.IMPORTER,
             pulp2_repo_type=repo_type,
             pulp2_repo_id=repo_id,
-            pulp2_resource_repo_id=importer_repo_id or '',
-            defaults={'status': cls.NEW}
+            pulp2_resource_repo_id=importer_repo_id or "",
+            defaults={"status": cls.NEW},
         )
 
         is_unchanged_relation = not created and relation.status == cls.OLD
@@ -470,7 +507,7 @@ class RepoSetup(BaseModel):
             pulp2_repo_id=repo_id,
             pulp2_resource_type=cls.DISTRIBUTOR,
             pulp2_resource_repo_id__in=distributor_repo_ids,
-            status=cls.OLD
+            status=cls.OLD,
         ).update(status=cls.UP_TO_DATE)
 
         no_new_relations = up_to_date_count == len(distributor_repo_ids)
@@ -484,7 +521,7 @@ class RepoSetup(BaseModel):
                     pulp2_resource_type=cls.DISTRIBUTOR,
                     pulp2_repo_type=repo_type,
                     pulp2_repo_id=repo_id,
-                    pulp2_resource_repo_id=distributor_repo_id or '',
+                    pulp2_resource_repo_id=distributor_repo_id or "",
                     status=cls.NEW,
                 )
             except IntegrityError:
@@ -499,9 +536,12 @@ class RepoSetup(BaseModel):
         Args:
             plugins(list): List of plugin names specified in the Migration Plan
         """
-        changed_relations_repo_ids = RepoSetup.objects.filter(pulp2_repo_type__in=plugins).exclude(
-            status=cls.UP_TO_DATE
-        ).only('pulp2_repo_id').values_list('pulp2_repo_id', flat=True)
+        changed_relations_repo_ids = (
+            RepoSetup.objects.filter(pulp2_repo_type__in=plugins)
+            .exclude(status=cls.UP_TO_DATE)
+            .only("pulp2_repo_id")
+            .values_list("pulp2_repo_id", flat=True)
+        )
         Pulp2Repository.objects.filter(
             pulp2_repo_id__in=changed_relations_repo_ids
         ).update(is_migrated=False)

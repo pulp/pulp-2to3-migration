@@ -25,7 +25,8 @@ class Pulp2DebPackage(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 DebPackage content details for Pulp 3
     content creation.
     """
-    pulp2_type = 'deb'
+
+    pulp2_type = "deb"
     checksumtype = django_models.TextField()
     checksum = django_models.TextField()
     filename = django_models.TextField()
@@ -61,43 +62,43 @@ class Pulp2DebPackage(Pulp2to3Content):
 
     # Ordered list of control file fields explicitly known to pulp_deb:
     control_field_map = {
-        'package': 'Package',
-        'source': 'Source',
-        'version': 'Version',
-        'essential': 'Essential',
-        'installed_size': 'Installed-Size',
-        'maintainer': 'Maintainer',
-        'original_maintainer': 'Original-Maintainer',
-        'architecture': 'Architecture',
-        'replaces': 'Replaces',
-        'provides': 'Provides',
-        'depends': 'Depends',
-        'pre_depends': 'Pre-Depends',
-        'recommends': 'Recommends',
-        'suggests': 'Suggests',
-        'enhances': 'Enhances',
-        'conflicts': 'Conflicts',
-        'breaks': 'Breaks',
-        'description': 'Description',
-        'multi_arch': 'Multi-Arch',
-        'homepage': 'Homepage',
-        'built_using': 'Built-Using',
-        'description_md5': 'Description-md5',
-        'build_essential': 'Build-Essential',
-        'tag': 'Tag',
-        'section': 'Section',
-        'priority': 'Priority',
+        "package": "Package",
+        "source": "Source",
+        "version": "Version",
+        "essential": "Essential",
+        "installed_size": "Installed-Size",
+        "maintainer": "Maintainer",
+        "original_maintainer": "Original-Maintainer",
+        "architecture": "Architecture",
+        "replaces": "Replaces",
+        "provides": "Provides",
+        "depends": "Depends",
+        "pre_depends": "Pre-Depends",
+        "recommends": "Recommends",
+        "suggests": "Suggests",
+        "enhances": "Enhances",
+        "conflicts": "Conflicts",
+        "breaks": "Breaks",
+        "description": "Description",
+        "multi_arch": "Multi-Arch",
+        "homepage": "Homepage",
+        "built_using": "Built-Using",
+        "description_md5": "Description-md5",
+        "build_essential": "Build-Essential",
+        "tag": "Tag",
+        "section": "Section",
+        "priority": "Priority",
     }
 
     class Meta:
-        default_related_name = 'deb_detail_model'
+        default_related_name = "deb_detail_model"
         unique_together = (
-            'package',
-            'version',
-            'architecture',
-            'checksumtype',
-            'checksum',
-            'pulp2content',
+            "package",
+            "version",
+            "architecture",
+            "checksumtype",
+            "checksum",
+            "pulp2content",
         )
 
     @property
@@ -123,34 +124,44 @@ class Pulp2DebPackage(Pulp2to3Content):
         Args:
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
         """
-        pulp2_unit_fields = set([
-            'checksumtype',
-            'checksum',
-            'filename',
-            'size',
-            'control_fields',
-        ])
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_unit_fields = set(
+            [
+                "checksumtype",
+                "checksum",
+                "filename",
+                "size",
+                "control_fields",
+            ]
+        )
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.DebPackage.objects.filter(
-            id__in=pulp2_ids,
-        ).as_pymongo().only(*pulp2_unit_fields)
+        pulp2_content_batch = (
+            pulp2_models.DebPackage.objects.filter(
+                id__in=pulp2_ids,
+            )
+            .as_pymongo()
+            .only(*pulp2_unit_fields)
+        )
 
         pulp2deb_to_save = []
         for deb in pulp2_content_batch:
-            pre_migrate_fields = {k: deb['control_fields'][v]
-                                  for k, v in cls.control_field_map.items()
-                                  if v in deb['control_fields'].keys()}
-            keys = deb['control_fields'].keys() - cls.control_field_map.values()
-            extra_control_fields = {k: deb['control_fields'][k] for k in keys}
+            pre_migrate_fields = {
+                k: deb["control_fields"][v]
+                for k, v in cls.control_field_map.items()
+                if v in deb["control_fields"].keys()
+            }
+            keys = deb["control_fields"].keys() - cls.control_field_map.values()
+            extra_control_fields = {k: deb["control_fields"][k] for k in keys}
             pulp2deb_to_save.append(
                 Pulp2DebPackage(
-                    checksumtype=deb['checksumtype'],
-                    checksum=deb['checksum'],
-                    filename=deb['filename'],
+                    checksumtype=deb["checksumtype"],
+                    checksum=deb["checksum"],
+                    filename=deb["filename"],
                     extra_control_fields=json.dumps(extra_control_fields),
-                    pulp2content=pulp2_id_obj_map[deb['_id']],
-                    size=deb['size'],
+                    pulp2content=pulp2_id_obj_map[deb["_id"]],
+                    size=deb["size"],
                     **pre_migrate_fields,
                 )
             )
@@ -198,15 +209,16 @@ class Pulp2DebRelease(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 DebRelease content details for Pulp 3
     content creation.
     """
-    pulp2_type = 'deb_release'
+
+    pulp2_type = "deb_release"
     distribution = django_models.TextField()
     codename = django_models.TextField()
     suite = django_models.TextField(null=True)
     repoid = django_models.TextField()
 
     class Meta:
-        default_related_name = 'deb_release_detail_model'
-        unique_together = ('codename', 'suite', 'distribution', 'repoid')
+        default_related_name = "deb_release_detail_model"
+        unique_together = ("codename", "suite", "distribution", "repoid")
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -219,17 +231,19 @@ class Pulp2DebRelease(Pulp2to3Content):
         pulp2_unit_map = {pulp2unit.pulp2_id: pulp2unit for pulp2unit in content_batch}
         pulp2_ids = pulp2_unit_map.keys()
         pulp2_unit_batch = pulp2_models.DebRelease.objects.filter(id__in=pulp2_ids)
-        units_to_save = [Pulp2DebRelease(distribution=release.distribution,
-                                         codename=release.codename,
-                                         suite=release.suite,
-                                         repoid=release.repoid,
-                                         pulp2content=pulp2_unit_map[release.id],)
-                         for release in pulp2_unit_batch]
+        units_to_save = [
+            Pulp2DebRelease(
+                distribution=release.distribution,
+                codename=release.codename,
+                suite=release.suite,
+                repoid=release.repoid,
+                pulp2content=pulp2_unit_map[release.id],
+            )
+            for release in pulp2_unit_batch
+        ]
 
         cls.objects.bulk_create(
-            units_to_save,
-            ignore_conflicts=True,
-            batch_size=DEFAULT_BATCH_SIZE
+            units_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
         )
 
     def create_pulp3_content(self):
@@ -252,7 +266,8 @@ class Pulp2DebComponent(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 DebComponent content details for Pulp 3
     content creation.
     """
-    pulp2_type = 'deb_component'
+
+    pulp2_type = "deb_component"
     distribution = django_models.TextField()
     codename = django_models.TextField()
     component = django_models.TextField()
@@ -260,8 +275,8 @@ class Pulp2DebComponent(Pulp2to3Content):
     repoid = django_models.TextField()
 
     class Meta:
-        default_related_name = 'deb_component_detail_model'
-        unique_together = ('component', 'codename', 'suite', 'distribution', 'repoid')
+        default_related_name = "deb_component_detail_model"
+        unique_together = ("component", "codename", "suite", "distribution", "repoid")
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -300,24 +315,35 @@ class Pulp2DebComponent(Pulp2to3Content):
                 distribution=distribution,
             ).first()
             suite = release.suite
-            component_units_to_save.append(Pulp2DebComponent(
-                distribution=distribution,
-                codename=codename,
-                component=component,
-                suite=suite,
-                repoid=repoid,
-                pulp2content=pulp2_base_record,
-            ))
+            component_units_to_save.append(
+                Pulp2DebComponent(
+                    distribution=distribution,
+                    codename=codename,
+                    component=component,
+                    suite=suite,
+                    repoid=repoid,
+                    pulp2content=pulp2_base_record,
+                )
+            )
             architectures = set()
             for package_id in component_unit.packages:
-                package_unit = pulp2_models.DebPackage.objects.filter(id__in=[package_id]).first()
+                package_unit = pulp2_models.DebPackage.objects.filter(
+                    id__in=[package_id]
+                ).first()
                 package_relative_path = package_unit.filename
                 package_sha256 = package_unit.checksum
 
                 # We are using the sha256 of the concatenated unique_together fields for the subid:
-                pulp2_subid_string = (component + codename + suite + distribution + repoid
-                                      + package_relative_path + package_sha256)
-                pulp2_subid = sha256(pulp2_subid_string.encode('utf-8')).hexdigest()
+                pulp2_subid_string = (
+                    component
+                    + codename
+                    + suite
+                    + distribution
+                    + repoid
+                    + package_relative_path
+                    + package_sha256
+                )
+                pulp2_subid = sha256(pulp2_subid_string.encode("utf-8")).hexdigest()
 
                 pulp2_sub_record = Pulp2Content(
                     pulp2_subid=pulp2_subid,
@@ -327,26 +353,32 @@ class Pulp2DebComponent(Pulp2to3Content):
                     pulp2_storage_path=pulp2_base_record.pulp2_storage_path,
                     downloaded=pulp2_base_record.downloaded,
                 )
-                _logger.debug('Adding Pulp2Content subrecord {}'.format(pulp2_sub_record))
+                _logger.debug(
+                    "Adding Pulp2Content subrecord {}".format(pulp2_sub_record)
+                )
                 pulp2_sub_records_to_save.append(pulp2_sub_record)
 
-                component_package_units_to_save.append(Pulp2DebComponentPackage(
-                    package_relative_path=package_relative_path,
-                    package_sha256=package_sha256,
-                    component=component,
-                    distribution=distribution,
-                    codename=codename,
-                    suite=suite,
-                    repoid=repoid,
-                    pulp2content=pulp2_sub_record,
-                ))
+                component_package_units_to_save.append(
+                    Pulp2DebComponentPackage(
+                        package_relative_path=package_relative_path,
+                        package_sha256=package_sha256,
+                        component=component,
+                        distribution=distribution,
+                        codename=codename,
+                        suite=suite,
+                        repoid=repoid,
+                        pulp2content=pulp2_sub_record,
+                    )
+                )
                 architectures.add(package_unit.architecture)
 
-            architectures.discard('all')
+            architectures.discard("all")
             for architecture in architectures:
                 # We are using the sha256 of the concatenated unique_together fields for the subid:
-                pulp2_subid_string = architecture + distribution + codename + suite + repoid
-                pulp2_subid = sha256(pulp2_subid_string.encode('utf-8')).hexdigest()
+                pulp2_subid_string = (
+                    architecture + distribution + codename + suite + repoid
+                )
+                pulp2_subid = sha256(pulp2_subid_string.encode("utf-8")).hexdigest()
 
                 pulp2_sub_record = Pulp2Content(
                     pulp2_subid=pulp2_subid,
@@ -356,37 +388,41 @@ class Pulp2DebComponent(Pulp2to3Content):
                     pulp2_storage_path=pulp2_base_record.pulp2_storage_path,
                     downloaded=pulp2_base_record.downloaded,
                 )
-                _logger.debug('Adding Pulp2Content subrecord {}'.format(pulp2_sub_record))
+                _logger.debug(
+                    "Adding Pulp2Content subrecord {}".format(pulp2_sub_record)
+                )
                 pulp2_sub_records_to_save.append(pulp2_sub_record)
 
-                release_architecture_units_to_save.append(Pulp2DebReleaseArchitecture(
-                    architecture=architecture,
-                    distribution=distribution,
-                    codename=codename,
-                    suite=suite,
-                    repoid=repoid,
-                    pulp2content=pulp2_sub_record,
-                ))
+                release_architecture_units_to_save.append(
+                    Pulp2DebReleaseArchitecture(
+                        architecture=architecture,
+                        distribution=distribution,
+                        codename=codename,
+                        suite=suite,
+                        repoid=repoid,
+                        pulp2content=pulp2_sub_record,
+                    )
+                )
 
         Pulp2Content.objects.bulk_create(
             pulp2_sub_records_to_save,
             ignore_conflicts=True,
-            batch_size=DEFAULT_BATCH_SIZE
+            batch_size=DEFAULT_BATCH_SIZE,
         )
         cls.objects.bulk_create(
             component_units_to_save,
             ignore_conflicts=True,
-            batch_size=DEFAULT_BATCH_SIZE
+            batch_size=DEFAULT_BATCH_SIZE,
         )
         Pulp2DebComponentPackage.objects.bulk_create(
             component_package_units_to_save,
             ignore_conflicts=True,
-            batch_size=DEFAULT_BATCH_SIZE
+            batch_size=DEFAULT_BATCH_SIZE,
         )
         Pulp2DebReleaseArchitecture.objects.bulk_create(
             release_architecture_units_to_save,
             ignore_conflicts=True,
-            batch_size=DEFAULT_BATCH_SIZE
+            batch_size=DEFAULT_BATCH_SIZE,
         )
 
     def create_pulp3_content(self):
@@ -412,7 +448,8 @@ class Pulp2DebComponentPackage(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 DebComponent content details for Pulp 3
     content creation.
     """
-    pulp2_type = 'deb_component'
+
+    pulp2_type = "deb_component"
     package_relative_path = django_models.TextField()
     package_sha256 = django_models.TextField()
     component = django_models.TextField()
@@ -422,15 +459,15 @@ class Pulp2DebComponentPackage(Pulp2to3Content):
     repoid = django_models.TextField()
 
     class Meta:
-        default_related_name = 'deb_component_package_detail_model'
+        default_related_name = "deb_component_package_detail_model"
         unique_together = (
-            'package_relative_path',
-            'package_sha256',
-            'component',
-            'distribution',
-            'codename',
-            'suite',
-            'repoid',
+            "package_relative_path",
+            "package_sha256",
+            "component",
+            "distribution",
+            "codename",
+            "suite",
+            "repoid",
         )
 
     @classmethod
@@ -475,7 +512,8 @@ class Pulp2DebReleaseArchitecture(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 DebComponent content details for Pulp 3
     content creation.
     """
-    pulp2_type = 'deb_component'
+
+    pulp2_type = "deb_component"
     architecture = django_models.TextField()
     distribution = django_models.TextField()
     codename = django_models.TextField()
@@ -483,8 +521,14 @@ class Pulp2DebReleaseArchitecture(Pulp2to3Content):
     repoid = django_models.TextField()
 
     class Meta:
-        default_related_name = 'deb_release_architecture_detail_model'
-        unique_together = ('architecture', 'distribution', 'codename', 'suite', 'repoid')
+        default_related_name = "deb_release_architecture_detail_model"
+        unique_together = (
+            "architecture",
+            "distribution",
+            "codename",
+            "suite",
+            "repoid",
+        )
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):

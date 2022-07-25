@@ -1,4 +1,4 @@
-SCHEMA = '''{
+SCHEMA = """{
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "MigrationPlan",
     "type": "object",
@@ -57,4 +57,4 @@ SCHEMA = '''{
     },
     "required": ["plugins"],
     "additionalProperties": false
-}'''
+}"""

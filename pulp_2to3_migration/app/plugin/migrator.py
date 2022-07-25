@@ -28,6 +28,7 @@ class Pulp2to3PluginMigrator:
                                     Optional.
 
     """
+
     mutable_content_models = {}
     premigrate_hook = {}
     artifactless_types = {}

@@ -34,38 +34,44 @@ class DebMigrator(Pulp2to3PluginMigrator):
       Check parent class.
 
     """
-    pulp2_plugin = 'deb'
+
+    pulp2_plugin = "deb"
     pulp2_content_models = {
-        'deb': pulp2_models.DebPackage,
-        'deb_release': pulp2_models.DebRelease,
-        'deb_component': pulp2_models.DebComponent,
+        "deb": pulp2_models.DebPackage,
+        "deb_release": pulp2_models.DebRelease,
+        "deb_component": pulp2_models.DebComponent,
     }
-    pulp2_collection = 'units_deb'
-    pulp3_plugin = 'pulp_deb'
+    pulp2_collection = "units_deb"
+    pulp3_plugin = "pulp_deb"
     pulp3_repository = pulp3_models.AptRepository
-    content_models = OrderedDict([
-        ('deb_release', pulp_2to3_models.Pulp2DebRelease),
-        ('deb', pulp_2to3_models.Pulp2DebPackage),
-        ('deb_component', pulp_2to3_models.Pulp2DebComponent),
-        ('deb_component_package', pulp_2to3_models.Pulp2DebComponentPackage),
-        ('deb_component_architecture', pulp_2to3_models.Pulp2DebReleaseArchitecture),
-    ])
+    content_models = OrderedDict(
+        [
+            ("deb_release", pulp_2to3_models.Pulp2DebRelease),
+            ("deb", pulp_2to3_models.Pulp2DebPackage),
+            ("deb_component", pulp_2to3_models.Pulp2DebComponent),
+            ("deb_component_package", pulp_2to3_models.Pulp2DebComponentPackage),
+            (
+                "deb_component_architecture",
+                pulp_2to3_models.Pulp2DebReleaseArchitecture,
+            ),
+        ]
+    )
     importer_migrators = {
-        'deb_importer': repository.DebImporter,
+        "deb_importer": repository.DebImporter,
     }
     distributor_migrators = {
-        'deb_distributor': repository.DebDistributor,
+        "deb_distributor": repository.DebDistributor,
     }
     future_types = {
-        'deb': pulp_2to3_models.Pulp2DebPackage,
-        'deb_release': pulp_2to3_models.Pulp2DebRelease,
-        'deb_component': pulp_2to3_models.Pulp2DebComponent,
+        "deb": pulp_2to3_models.Pulp2DebPackage,
+        "deb_release": pulp_2to3_models.Pulp2DebRelease,
+        "deb_component": pulp_2to3_models.Pulp2DebComponent,
     }
     artifactless_types = {
-        'deb_release': pulp_2to3_models.Pulp2DebRelease,
-        'deb_component': pulp_2to3_models.Pulp2DebComponent,
-        'deb_component_package': pulp_2to3_models.Pulp2DebComponentPackage,
-        'deb_component_architecture': pulp_2to3_models.Pulp2DebReleaseArchitecture,
+        "deb_release": pulp_2to3_models.Pulp2DebRelease,
+        "deb_component": pulp_2to3_models.Pulp2DebComponent,
+        "deb_component_package": pulp_2to3_models.Pulp2DebComponentPackage,
+        "deb_component_architecture": pulp_2to3_models.Pulp2DebReleaseArchitecture,
     }
 
     @classmethod

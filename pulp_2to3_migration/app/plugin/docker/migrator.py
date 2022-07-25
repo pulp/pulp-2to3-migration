@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 from collections import OrderedDict
@@ -48,47 +47,48 @@ class DockerMigrator(Pulp2to3PluginMigrator):
     """
     An entry point for migration the Pulp 2 Docker plugin to Pulp 3.
     """
-    pulp2_plugin = 'docker'
+
+    pulp2_plugin = "docker"
     pulp2_content_models = {
-        'docker_blob': pulp2_models.Blob,
-        'docker_manifest': pulp2_models.Manifest,
-        'docker_manifest_list': pulp2_models.ManifestList,
-        'docker_tag': pulp2_models.Tag,
+        "docker_blob": pulp2_models.Blob,
+        "docker_manifest": pulp2_models.Manifest,
+        "docker_manifest_list": pulp2_models.ManifestList,
+        "docker_tag": pulp2_models.Tag,
     }
-    pulp2_collection = 'units_docker_manifest'
+    pulp2_collection = "units_docker_manifest"
     # will be renamed to pulp_container
-    pulp3_plugin = 'pulp_container'
+    pulp3_plugin = "pulp_container"
     pulp3_repository = ContainerRepository
 
-    content_models = OrderedDict([
-        ('docker_blob', Pulp2Blob),
-        ('docker_manifest', Pulp2Manifest),
-        ('docker_manifest_list', Pulp2ManifestList),
-        ('docker_tag', Pulp2Tag),
-    ])
+    content_models = OrderedDict(
+        [
+            ("docker_blob", Pulp2Blob),
+            ("docker_manifest", Pulp2Manifest),
+            ("docker_manifest_list", Pulp2ManifestList),
+            ("docker_tag", Pulp2Tag),
+        ]
+    )
 
     mutable_content_models = {
-        'docker_tag': Pulp2Tag,
+        "docker_tag": Pulp2Tag,
     }
 
     importer_migrators = {
-        'docker_importer': DockerImporter,
+        "docker_importer": DockerImporter,
     }
     distributor_migrators = {
-        'docker_distributor_web': DockerDistributor,
+        "docker_distributor_web": DockerDistributor,
     }
 
-    premigrate_hook = {
-        'docker_tag': utils.find_tags
-    }
+    premigrate_hook = {"docker_tag": utils.find_tags}
 
     artifactless_types = {
-        'docker_tag': Pulp2Tag,
+        "docker_tag": Pulp2Tag,
     }
 
     future_types = {
-        'docker_manifest': Pulp2Manifest,
-        'docker_manifest_list': Pulp2ManifestList
+        "docker_manifest": Pulp2Manifest,
+        "docker_manifest_list": Pulp2ManifestList,
     }
 
     @classmethod
@@ -147,33 +147,41 @@ class InterrelateContent(Stage):
         Relate each item in the input queue to objects specified on the DeclarativeContent.
         """
         async for batch in self.batches():
+
             def process_batch():
                 manifestlist_manifest_batch = []
                 blob_manifest_batch = []
                 manifest_batch = []
                 with transaction.atomic():
                     for dc in batch:
-                        if dc.extra_data.get('man_rel'):
+                        if dc.extra_data.get("man_rel"):
                             thru = self.relate_manifest_to_list(dc)
                             manifestlist_manifest_batch.extend(thru)
-                        elif dc.extra_data.get('blob_rel'):
+                        elif dc.extra_data.get("blob_rel"):
                             thru = self.relate_blob(dc)
                             blob_manifest_batch.extend(thru)
 
-                        if dc.extra_data.get('config_blob_rel'):
+                        if dc.extra_data.get("config_blob_rel"):
                             manifest_to_update = self.relate_config_blob(dc)
                             manifest_batch.append(manifest_to_update)
 
-                    ManifestListManifest.objects.bulk_create(objs=manifestlist_manifest_batch,
-                                                             ignore_conflicts=True,
-                                                             batch_size=DEFAULT_BATCH_SIZE)
-                    BlobManifest.objects.bulk_create(objs=blob_manifest_batch,
-                                                     ignore_conflicts=True,
-                                                     batch_size=DEFAULT_BATCH_SIZE)
+                    ManifestListManifest.objects.bulk_create(
+                        objs=manifestlist_manifest_batch,
+                        ignore_conflicts=True,
+                        batch_size=DEFAULT_BATCH_SIZE,
+                    )
+                    BlobManifest.objects.bulk_create(
+                        objs=blob_manifest_batch,
+                        ignore_conflicts=True,
+                        batch_size=DEFAULT_BATCH_SIZE,
+                    )
 
-                    Manifest.objects.bulk_update(objs=manifest_batch,
-                                                 fields=['config_blob'],
-                                                 batch_size=DEFAULT_BATCH_SIZE)
+                    Manifest.objects.bulk_update(
+                        objs=manifest_batch,
+                        fields=["config_blob"],
+                        batch_size=DEFAULT_BATCH_SIZE,
+                    )
+
             await sync_to_async(process_batch)()
             for dc in batch:
                 await self.put(dc)
@@ -185,7 +193,7 @@ class InterrelateContent(Stage):
         Args:
             dc (pulpcore.plugin.stages.DeclarativeContent): dc for a Manifest
         """
-        configured_dc_id = dc.extra_data.get('config_blob_rel')
+        configured_dc_id = dc.extra_data.get("config_blob_rel")
         # find blob by id
         # We are relying on the order of the processed DC
         # Blobs should have passed through ContentSaver stage already
@@ -200,7 +208,7 @@ class InterrelateContent(Stage):
         Args:
             dc (pulpcore.plugin.stages.DeclarativeContent): dc for a Manifest
         """
-        related_dc_id_list = dc.extra_data.get('blob_rel')
+        related_dc_id_list = dc.extra_data.get("blob_rel")
         # find blob by id
         # We are relying on the order of the processed DC
         # Blobs should have passed through ContentSaver stage already
@@ -217,7 +225,7 @@ class InterrelateContent(Stage):
         Args:
             dc (pulpcore.plugin.stages.DeclarativeContent): dc for a Manifest list
         """
-        related_dc_id_list = dc.extra_data.get('man_rel')
+        related_dc_id_list = dc.extra_data.get("man_rel")
         # find manifests by id
         # We are relying on the order of the processed DC
         # Manifests should have passed through ContentSaver stage already
@@ -226,22 +234,24 @@ class InterrelateContent(Stage):
         with dc.content._artifacts.get().file.open() as content_file:
             raw = content_file.read()
         content_data = json.loads(raw)
-        manifests_from_json = content_data['manifests']
+        manifests_from_json = content_data["manifests"]
 
         mlm = []
         for manifest in manifests_from_json:
-            digest = manifest['digest']
+            digest = manifest["digest"]
             for item in man_list:
                 if item.digest == digest:
-                    platform = manifest['platform']
-                    thru = ManifestListManifest(manifest_list=item, image_manifest=dc.content,
-                                                architecture=platform['architecture'],
-                                                os=platform['os'],
-                                                features=platform.get('features', ''),
-                                                variant=platform.get('variant', ''),
-                                                os_version=platform.get('os.version', ''),
-                                                os_features=platform.get('os.features', '')
-                                                )
+                    platform = manifest["platform"]
+                    thru = ManifestListManifest(
+                        manifest_list=item,
+                        image_manifest=dc.content,
+                        architecture=platform["architecture"],
+                        os=platform["os"],
+                        features=platform.get("features", ""),
+                        variant=platform.get("variant", ""),
+                        os_version=platform.get("os.version", ""),
+                        os_features=platform.get("os.features", ""),
+                    )
                     mlm.append(thru)
                     break
         return mlm
@@ -264,7 +274,7 @@ class DockerContentSaver(ContentSaver):
         """
         for dc in batch:
             if isinstance(dc.content, Tag):
-                related_man_id = dc.extra_data.get('tag_rel')
+                related_man_id = dc.extra_data.get("tag_rel")
                 # find manifest by id
                 # We are relying on the order of the processed DC
                 # Manifests should have passed through ContentSaver stage already

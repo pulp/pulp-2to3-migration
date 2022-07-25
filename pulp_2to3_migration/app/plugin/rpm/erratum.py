@@ -29,26 +29,27 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
         A pkglist to migrate
 
     """
+
     def get_module_nsvca(module):
-        return (module['name'],
-                module['stream'],
-                int(module['version']),
-                module['context'],
-                module['arch'])
+        return (
+            module["name"],
+            module["stream"],
+            int(module["version"]),
+            module["context"],
+            module["arch"],
+        )
 
     def get_pkg_nevra(pkg):
-        return (pkg['name'],
-                pkg['epoch'] or '0',
-                pkg['version'],
-                pkg['release'],
-                pkg['arch'])
+        return (
+            pkg["name"],
+            pkg["epoch"] or "0",
+            pkg["version"],
+            pkg["release"],
+            pkg["arch"],
+        )
 
     filtered_pkglist = []
-    default_collection = {
-        'name': 'default',
-        'short': 'def',
-        'packages': []
-    }
+    default_collection = {"name": "default", "short": "def", "packages": []}
     filtered_pkglist.append(default_collection)
     if not repo_pkg_nevra:
         # If there are no packages in a repo, no pkglist will ever contain packages.
@@ -60,7 +61,7 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
     seen_non_modular_packages = set()
     seen_modules = set()
     for collection in pulp2erratum.pkglist:
-        module = collection.get('module')
+        module = collection.get("module")
         if module:
             # inside a modular collection
             nsvca = get_module_nsvca(module)
@@ -69,29 +70,29 @@ def get_pulp2_filtered_collections(pulp2erratum, repo_pkg_nevra, repo_module_nsv
                 continue
             seen_modules.add(nsvca)
             current_collection = {
-                'name': collection.get('name'),
-                'short': collection.get('short'),
-                'module': module,
-                'packages': []
+                "name": collection.get("name"),
+                "short": collection.get("short"),
+                "module": module,
+                "packages": [],
             }
             filtered_pkglist.append(current_collection)
         else:
             # the first and default collection collects the non-modular packages
             current_collection = filtered_pkglist[0]
-            current_collection['name'] = collection.get('name')
-            current_collection['short'] = collection.get('short')
+            current_collection["name"] = collection.get("name")
+            current_collection["short"] = collection.get("short")
 
-        for package in collection.get('packages', []):
+        for package in collection.get("packages", []):
             if not module:
                 # only non-modular packages are tracked;
                 # modular packages are not tracked because the same package can be present
                 # in different modules and duplicated modules are already filtered out.
-                if package['filename'] in seen_non_modular_packages:
+                if package["filename"] in seen_non_modular_packages:
                     continue
-                seen_non_modular_packages.add(package['filename'])
+                seen_non_modular_packages.add(package["filename"])
             nevra = get_pkg_nevra(package)
             if nevra in repo_pkg_nevra:
-                current_collection['packages'].append(package)
+                current_collection["packages"].append(package)
 
     return filtered_pkglist
 
@@ -114,9 +115,9 @@ def get_package_checksum(errata_pkg):
         If found, a tuple with a checksum type id in createrepo_c and a checksum itself
 
     """
-    checksums = errata_pkg.get('sum', [])
-    checksum_type_v2 = errata_pkg.get('type')
-    checksum_v2 = errata_pkg.get('sums')
+    checksums = errata_pkg.get("sum", [])
+    checksum_type_v2 = errata_pkg.get("type")
+    checksum_v2 = errata_pkg.get("sums")
     if checksum_type_v2 and checksum_v2:
         checksums.extend([checksum_type_v2, checksum_v2])
 
@@ -154,7 +155,7 @@ def get_bool(value):
 
     """
     if value:
-        if isinstance(value, str) and value.lower() == 'true':
+        if isinstance(value, str) and value.lower() == "true":
             return True
         if isinstance(value, int):
             return bool(value)
@@ -183,12 +184,12 @@ def get_datetime(datetime_str):
 
     """
     # remove UTC part
-    if datetime_str.endswith(' UTC'):
+    if datetime_str.endswith(" UTC"):
         datetime_str = datetime_str[:-4]
 
     # if it's as short as '%Y-%m-%d', try adding time so `parse_datetime` could parse it
     if len(datetime_str.strip()) == 10:
-        datetime_str = f'{datetime_str.strip()} 00:00'
+        datetime_str = f"{datetime_str.strip()} 00:00"
 
     datetime_obj = parse_datetime(datetime_str)
     if not datetime_obj:
@@ -199,7 +200,9 @@ def get_datetime(datetime_str):
             pass
 
         # We don't know what else to do with it
-        _logger.warn(f'Unsupported datetime format {datetime_str}, resetting to 1970-01-01 00:00')
+        _logger.warn(
+            f"Unsupported datetime format {datetime_str}, resetting to 1970-01-01 00:00"
+        )
         datetime_obj = datetime.datetime(1970, 1, 1, 0, 0)
 
     return datetime_obj

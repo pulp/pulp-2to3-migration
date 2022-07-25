@@ -17,6 +17,7 @@ class DebImporter(Pulp2to3Importer):
     """
     Interface to migrate Pulp 2 Deb importer.
     """
+
     pulp3_remote_models = [AptRemote]
 
     @classmethod
@@ -33,14 +34,16 @@ class DebImporter(Pulp2to3Importer):
         """
         pulp2_config = pulp2importer.pulp2_config
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
-        base_config['distributions'] = pulp2_config.get('releases', 'stable').replace(',', ' ')
-        components = pulp2_config.get('components')
+        base_config["distributions"] = pulp2_config.get("releases", "stable").replace(
+            ",", " "
+        )
+        components = pulp2_config.get("components")
         if components:
-            base_config['components'] = components.replace(',', ' ')
-        architectures = pulp2_config.get('architectures')
+            base_config["components"] = components.replace(",", " ")
+        architectures = pulp2_config.get("architectures")
         if architectures:
-            base_config['architectures'] = architectures.replace(',', ' ')
-        base_config['gpgkey'] = pulp2_config.get('gpg_keys')
+            base_config["architectures"] = architectures.replace(",", " ")
+        base_config["gpgkey"] = pulp2_config.get("gpg_keys")
         return AptRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
@@ -48,6 +51,7 @@ class DebDistributor(Pulp2to3Distributor):
     """
     Interface to migrate Pulp 2 Deb distributor.
     """
+
     pulp3_publication_models = [AptPublication]
     pulp3_distribution_models = [AptDistribution]
 
@@ -68,7 +72,9 @@ class DebDistributor(Pulp2to3Distributor):
         signing_service_pk = signing_service.pk if signing_service else None
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
+            repo = pulp2distributor.pulp2_repos.filter(
+                not_in_plan=False, is_migrated=True
+            )
             repo_version = repo[0].pulp3_repository_version
         publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
@@ -77,19 +83,19 @@ class DebDistributor(Pulp2to3Distributor):
                 repo_version.pk,
                 simple=True,
                 structured=True,
-                signing_service_pk=signing_service_pk
+                signing_service_pk=signing_service_pk,
             )
             publication = repo_version.publication_set.filter(complete=True).first()
 
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
         distribution_data = cls.parse_base_config(pulp2distributor, pulp2_config)
-        base_path = pulp2_config.get('relative_url', pulp2distributor.pulp2_repo_id)
-        distribution_data['base_path'] = base_path.strip('/')
-        distribution_data['publication'] = publication
+        base_path = pulp2_config.get("relative_url", pulp2distributor.pulp2_repo_id)
+        distribution_data["base_path"] = base_path.strip("/")
+        distribution_data["publication"] = publication
         distribution, created = AptDistribution.objects.update_or_create(
-            name=distribution_data['name'],
-            base_path=distribution_data['base_path'],
+            name=distribution_data["name"],
+            base_path=distribution_data["base_path"],
             defaults=distribution_data,
         )
 

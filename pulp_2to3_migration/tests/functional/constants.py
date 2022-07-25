@@ -1,36 +1,32 @@
 BINDINGS_CONFIGURATION = {
-    'username': 'admin',
-    'password': 'password',
-    'host': 'https://pulp',
+    "username": "admin",
+    "password": "password",
+    "host": "https://pulp",
 }
 
 TABLES_TO_KEEP = (
     # django's sqlclear or sqlflush excludes this table when cleaning up the db
-    'django_migrations',
-
+    "django_migrations",
     # not to create an admin user every time
-    'auth_user',
-
+    "auth_user",
     # not to be doomed by the lack of permissions
-    'auth_group',
-    'auth_permission',
-    'core_accesspolicy',
-    'core_role',
-    'core_role_permissions',
-    'core_userrole',
-    'core_grouprole',
-
+    "auth_group",
+    "auth_permission",
+    "core_accesspolicy",
+    "core_role",
+    "core_role_permissions",
+    "core_userrole",
+    "core_grouprole",
     # 'auth_permission' references it, so it should not be truncated
-    'django_content_type',
-
+    "django_content_type",
     # not to freak out the tasking system
-    'core_reservedresource',
-    'core_reservedresourcerecord',
-    'core_task',
-    'core_taskgroup',
-    'core_taskreservedresource',
-    'core_taskreservedresourcerecord',
-    'core_worker',
+    "core_reservedresource",
+    "core_reservedresourcerecord",
+    "core_task",
+    "core_taskgroup",
+    "core_taskreservedresource",
+    "core_taskreservedresourcerecord",
+    "core_worker",
 )
 
 TRUNCATE_TABLES_QUERY_BASH = f"""
@@ -46,6 +42,8 @@ DO $$
 $$;
 """  # noqa
 
-FILE_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file/PULP_MANIFEST'
-FILE_MANY_URL = 'https://repos.fedorapeople.org/pulp/pulp/fixtures/file-many/PULP_MANIFEST'
-FIXTURES_BASE_URL = 'https://fixtures.pulpproject.org/'
+FILE_URL = "https://repos.fedorapeople.org/pulp/pulp/fixtures/file/PULP_MANIFEST"
+FILE_MANY_URL = (
+    "https://repos.fedorapeople.org/pulp/pulp/fixtures/file-many/PULP_MANIFEST"
+)
+FIXTURES_BASE_URL = "https://fixtures.pulpproject.org/"

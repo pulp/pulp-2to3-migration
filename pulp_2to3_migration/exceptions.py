@@ -27,6 +27,7 @@ class PlanValidationError(Exception):
 
     e.g. Repository specified does not exist.
     """
+
     pass
 
 
@@ -35,6 +36,7 @@ class ArtifactValidationError(PulpException):
     Exception for the issues with artifact creation during migration.
 
     """
+
     def __init__(self, msg):
         """
         :param msg: error message specifying what exactly is out of place

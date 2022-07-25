@@ -9,10 +9,7 @@ import createrepo_c as cr
 from django.db import models
 
 from pulp_2to3_migration.app.constants import DEFAULT_BATCH_SIZE
-from pulp_2to3_migration.app.models import (
-    Pulp2to3Content,
-    Pulp2RepoContent
-)
+from pulp_2to3_migration.app.models import Pulp2to3Content, Pulp2RepoContent
 
 from pulp_rpm.app.comps import dict_digest
 from pulp_rpm.app.advisory import hash_update_record
@@ -32,10 +29,7 @@ from pulp_rpm.app.models import (
     UpdateReference,
 )
 
-from pulp_rpm.app.kickstart.treeinfo import (
-    PulpTreeInfo,
-    TreeinfoData
-)
+from pulp_rpm.app.kickstart.treeinfo import PulpTreeInfo, TreeinfoData
 
 from . import pulp2_models
 
@@ -43,32 +37,34 @@ from .comps_utils import (
     langpacks_to_libcomps,
     pkg_cat_to_libcomps,
     pkg_env_to_libcomps,
-    pkg_grp_to_libcomps
+    pkg_grp_to_libcomps,
 )
 
 from .erratum import (
     get_bool,
     get_datetime,
     get_package_checksum,
-    get_pulp2_filtered_collections
+    get_pulp2_filtered_collections,
 )
 from .xml_utils import get_cr_obj
 
-SRPM_UNIT_FIELDS = set([
-    'name',
-    'epoch',
-    'version',
-    'release',
-    'arch',
-    'checksum',
-    'checksumtype',
-    'repodata',
-    'size',
-    'filename',
-    'pk',
-])
+SRPM_UNIT_FIELDS = set(
+    [
+        "name",
+        "epoch",
+        "version",
+        "release",
+        "arch",
+        "checksum",
+        "checksumtype",
+        "repodata",
+        "size",
+        "filename",
+        "pk",
+    ]
+)
 
-RPM_UNIT_FIELDS = SRPM_UNIT_FIELDS | set(['is_modular'])
+RPM_UNIT_FIELDS = SRPM_UNIT_FIELDS | set(["is_modular"])
 
 
 class Pulp2RpmBase(Pulp2to3Content):
@@ -118,30 +114,38 @@ class Pulp2RpmBase(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = cls.pulp2_model.objects.filter(id__in=pulp2_ids).as_pymongo().only(
-            *cls.unit_fields)
+        pulp2_content_batch = (
+            cls.pulp2_model.objects.filter(id__in=pulp2_ids)
+            .as_pymongo()
+            .only(*cls.unit_fields)
+        )
         pulp2rpm_to_save = []
         for rpm in pulp2_content_batch:
             pulp2rpm_to_save.append(
-                cls(name=rpm['name'],
-                    epoch=rpm['epoch'],
-                    version=rpm['version'],
-                    release=rpm['release'],
-                    arch=rpm['arch'],
-                    checksum=rpm['checksum'],
-                    checksumtype=rpm['checksumtype'],
-                    primary_template_gz=rpm['repodata']['primary'],
-                    filelists_template_gz=rpm['repodata']['filelists'],
-                    other_template_gz=rpm['repodata']['other'],
-                    is_modular=rpm.get('is_modular', False),
-                    size=rpm['size'],
-                    filename=rpm['filename'],
-                    pulp2content=pulp2_id_obj_map[rpm['_id']])
+                cls(
+                    name=rpm["name"],
+                    epoch=rpm["epoch"],
+                    version=rpm["version"],
+                    release=rpm["release"],
+                    arch=rpm["arch"],
+                    checksum=rpm["checksum"],
+                    checksumtype=rpm["checksumtype"],
+                    primary_template_gz=rpm["repodata"]["primary"],
+                    filelists_template_gz=rpm["repodata"]["filelists"],
+                    other_template_gz=rpm["repodata"]["other"],
+                    is_modular=rpm.get("is_modular", False),
+                    size=rpm["size"],
+                    filename=rpm["filename"],
+                    pulp2content=pulp2_id_obj_map[rpm["_id"]],
+                )
             )
-        cls.objects.bulk_create(pulp2rpm_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+        cls.objects.bulk_create(
+            pulp2rpm_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
@@ -149,7 +153,7 @@ class Pulp2RpmBase(Pulp2to3Content):
         """
         cr_package = get_cr_obj(self)
         pkg_dict = Package.createrepo_to_dict(cr_package)
-        pkg_dict['is_modular'] = self.is_modular
+        pkg_dict["is_modular"] = self.is_modular
         return (Package(**pkg_dict), None)
 
 
@@ -161,13 +165,20 @@ class Pulp2Rpm(Pulp2RpmBase):
     unit_fields = RPM_UNIT_FIELDS
     pulp2_model = pulp2_models.RPM
 
-    pulp2_type = 'rpm'
+    pulp2_type = "rpm"
 
     class Meta:
         unique_together = (
-            'name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum',
-            'pulp2content')
-        default_related_name = 'rpm_detail_model'
+            "name",
+            "epoch",
+            "version",
+            "release",
+            "arch",
+            "checksumtype",
+            "checksum",
+            "pulp2content",
+        )
+        default_related_name = "rpm_detail_model"
 
 
 class Pulp2Srpm(Pulp2RpmBase):
@@ -178,13 +189,20 @@ class Pulp2Srpm(Pulp2RpmBase):
     unit_fields = SRPM_UNIT_FIELDS
     pulp2_model = pulp2_models.SRPM
 
-    pulp2_type = 'srpm'
+    pulp2_type = "srpm"
 
     class Meta:
         unique_together = (
-            'name', 'epoch', 'version', 'release', 'arch', 'checksumtype', 'checksum',
-            'pulp2content')
-        default_related_name = 'srpm_detail_model'
+            "name",
+            "epoch",
+            "version",
+            "release",
+            "arch",
+            "checksumtype",
+            "checksum",
+            "pulp2content",
+        )
+        default_related_name = "srpm_detail_model"
 
 
 class Pulp2Erratum(Pulp2to3Content):
@@ -192,6 +210,7 @@ class Pulp2Erratum(Pulp2to3Content):
     Pulp 2to3 detail content model to store Pulp2 Errata content details.
 
     """
+
     # Required fields
     errata_id = models.TextField()
     updated = models.TextField()
@@ -216,13 +235,13 @@ class Pulp2Erratum(Pulp2to3Content):
     solution = models.TextField(null=True)
     summary = models.TextField(null=True)
 
-    pulp2_type = 'erratum'
+    pulp2_type = "erratum"
     set_pulp2_repo = True
     cached_repo_data = {}
 
     class Meta:
-        unique_together = ('errata_id', 'repo_id')
-        default_related_name = 'erratum_detail_model'
+        unique_together = ("errata_id", "repo_id")
+        default_related_name = "erratum_detail_model"
 
     @classmethod
     def get_repo_data(cls, pulp2_repo):
@@ -244,37 +263,48 @@ class Pulp2Erratum(Pulp2to3Content):
         repo_module_nsvca = []
 
         # gather info about available packages
-        package_pulp2_ids = Pulp2RepoContent.objects.filter(
-            pulp2_repository=pulp2_repo,
-            pulp2_content_type_id='rpm'
-        ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
+        package_pulp2_ids = (
+            Pulp2RepoContent.objects.filter(
+                pulp2_repository=pulp2_repo, pulp2_content_type_id="rpm"
+            )
+            .only("pulp2_unit_id")
+            .values_list("pulp2_unit_id", flat=True)
+        )
 
         pulp2rpms = Pulp2Rpm.objects.filter(
             pulp2content__pulp2_id__in=package_pulp2_ids
-        ).values(
-            'name', 'epoch', 'version', 'release', 'arch'
-        )
+        ).values("name", "epoch", "version", "release", "arch")
         for pkg in pulp2rpms.iterator():
             repo_pkg_nevra.append(
-                (pkg['name'], pkg.get('epoch', '0'), pkg['version'], pkg['release'], pkg['arch'])
+                (
+                    pkg["name"],
+                    pkg.get("epoch", "0"),
+                    pkg["version"],
+                    pkg["release"],
+                    pkg["arch"],
+                )
             )
 
         # gather info about available modules
-        modulemd_pulp2_ids = Pulp2RepoContent.objects.filter(
-            pulp2_repository=pulp2_repo,
-            pulp2_content_type_id='modulemd'
-        ).only('pulp2_unit_id').values_list('pulp2_unit_id', flat=True)
+        modulemd_pulp2_ids = (
+            Pulp2RepoContent.objects.filter(
+                pulp2_repository=pulp2_repo, pulp2_content_type_id="modulemd"
+            )
+            .only("pulp2_unit_id")
+            .values_list("pulp2_unit_id", flat=True)
+        )
 
         pulp2modulemds = Pulp2Modulemd.objects.filter(
             pulp2content__pulp2_id__in=modulemd_pulp2_ids
-        ).values(
-            'name', 'stream', 'version', 'context', 'arch'
-        )
+        ).values("name", "stream", "version", "context", "arch")
         for module in pulp2modulemds.iterator():
             repo_module_nsvca.append(
                 (
-                    module['name'], module['stream'], module['version'],
-                    module['context'], module['arch']
+                    module["name"],
+                    module["stream"],
+                    module["version"],
+                    module["context"],
+                    module["arch"],
                 )
             )
 
@@ -282,8 +312,8 @@ class Pulp2Erratum(Pulp2to3Content):
         # a repo it belongs to)
         cls.cached_repo_data.clear()
         cls.cached_repo_data[pulp2_repo.pk] = {
-            'packages': repo_pkg_nevra,
-            'modules': repo_module_nsvca
+            "packages": repo_pkg_nevra,
+            "modules": repo_module_nsvca,
         }
         return cls.cached_repo_data[pulp2_repo.pk]
 
@@ -296,6 +326,7 @@ class Pulp2Erratum(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
+
         def get_pkglist(errata_id):
             """
             Get a pkglist for a specified erratum.
@@ -309,28 +340,38 @@ class Pulp2Erratum(Pulp2to3Content):
             Args:
                 errata_id(str): Id of an erratum to get a pkglist for
             """
-            match_stage = {'$match': {'errata_id': errata_id}}
-            unwind_collections_stage = {'$unwind': '$collections'}
-            unwind_packages_stage = {'$unwind': '$collections.packages'}
+            match_stage = {"$match": {"errata_id": errata_id}}
+            unwind_collections_stage = {"$unwind": "$collections"}
+            unwind_packages_stage = {"$unwind": "$collections.packages"}
 
             # Group all packages by their relation to a module specified in each collection.
             # All non-modular RPMs will be in a single collection.
-            group_stage = {'$group': {'_id': '$collections.module',
-                                      'packages': {'$addToSet': '$collections.packages'}}}
+            group_stage = {
+                "$group": {
+                    "_id": "$collections.module",
+                    "packages": {"$addToSet": "$collections.packages"},
+                }
+            }
             collections = pulp2_models.ErratumPkglist.objects.aggregate(
-                match_stage, unwind_collections_stage, unwind_packages_stage, group_stage,
-                allowDiskUse=True)
+                match_stage,
+                unwind_collections_stage,
+                unwind_packages_stage,
+                group_stage,
+                allowDiskUse=True,
+            )
 
             pkglist = []
             for collection_idx, collection in enumerate(collections):
                 # To preserve the original format of a pkglist the 'short' and 'name'
                 # keys are added. 'short' can be an empty string, collection 'name'
                 # should be unique within an erratum.
-                item = {'packages': collection['packages'],
-                        'short': '',
-                        'name': 'collection-%s' % collection_idx}
-                if collection['_id']:
-                    item['module'] = collection['_id']
+                item = {
+                    "packages": collection["packages"],
+                    "short": "",
+                    "name": "collection-%s" % collection_idx,
+                }
+                if collection["_id"]:
+                    item["module"] = collection["_id"]
                 pkglist.append(item)
             return pkglist
 
@@ -340,11 +381,14 @@ class Pulp2Erratum(Pulp2to3Content):
             repo_id = pulp2content.pulp2_repo.pk
             pulp2_id_obj_map[pulp2content.pulp2_id][repo_id] = pulp2content
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_erratum_content_batch = pulp2_models.Errata.objects.filter(id__in=pulp2_ids)
+        pulp2_erratum_content_batch = pulp2_models.Errata.objects.filter(
+            id__in=pulp2_ids
+        )
         for erratum in pulp2_erratum_content_batch:
             for repo_id, pulp2content in pulp2_id_obj_map[erratum.id].items():
                 pulp2erratum_to_save.append(
-                    cls(errata_id=erratum.errata_id,
+                    cls(
+                        errata_id=erratum.errata_id,
                         updated=erratum.updated,
                         repo_id=repo_id,
                         issued=erratum.issued,
@@ -365,9 +409,12 @@ class Pulp2Erratum(Pulp2to3Content):
                         title=erratum.title,
                         solution=erratum.solution,
                         summary=erratum.summary,
-                        pulp2content=pulp2content))
-        cls.objects.bulk_create(pulp2erratum_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                        pulp2content=pulp2content,
+                    )
+                )
+        cls.objects.bulk_create(
+            pulp2erratum_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def get_collections(self):
         """
@@ -376,9 +423,7 @@ class Pulp2Erratum(Pulp2to3Content):
         """
         repo_data = Pulp2Erratum.get_repo_data(self.pulp2content.pulp2_repo)
         return get_pulp2_filtered_collections(
-            self,
-            repo_data['packages'],
-            repo_data['modules']
+            self, repo_data["packages"], repo_data["modules"]
         )
 
     def create_pulp3_content(self):
@@ -406,30 +451,30 @@ class Pulp2Erratum(Pulp2to3Content):
         collections = self.get_collections()
         for collection in collections:
             col = cr.UpdateCollection()
-            col.shortname = collection.get('short')
-            col.name = collection.get('name')
-            module = collection.get('module')
+            col.shortname = collection.get("short")
+            col.name = collection.get("name")
+            module = collection.get("module")
             if module:
                 cr_module = cr.UpdateCollectionModule()
-                cr_module.name = module['name']
-                cr_module.stream = module['stream']
-                cr_module.version = int(module['version'])
-                cr_module.context = module['context']
-                cr_module.arch = module['arch']
+                cr_module.name = module["name"]
+                cr_module.stream = module["stream"]
+                cr_module.version = int(module["version"])
+                cr_module.context = module["context"]
+                cr_module.arch = module["arch"]
                 col.module = cr_module
 
-            for package in collection.get('packages', []):
+            for package in collection.get("packages", []):
                 pkg = cr.UpdateCollectionPackage()
-                pkg.name = package['name']
-                pkg.version = package['version']
-                pkg.release = package['release']
-                pkg.epoch = package['epoch']
-                pkg.arch = package['arch']
-                pkg.src = package.get('src')
-                pkg.filename = package['filename']
-                pkg.reboot_suggested = get_bool(package.get('reboot_suggested'))
-                pkg.restart_suggested = get_bool(package.get('restart_suggested'))
-                pkg.relogin_suggested = get_bool(package.get('relogin_suggested'))
+                pkg.name = package["name"]
+                pkg.version = package["version"]
+                pkg.release = package["release"]
+                pkg.epoch = package["epoch"]
+                pkg.arch = package["arch"]
+                pkg.src = package.get("src")
+                pkg.filename = package["filename"]
+                pkg.reboot_suggested = get_bool(package.get("reboot_suggested"))
+                pkg.restart_suggested = get_bool(package.get("restart_suggested"))
+                pkg.relogin_suggested = get_bool(package.get("relogin_suggested"))
                 checksum_tuple = get_package_checksum(package)
                 if checksum_tuple:
                     pkg.sum_type, pkg.sum = checksum_tuple
@@ -439,15 +484,15 @@ class Pulp2Erratum(Pulp2to3Content):
 
         for reference in self.references:
             ref = cr.UpdateReference()
-            ref.href = reference.get('href')
-            ref.id = reference.get('id')
-            ref.type = reference.get('type')
-            ref.title = reference.get('title')
+            ref.href = reference.get("href")
+            ref.id = reference.get("id")
+            ref.type = reference.get("type")
+            ref.title = reference.get("title")
             rec.append_reference(ref)
 
         update_record = UpdateRecord(**UpdateRecord.createrepo_to_dict(rec))
         update_record.digest = hash_update_record(rec)
-        relations = {'collections': defaultdict(list), 'references': []}
+        relations = {"collections": defaultdict(list), "references": []}
 
         for collection in rec.collections:
             coll_dict = UpdateCollection.createrepo_to_dict(collection)
@@ -456,12 +501,12 @@ class Pulp2Erratum(Pulp2to3Content):
             for package in collection.packages:
                 pkg_dict = UpdateCollectionPackage.createrepo_to_dict(package)
                 pkg = UpdateCollectionPackage(**pkg_dict)
-                relations['collections'][coll].append(pkg)
+                relations["collections"][coll].append(pkg)
 
         for reference in rec.references:
             reference_dict = UpdateReference.createrepo_to_dict(reference)
             ref = UpdateReference(**reference_dict)
-            relations['references'].append(ref)
+            relations["references"].append(ref)
 
         return (update_record, relations)
 
@@ -471,16 +516,17 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 yum_repo_metadata_file
     content details for Pulp 3 content creation.
     """
+
     data_type = models.CharField(max_length=20)
     checksum = models.CharField(max_length=128)
     checksum_type = models.CharField(max_length=6)
     repo_id = models.TextField()
 
-    pulp2_type = 'yum_repo_metadata_file'
+    pulp2_type = "yum_repo_metadata_file"
 
     class Meta:
-        unique_together = ('data_type', 'repo_id', 'pulp2content')
-        default_related_name = 'yum_repo_metadata_file_detail_model'
+        unique_together = ("data_type", "repo_id", "pulp2content")
+        default_related_name = "yum_repo_metadata_file_detail_model"
 
     @property
     def expected_digests(self):
@@ -497,7 +543,7 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
         """Return relative path."""
         path = self.pulp2content.pulp2_storage_path
         metadata_file_name = os.path.basename(path)
-        return os.path.join('repodata', metadata_file_name)
+        return os.path.join("repodata", metadata_file_name)
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -508,29 +554,40 @@ class Pulp2YumRepoMetadataFile(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_metadata_content_batch = pulp2_models.YumMetadataFile.objects.filter(id__in=pulp2_ids)
+        pulp2_metadata_content_batch = pulp2_models.YumMetadataFile.objects.filter(
+            id__in=pulp2_ids
+        )
         pulp2metadata_to_save = [
             cls(
                 data_type=meta.data_type,
                 checksum=meta.checksum,
                 checksum_type=meta.checksum_type,
                 repo_id=meta.repo_id,
-                pulp2content=pulp2_id_obj_map[meta.id]
-            ) for meta in pulp2_metadata_content_batch.no_cache()
+                pulp2content=pulp2_id_obj_map[meta.id],
+            )
+            for meta in pulp2_metadata_content_batch.no_cache()
         ]
-        cls.objects.bulk_create(pulp2metadata_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+        cls.objects.bulk_create(
+            pulp2metadata_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
         Create a Pulp 3 RepoMetadataFile unit for saving it later in a bulk operation.
         """
-        return (RepoMetadataFile(data_type=self.data_type,
-                                 checksum=self.checksum,
-                                 checksum_type=self.checksum_type,
-                                 relative_path=self.relative_path_for_content_artifact), None,)
+        return (
+            RepoMetadataFile(
+                data_type=self.data_type,
+                checksum=self.checksum,
+                checksum_type=self.checksum_type,
+                relative_path=self.relative_path_for_content_artifact,
+            ),
+            None,
+        )
 
 
 class Pulp2Modulemd(Pulp2to3Content):
@@ -549,17 +606,23 @@ class Pulp2Modulemd(Pulp2to3Content):
     checksum = models.TextField()
     dependencies = models.JSONField(default=list)
 
-    pulp2_type = 'modulemd'
+    pulp2_type = "modulemd"
 
     class Meta:
         unique_together = (
-            'name', 'stream', 'version', 'context', 'arch', 'pulp2content')
-        default_related_name = 'modulemd_detail_model'
+            "name",
+            "stream",
+            "version",
+            "context",
+            "arch",
+            "pulp2content",
+        )
+        default_related_name = "modulemd_detail_model"
 
     @property
     def expected_digests(self):
         """Return expected digests."""
-        return {'sha256': self.checksum}
+        return {"sha256": self.checksum}
 
     @property
     def expected_size(self):
@@ -569,9 +632,9 @@ class Pulp2Modulemd(Pulp2to3Content):
     @property
     def relative_path_for_content_artifact(self):
         """Return relative path."""
-        relative_path = '{}{}{}{}{}snippet'.format(
-                        self.name, self.stream, self.version,
-                        self.context, self.arch)
+        relative_path = "{}{}{}{}{}snippet".format(
+            self.name, self.stream, self.version, self.context, self.arch
+        )
 
         return relative_path
 
@@ -584,11 +647,14 @@ class Pulp2Modulemd(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_content_batch = pulp2_models.Modulemd.objects.filter(id__in=pulp2_ids)
         pulp2modules_to_save = [
-            cls(name=md.name,
+            cls(
+                name=md.name,
                 stream=md.stream,
                 version=md.version,
                 context=md.context,
@@ -596,18 +662,30 @@ class Pulp2Modulemd(Pulp2to3Content):
                 dependencies=md.dependencies or [],
                 artifacts=md.artifacts,
                 checksum=md.checksum,
-                pulp2content=pulp2_id_obj_map[md.id])
-            for md in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2modules_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[md.id],
+            )
+            for md in pulp2_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2modules_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
-        return (Modulemd(name=self.name, stream=self.stream, version=self.version,
-                         context=self.context, arch=self.arch, artifacts=self.artifacts,
-                         dependencies=self.dependencies), None)
+        return (
+            Modulemd(
+                name=self.name,
+                stream=self.stream,
+                version=self.version,
+                context=self.context,
+                arch=self.arch,
+                artifacts=self.artifacts,
+                dependencies=self.dependencies,
+            ),
+            None,
+        )
 
 
 class Pulp2ModulemdDefaults(Pulp2to3Content):
@@ -622,16 +700,16 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
     digest = models.TextField()
     repo_id = models.TextField()
 
-    pulp2_type = 'modulemd_defaults'
+    pulp2_type = "modulemd_defaults"
 
     class Meta:
-        unique_together = ('digest', 'repo_id', 'pulp2content')
-        default_related_name = 'modulemd_defaults_detail_model'
+        unique_together = ("digest", "repo_id", "pulp2content")
+        default_related_name = "modulemd_defaults_detail_model"
 
     @property
     def expected_digests(self):
         """Return expected digests."""
-        return {'sha256': self.digest}
+        return {"sha256": self.digest}
 
     @property
     def expected_size(self):
@@ -641,7 +719,7 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
     @property
     def relative_path_for_content_artifact(self):
         """Return relative path."""
-        relative_path = '{}{}snippet'.format(self.module, self.stream)
+        relative_path = "{}{}snippet".format(self.module, self.stream)
 
         return relative_path
 
@@ -655,39 +733,53 @@ class Pulp2ModulemdDefaults(Pulp2to3Content):
 
         """
 
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.ModulemdDefaults.objects.filter(id__in=pulp2_ids)
+        pulp2_content_batch = pulp2_models.ModulemdDefaults.objects.filter(
+            id__in=pulp2_ids
+        )
         pulp2defaults_to_save = []
 
         for defaults in pulp2_content_batch:
             kwargs = {
-                'module': defaults.name,
-                'digest': defaults.checksum,
-                'repo_id': defaults.repo_id,
-                'pulp2content': pulp2_id_obj_map[defaults.id]
+                "module": defaults.name,
+                "digest": defaults.checksum,
+                "repo_id": defaults.repo_id,
+                "pulp2content": pulp2_id_obj_map[defaults.id],
             }
             if defaults.stream:
-                kwargs['stream'] = defaults.stream
+                kwargs["stream"] = defaults.stream
             if defaults.profiles:
                 if isinstance(defaults.profiles, str):
                     # "normal path" - the data was BSON-encoded and then saved into MongoDB
                     # as a utf-8 encoded string
-                    kwargs['profiles'] = bson.decode(bytes(defaults.profiles, encoding='utf-8'))
+                    kwargs["profiles"] = bson.decode(
+                        bytes(defaults.profiles, encoding="utf-8")
+                    )
                 elif isinstance(defaults.profiles, bytes):
                     # "hotfix path" (#8893) - the data was BSON-encoded and then saved into MongoDB
                     # as raw binary data
-                    kwargs['profiles'] = bson.decode(defaults.profiles)
+                    kwargs["profiles"] = bson.decode(defaults.profiles)
             pulp2defaults_to_save.append(cls(**kwargs))
-        cls.objects.bulk_create(pulp2defaults_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+        cls.objects.bulk_create(
+            pulp2defaults_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
         Create a Pulp 3 Module content for saving it later in a bulk operation.
         """
-        return (ModulemdDefaults(module=self.module, stream=self.stream,
-                                 profiles=self.profiles, digest=self.digest), None)
+        return (
+            ModulemdDefaults(
+                module=self.module,
+                stream=self.stream,
+                profiles=self.profiles,
+                digest=self.digest,
+            ),
+            None,
+        )
 
 
 class Pulp2Distribution(Pulp2to3Content):
@@ -708,8 +800,14 @@ class Pulp2Distribution(Pulp2to3Content):
 
     class Meta:
         unique_together = (
-            'distribution_id', 'family', 'variant', 'version', 'arch', 'pulp2content')
-        default_related_name = 'distribution_detail_model'
+            "distribution_id",
+            "family",
+            "variant",
+            "version",
+            "arch",
+            "pulp2content",
+        )
+        default_related_name = "distribution_detail_model"
 
     @property
     def relative_path_for_content_artifact(self):
@@ -726,20 +824,29 @@ class Pulp2Distribution(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_distribution_content_batch = pulp2_models.Distribution.objects.filter(
-            id__in=pulp2_ids)
+            id__in=pulp2_ids
+        )
         pulp2distribution_to_save = [
-            cls(distribution_id=distribution.distribution_id,
+            cls(
+                distribution_id=distribution.distribution_id,
                 family=distribution.family,
                 variant=distribution.variant,
                 version=distribution.version,
                 arch=distribution.arch,
-                pulp2content=pulp2_id_obj_map[distribution.id])
-            for distribution in pulp2_distribution_content_batch]
-        cls.objects.bulk_create(pulp2distribution_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[distribution.id],
+            )
+            for distribution in pulp2_distribution_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2distribution_to_save,
+            ignore_conflicts=True,
+            batch_size=DEFAULT_BATCH_SIZE,
+        )
 
     def get_treeinfo_serialized(self):
         """
@@ -752,36 +859,42 @@ class Pulp2Distribution(Pulp2to3Content):
         namespaces = [".treeinfo", "treeinfo"]
         for namespace in namespaces:
             treeinfo = PulpTreeInfo()
-            treeinfo_path = os.path.join(self.pulp2content.pulp2_storage_path, namespace)
+            treeinfo_path = os.path.join(
+                self.pulp2content.pulp2_storage_path, namespace
+            )
             try:
                 treeinfo.load(f=treeinfo_path)
             except FileNotFoundError:
                 continue
 
-            with open(treeinfo_path, 'rb') as treeinfo_fd:
+            with open(treeinfo_path, "rb") as treeinfo_fd:
                 treeinfo_digest = hashlib.sha256(treeinfo_fd.read()).hexdigest()
             self.filename = namespace
             treeinfo_parsed = treeinfo.parsed_sections()
-            treeinfo_serialized = TreeinfoData(treeinfo_parsed).to_dict(filename=namespace)
+            treeinfo_serialized = TreeinfoData(treeinfo_parsed).to_dict(
+                filename=namespace
+            )
             # Pulp 2 only knows about the top level kickstart repository
-            treeinfo_serialized["repositories"] = {'.': None}
+            treeinfo_serialized["repositories"] = {".": None}
             # Pulp 2 did not support addon repositories, so we should not list them here either
-            treeinfo_serialized['addons'] = {}
+            treeinfo_serialized["addons"] = {}
             # Pulp 2 only supported variants that are in the root of the repository
             variants = {}
-            for name, variant in treeinfo_serialized['variants'].items():
-                if variant['repository'] == '.':
+            for name, variant in treeinfo_serialized["variants"].items():
+                if variant["repository"] == ".":
                     variants[name] = variant
-            treeinfo_serialized['variants'] = variants
+            treeinfo_serialized["variants"] = variants
             # Set older timestamp so Pulp will fetch all the addons during the next sync
             # We can't reset it to 0, some creative repository providers use the same
             # name/release in many distribution trees and the only way to distinguish tem is by
             # the build timestamp. e.g. CentOS 8 BaseOs, Appstream, PowerTools, HighAvailability.
             orig_build_timestamp = int(
-                float(treeinfo_serialized['distribution_tree']['build_timestamp'])
+                float(treeinfo_serialized["distribution_tree"]["build_timestamp"])
             )
-            treeinfo_serialized['distribution_tree']['build_timestamp'] = orig_build_timestamp - 1
-            treeinfo_serialized['distribution_tree']['digest'] = treeinfo_digest
+            treeinfo_serialized["distribution_tree"]["build_timestamp"] = (
+                orig_build_timestamp - 1
+            )
+            treeinfo_serialized["distribution_tree"]["digest"] = treeinfo_digest
             return treeinfo_serialized
 
         return None
@@ -800,8 +913,10 @@ class Pulp2Distribution(Pulp2to3Content):
         if treeinfo_serialized is None:
             return None, None
         else:
-            return (DistributionTree(**treeinfo_serialized["distribution_tree"]),
-                    treeinfo_serialized)
+            return (
+                DistributionTree(**treeinfo_serialized["distribution_tree"]),
+                treeinfo_serialized,
+            )
 
 
 class Pulp2PackageLangpacks(Pulp2to3Content):
@@ -809,14 +924,15 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 package_langpacks
     content details for Pulp 3 content creation.
     """
+
     matches = models.JSONField()
     repo_id = models.TextField()
 
-    pulp2_type = 'package_langpacks'
+    pulp2_type = "package_langpacks"
 
     class Meta:
-        unique_together = ('repo_id', 'pulp2content')
-        default_related_name = 'package_langpacks_detail_model'
+        unique_together = ("repo_id", "pulp2content")
+        default_related_name = "package_langpacks_detail_model"
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -827,16 +943,24 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.PackageLangpacks.objects.filter(id__in=pulp2_ids)
+        pulp2_content_batch = pulp2_models.PackageLangpacks.objects.filter(
+            id__in=pulp2_ids
+        )
         pulp2langpacks_to_save = [
-            cls(repo_id=p.repo_id,
+            cls(
+                repo_id=p.repo_id,
                 matches=p.matches,
-                pulp2content=pulp2_id_obj_map[p.id])
-            for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2langpacks_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[p.id],
+            )
+            for p in pulp2_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2langpacks_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
@@ -844,8 +968,12 @@ class Pulp2PackageLangpacks(Pulp2to3Content):
         """
         langpacks = langpacks_to_libcomps(self)
         langpacks_dict = PackageLangpacks.libcomps_to_dict(langpacks)
-        return (PackageLangpacks(matches=langpacks_dict['matches'],
-                                 digest=dict_digest(langpacks_dict)), None)
+        return (
+            PackageLangpacks(
+                matches=langpacks_dict["matches"], digest=dict_digest(langpacks_dict)
+            ),
+            None,
+        )
 
 
 class Pulp2PackageGroup(Pulp2to3Content):
@@ -853,6 +981,7 @@ class Pulp2PackageGroup(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 package_group
     content details for Pulp 3 content creation.
     """
+
     package_group_id = models.TextField()
     repo_id = models.TextField()
 
@@ -867,11 +996,11 @@ class Pulp2PackageGroup(Pulp2to3Content):
     name_by_lang = models.JSONField(default=dict)
     biarch_only = models.BooleanField(default=False)
 
-    pulp2_type = 'package_group'
+    pulp2_type = "package_group"
 
     class Meta:
-        unique_together = ('repo_id', 'package_group_id', 'pulp2content')
-        default_related_name = 'package_group_detail_model'
+        unique_together = ("repo_id", "package_group_id", "pulp2content")
+        default_related_name = "package_group_detail_model"
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -882,30 +1011,41 @@ class Pulp2PackageGroup(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
+
         def _get_packages(group):
             """Merge in a list all package types"""
             # order of type of packages is important and should be preserved
-            return [(3, group.mandatory_package_names), (0, group.default_package_names),
-                    (1, group.optional_package_names), (2, group.conditional_package_names)]
+            return [
+                (3, group.mandatory_package_names),
+                (0, group.default_package_names),
+                (1, group.optional_package_names),
+                (2, group.conditional_package_names),
+            ]
 
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_content_batch = pulp2_models.PackageGroup.objects.filter(id__in=pulp2_ids)
         pulp2groups_to_save = [
-            cls(repo_id=p.repo_id,
+            cls(
+                repo_id=p.repo_id,
                 package_group_id=p.package_group_id,
                 default=p.default,
                 user_visible=p.user_visible,
                 display_order=p.display_order,
                 name=p.name,
-                description=p.description if p.description else '',
+                description=p.description if p.description else "",
                 packages=_get_packages(p),
                 desc_by_lang=p.translated_description,
                 name_by_lang=p.translated_name,
-                pulp2content=pulp2_id_obj_map[p.id])
-            for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[p.id],
+            )
+            for p in pulp2_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2groups_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
@@ -913,11 +1053,11 @@ class Pulp2PackageGroup(Pulp2to3Content):
         """
         group = pkg_grp_to_libcomps(self)
         group_dict = PackageGroup.libcomps_to_dict(group)
-        packages = group_dict['packages']
+        packages = group_dict["packages"]
         # ugly stuff
         for pkg in packages:
-            pkg['requires'] = pkg['requires'] or None
-        group_dict['digest'] = dict_digest(group_dict)
+            pkg["requires"] = pkg["requires"] or None
+        group_dict["digest"] = dict_digest(group_dict)
         return (PackageGroup(**group_dict), None)
 
 
@@ -926,6 +1066,7 @@ class Pulp2PackageCategory(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 package_category
     content details for Pulp 3 content creation.
     """
+
     package_category_id = models.TextField()
     repo_id = models.TextField()
 
@@ -936,11 +1077,11 @@ class Pulp2PackageCategory(Pulp2to3Content):
     desc_by_lang = models.JSONField(default=dict)
     name_by_lang = models.JSONField(default=dict)
 
-    pulp2_type = 'package_category'
+    pulp2_type = "package_category"
 
     class Meta:
-        unique_together = ('repo_id', 'package_category_id', 'pulp2content')
-        default_related_name = 'package_category_detail_model'
+        unique_together = ("repo_id", "package_category_id", "pulp2content")
+        default_related_name = "package_category_detail_model"
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -951,22 +1092,30 @@ class Pulp2PackageCategory(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.PackageCategory.objects.filter(id__in=pulp2_ids)
+        pulp2_content_batch = pulp2_models.PackageCategory.objects.filter(
+            id__in=pulp2_ids
+        )
         pulp2groups_to_save = [
-            cls(repo_id=p.repo_id,
+            cls(
+                repo_id=p.repo_id,
                 package_category_id=p.package_category_id,
                 display_order=p.display_order,
                 name=p.name,
-                description=p.description if p.description else '',
+                description=p.description if p.description else "",
                 packagegroupids=p.packagegroupids,
                 desc_by_lang=p.translated_description,
                 name_by_lang=p.translated_name,
-                pulp2content=pulp2_id_obj_map[p.id])
-            for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2groups_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[p.id],
+            )
+            for p in pulp2_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2groups_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
@@ -974,7 +1123,7 @@ class Pulp2PackageCategory(Pulp2to3Content):
         """
         cat = pkg_cat_to_libcomps(self)
         category_dict = PackageCategory.libcomps_to_dict(cat)
-        category_dict['digest'] = dict_digest(category_dict)
+        category_dict["digest"] = dict_digest(category_dict)
         return (PackageCategory(**category_dict), None)
 
 
@@ -983,6 +1132,7 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
     Pulp 2to3 detail content model to store pulp 2 package_environment
     content details for Pulp 3 content creation.
     """
+
     package_environment_id = models.TextField()
     repo_id = models.TextField()
 
@@ -994,11 +1144,11 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
     desc_by_lang = models.JSONField(default=dict)
     name_by_lang = models.JSONField(default=dict)
 
-    pulp2_type = 'package_environment'
+    pulp2_type = "package_environment"
 
     class Meta:
-        unique_together = ('repo_id', 'package_environment_id', 'pulp2content')
-        default_related_name = 'package_environment_detail_model'
+        unique_together = ("repo_id", "package_environment_id", "pulp2content")
+        default_related_name = "package_environment_detail_model"
 
     @classmethod
     def pre_migrate_content_detail(cls, content_batch):
@@ -1009,23 +1159,31 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_content_batch = pulp2_models.PackageEnvironment.objects.filter(id__in=pulp2_ids)
+        pulp2_content_batch = pulp2_models.PackageEnvironment.objects.filter(
+            id__in=pulp2_ids
+        )
         pulp2envs_to_save = [
-            cls(repo_id=p.repo_id,
+            cls(
+                repo_id=p.repo_id,
                 package_environment_id=p.package_environment_id,
                 display_order=p.display_order,
                 name=p.name,
-                description=p.description if p.description else '',
+                description=p.description if p.description else "",
                 group_ids=p.group_ids,
                 option_ids=p.options,
                 desc_by_lang=p.translated_description,
                 name_by_lang=p.translated_name,
-                pulp2content=pulp2_id_obj_map[p.id])
-            for p in pulp2_content_batch]
-        cls.objects.bulk_create(pulp2envs_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+                pulp2content=pulp2_id_obj_map[p.id],
+            )
+            for p in pulp2_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2envs_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
@@ -1033,5 +1191,5 @@ class Pulp2PackageEnvironment(Pulp2to3Content):
         """
         env = pkg_env_to_libcomps(self)
         environment_dict = PackageEnvironment.libcomps_to_dict(env)
-        environment_dict['digest'] = dict_digest(environment_dict)
+        environment_dict["digest"] = dict_digest(environment_dict)
         return (PackageEnvironment(**environment_dict), None)

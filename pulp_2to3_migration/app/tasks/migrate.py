@@ -27,7 +27,9 @@ from pulp_2to3_migration.pulp2 import connection
 _logger = logging.getLogger(__name__)
 
 
-def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False, skip_corrupted=False):
+def migrate_from_pulp2(
+    migration_plan_pk, validate=False, dry_run=False, skip_corrupted=False
+):
     """
     Main task to migrate from Pulp 2 to Pulp 3.
 
@@ -60,11 +62,13 @@ def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False, skip_co
     GroupProgressReport(
         message="Repo version creation",
         code="create.repo_version",
-        task_group=task_group).save()
+        task_group=task_group,
+    ).save()
     GroupProgressReport(
         message="Distribution creation",
         code="create.distribution",
-        task_group=task_group).save()
+        task_group=task_group,
+    ).save()
     current_task = Task.current()
     current_task.task_group = task_group
     current_task.save()

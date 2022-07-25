@@ -34,6 +34,7 @@ class Pulp2Repository(BaseModel):
             repository was migrated to
         pulp3_repository_remote (models.ForeignKey): Pulp 3 remote to use with the migrated Pulp2
     """
+
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_repo_id = models.TextField()
     pulp2_description = models.TextField(null=True)
@@ -47,26 +48,26 @@ class Pulp2Repository(BaseModel):
     # a migration run and then recreated with exactly the same name and content in pulp 2,
     # and then migration was run again. In Pulp 3 it's the same repo and repo version which
     # should point to a new pulp2repository object.
-    pulp3_repository_version = models.ForeignKey(RepositoryVersion,
-                                                 on_delete=models.SET_NULL,
-                                                 null=True)
+    pulp3_repository_version = models.ForeignKey(
+        RepositoryVersion, on_delete=models.SET_NULL, null=True
+    )
 
     # The same importer/remote can be used for multiple repositories, thus it's a foreign key.
-    pulp3_repository_remote = models.ForeignKey(Remote,
-                                                on_delete=models.SET_NULL,
-                                                null=True)
+    pulp3_repository_remote = models.ForeignKey(
+        Remote, on_delete=models.SET_NULL, null=True
+    )
 
     # This is needed for migrating Variants of the DistributionTree
-    pulp3_repository = models.ForeignKey(Repository,
-                                         on_delete=models.SET_NULL,
-                                         null=True)
+    pulp3_repository = models.ForeignKey(
+        Repository, on_delete=models.SET_NULL, null=True
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['pulp2_repo_type']),
-            models.Index(fields=['pulp2_last_unit_added']),
-            models.Index(fields=['pulp2_last_unit_removed']),
-            models.Index(fields=['pulp2_repo_id']),
+            models.Index(fields=["pulp2_repo_type"]),
+            models.Index(fields=["pulp2_last_unit_added"]),
+            models.Index(fields=["pulp2_last_unit_removed"]),
+            models.Index(fields=["pulp2_repo_id"]),
         ]
 
 
@@ -85,6 +86,7 @@ class Pulp2RepoContent(BaseModel):
     Relations:
         pulp2_repository (models.ForeignKey): Pulp 2 repository this content belongs to
     """
+
     pulp2_unit_id = models.CharField(max_length=255)
     pulp2_content_type_id = models.CharField(max_length=255)
     pulp2_created = models.DateTimeField(null=True)
@@ -93,10 +95,10 @@ class Pulp2RepoContent(BaseModel):
     pulp2_repository = models.ForeignKey(Pulp2Repository, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('pulp2_repository', 'pulp2_unit_id')
+        unique_together = ("pulp2_repository", "pulp2_unit_id")
         indexes = [
-            models.Index(fields=['pulp2_content_type_id']),
-            models.Index(fields=['pulp2_created'])
+            models.Index(fields=["pulp2_content_type_id"]),
+            models.Index(fields=["pulp2_created"]),
         ]
 
 
@@ -117,6 +119,7 @@ class Pulp2Importer(BaseModel):
     Relations:
         pulp3_remote (models.OneToOneField): Pulp 3 remote which this importer was migrated to
     """
+
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_type_id = models.CharField(max_length=255)
     pulp2_config = models.JSONField()
@@ -129,9 +132,9 @@ class Pulp2Importer(BaseModel):
 
     class Meta:
         indexes = [
-            models.Index(fields=['pulp2_type_id']),
-            models.Index(fields=['pulp2_last_updated']),
-            models.Index(fields=['pulp2_repo_id']),
+            models.Index(fields=["pulp2_type_id"]),
+            models.Index(fields=["pulp2_last_updated"]),
+            models.Index(fields=["pulp2_repo_id"]),
         ]
 
 
@@ -157,6 +160,7 @@ class Pulp2Distributor(BaseModel):
         pulp3_distribution (models.OneToOneField): Pulp 3 distribution this distributor was
             migrated to
     """
+
     pulp2_object_id = models.CharField(max_length=255, unique=True)
     pulp2_id = models.TextField()
     pulp2_type_id = models.CharField(max_length=255)
@@ -167,21 +171,23 @@ class Pulp2Distributor(BaseModel):
     not_in_plan = models.BooleanField(default=False)
 
     # each pulp2 repository can have multiple distributors
-    pulp2_repos = models.ManyToManyField(Pulp2Repository, related_name='pulp2_dists')
+    pulp2_repos = models.ManyToManyField(Pulp2Repository, related_name="pulp2_dists")
 
     # the same publication/repo version can be published by multiple distributors
-    pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
+    pulp3_publication = models.ForeignKey(
+        Publication, on_delete=models.SET_NULL, null=True
+    )
 
     # due to base_path overlap restriction, a distribution can't correspond to multiple pulp 2
     # distributors, thus one-to-one relationship.
-    pulp3_distribution = models.OneToOneField(Distribution,
-                                              on_delete=models.SET_NULL,
-                                              null=True)
+    pulp3_distribution = models.OneToOneField(
+        Distribution, on_delete=models.SET_NULL, null=True
+    )
 
     class Meta:
-        unique_together = ('pulp2_object_id',)
+        unique_together = ("pulp2_object_id",)
         indexes = [
-            models.Index(fields=['pulp2_type_id']),
-            models.Index(fields=['pulp2_last_updated']),
-            models.Index(fields=['pulp2_repo_id']),
+            models.Index(fields=["pulp2_type_id"]),
+            models.Index(fields=["pulp2_last_updated"]),
+            models.Index(fields=["pulp2_repo_id"]),
         ]

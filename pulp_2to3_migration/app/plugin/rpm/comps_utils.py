@@ -21,7 +21,7 @@ def langpacks_to_libcomps(obj):
     """
     strdict = libcomps.StrDict()
     for dct in obj.matches:
-        strdict[dct['name']] = dct['install']
+        strdict[dct["name"]] = dct["install"]
     return strdict
 
 
@@ -113,7 +113,7 @@ def _packages_to_grplist(packages):
         A list
 
     """
-    return [{'name': pkg, 'default': False} for pkg in packages]
+    return [{"name": pkg, "default": False} for pkg in packages]
 
 
 def _list_to_pkglist(packages):
@@ -156,11 +156,10 @@ def _packages_to_optionlist(packages):
     """
     option_list = []
     for pkg in packages:
-        if not isinstance(pkg['default'], bool):
-            if pkg['default'].lower() == 'false':
-                pkg['default'] = False
-            elif pkg['default'].lower() == 'true':
-                pkg['default'] = True
-        option_list.append({'name': pkg['group'],
-                            'default': pkg['default']})
+        if not isinstance(pkg["default"], bool):
+            if pkg["default"].lower() == "false":
+                pkg["default"] = False
+            elif pkg["default"].lower() == "true":
+                pkg["default"] = True
+        option_list.append({"name": pkg["group"], "default": pkg["default"]})
     return option_list

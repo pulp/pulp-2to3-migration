@@ -9,80 +9,151 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0021_pulp2content_add_subid'),
+        ("pulp_2to3_migration", "0021_pulp2content_add_subid"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Pulp2DebReleaseArchitecture',
+            name="Pulp2DebReleaseArchitecture",
             fields=[
-                ('pulp_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('pulp_created', models.DateTimeField(auto_now_add=True)),
-                ('pulp_last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('architecture', models.TextField()),
-                ('distribution', models.TextField()),
-                ('codename', models.TextField()),
-                ('suite', models.TextField()),
-                ('pulp2content', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deb_release_architecture_detail_model', to='pulp_2to3_migration.Pulp2Content')),
+                (
+                    "pulp_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("pulp_created", models.DateTimeField(auto_now_add=True)),
+                ("pulp_last_updated", models.DateTimeField(auto_now=True, null=True)),
+                ("architecture", models.TextField()),
+                ("distribution", models.TextField()),
+                ("codename", models.TextField()),
+                ("suite", models.TextField()),
+                (
+                    "pulp2content",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="deb_release_architecture_detail_model",
+                        to="pulp_2to3_migration.Pulp2Content",
+                    ),
+                ),
             ],
             options={
-                'default_related_name': 'deb_release_architecture_detail_model',
-                'unique_together': {('architecture', 'distribution', 'codename', 'suite')},
+                "default_related_name": "deb_release_architecture_detail_model",
+                "unique_together": {
+                    ("architecture", "distribution", "codename", "suite")
+                },
             },
             bases=(django_lifecycle.mixins.LifecycleModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Pulp2DebRelease',
+            name="Pulp2DebRelease",
             fields=[
-                ('pulp_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('pulp_created', models.DateTimeField(auto_now_add=True)),
-                ('pulp_last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('distribution', models.TextField()),
-                ('codename', models.TextField()),
-                ('suite', models.TextField(null=True)),
-                ('pulp2content', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deb_release_detail_model', to='pulp_2to3_migration.Pulp2Content')),
+                (
+                    "pulp_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("pulp_created", models.DateTimeField(auto_now_add=True)),
+                ("pulp_last_updated", models.DateTimeField(auto_now=True, null=True)),
+                ("distribution", models.TextField()),
+                ("codename", models.TextField()),
+                ("suite", models.TextField(null=True)),
+                (
+                    "pulp2content",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="deb_release_detail_model",
+                        to="pulp_2to3_migration.Pulp2Content",
+                    ),
+                ),
             ],
             options={
-                'default_related_name': 'deb_release_detail_model',
-                'unique_together': {('codename', 'suite', 'distribution')},
+                "default_related_name": "deb_release_detail_model",
+                "unique_together": {("codename", "suite", "distribution")},
             },
             bases=(django_lifecycle.mixins.LifecycleModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Pulp2DebComponentPackage',
+            name="Pulp2DebComponentPackage",
             fields=[
-                ('pulp_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('pulp_created', models.DateTimeField(auto_now_add=True)),
-                ('pulp_last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('package_relative_path', models.TextField()),
-                ('package_sha256', models.TextField()),
-                ('component', models.TextField()),
-                ('distribution', models.TextField()),
-                ('codename', models.TextField()),
-                ('suite', models.TextField()),
-                ('pulp2content', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deb_component_package_detail_model', to='pulp_2to3_migration.Pulp2Content')),
+                (
+                    "pulp_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("pulp_created", models.DateTimeField(auto_now_add=True)),
+                ("pulp_last_updated", models.DateTimeField(auto_now=True, null=True)),
+                ("package_relative_path", models.TextField()),
+                ("package_sha256", models.TextField()),
+                ("component", models.TextField()),
+                ("distribution", models.TextField()),
+                ("codename", models.TextField()),
+                ("suite", models.TextField()),
+                (
+                    "pulp2content",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="deb_component_package_detail_model",
+                        to="pulp_2to3_migration.Pulp2Content",
+                    ),
+                ),
             ],
             options={
-                'default_related_name': 'deb_component_package_detail_model',
-                'unique_together': {('package_relative_path', 'package_sha256', 'component', 'distribution', 'codename', 'suite')},
+                "default_related_name": "deb_component_package_detail_model",
+                "unique_together": {
+                    (
+                        "package_relative_path",
+                        "package_sha256",
+                        "component",
+                        "distribution",
+                        "codename",
+                        "suite",
+                    )
+                },
             },
             bases=(django_lifecycle.mixins.LifecycleModelMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='Pulp2DebComponent',
+            name="Pulp2DebComponent",
             fields=[
-                ('pulp_id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('pulp_created', models.DateTimeField(auto_now_add=True)),
-                ('pulp_last_updated', models.DateTimeField(auto_now=True, null=True)),
-                ('distribution', models.TextField()),
-                ('codename', models.TextField()),
-                ('component', models.TextField()),
-                ('suite', models.TextField()),
-                ('pulp2content', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='deb_component_detail_model', to='pulp_2to3_migration.Pulp2Content')),
+                (
+                    "pulp_id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("pulp_created", models.DateTimeField(auto_now_add=True)),
+                ("pulp_last_updated", models.DateTimeField(auto_now=True, null=True)),
+                ("distribution", models.TextField()),
+                ("codename", models.TextField()),
+                ("component", models.TextField()),
+                ("suite", models.TextField()),
+                (
+                    "pulp2content",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="deb_component_detail_model",
+                        to="pulp_2to3_migration.Pulp2Content",
+                    ),
+                ),
             ],
             options={
-                'default_related_name': 'deb_component_detail_model',
-                'unique_together': {('component', 'codename', 'suite', 'distribution')},
+                "default_related_name": "deb_component_detail_model",
+                "unique_together": {("component", "codename", "suite", "distribution")},
             },
             bases=(django_lifecycle.mixins.LifecycleModelMixin, models.Model),
         ),

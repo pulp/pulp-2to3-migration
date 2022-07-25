@@ -13,18 +13,26 @@ def gzip_repodata(apps, schema_editor):
     """
 
     def gzip_pkg_repodata(pkg):
-        pkg.primary_template_gz = gzip.zlib.compress(pkg.repodata.get('primary').encode())
-        pkg.other_template_gz = gzip.zlib.compress(pkg.repodata.get('other').encode())
-        pkg.filelists_template_gz = gzip.zlib.compress(pkg.repodata.get('filelists').encode())
-        pkg.repodata = ''
+        pkg.primary_template_gz = gzip.zlib.compress(
+            pkg.repodata.get("primary").encode()
+        )
+        pkg.other_template_gz = gzip.zlib.compress(pkg.repodata.get("other").encode())
+        pkg.filelists_template_gz = gzip.zlib.compress(
+            pkg.repodata.get("filelists").encode()
+        )
+        pkg.repodata = ""
         return pkg
-    
-    Pulp2Rpm = apps.get_model('pulp_2to3_migration', 'Pulp2Rpm')
-    Pulp2Srpm = apps.get_model('pulp_2to3_migration', 'Pulp2Srpm')
+
+    Pulp2Rpm = apps.get_model("pulp_2to3_migration", "Pulp2Rpm")
+    Pulp2Srpm = apps.get_model("pulp_2to3_migration", "Pulp2Srpm")
 
     batch_size = 500
-    fields_to_update = ('repodata', 'primary_template_gz', 'other_template_gz',
-                        'filelists_template_gz')
+    fields_to_update = (
+        "repodata",
+        "primary_template_gz",
+        "other_template_gz",
+        "filelists_template_gz",
+    )
 
     for model in (Pulp2Rpm, Pulp2Srpm):
         batch_to_save = []
@@ -41,50 +49,48 @@ def gzip_repodata(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0013_fix_file_remote_migration'),
+        ("pulp_2to3_migration", "0013_fix_file_remote_migration"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2rpm',
-            name='filelists_template_gz',
+            model_name="pulp2rpm",
+            name="filelists_template_gz",
             field=models.BinaryField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2rpm',
-            name='other_template_gz',
+            model_name="pulp2rpm",
+            name="other_template_gz",
             field=models.BinaryField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2rpm',
-            name='primary_template_gz',
+            model_name="pulp2rpm",
+            name="primary_template_gz",
             field=models.BinaryField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2srpm',
-            name='filelists_template_gz',
+            model_name="pulp2srpm",
+            name="filelists_template_gz",
             field=models.BinaryField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2srpm',
-            name='other_template_gz',
+            model_name="pulp2srpm",
+            name="other_template_gz",
             field=models.BinaryField(null=True),
         ),
         migrations.AddField(
-            model_name='pulp2srpm',
-            name='primary_template_gz',
+            model_name="pulp2srpm",
+            name="primary_template_gz",
             field=models.BinaryField(null=True),
         ),
-
         migrations.RunPython(gzip_repodata),
-
         # Those fields can be removed only after data migration happened
         migrations.RemoveField(
-            model_name='pulp2rpm',
-            name='repodata',
+            model_name="pulp2rpm",
+            name="repodata",
         ),
         migrations.RemoveField(
-            model_name='pulp2srpm',
-            name='repodata',
+            model_name="pulp2srpm",
+            name="repodata",
         ),
     ]

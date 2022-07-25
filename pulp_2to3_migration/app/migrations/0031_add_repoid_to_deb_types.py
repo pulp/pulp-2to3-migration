@@ -6,48 +6,62 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0030_update_json_field'),
+        ("pulp_2to3_migration", "0030_update_json_field"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2debcomponent',
-            name='repoid',
-            field=models.TextField(default='blub'),
+            model_name="pulp2debcomponent",
+            name="repoid",
+            field=models.TextField(default="blub"),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='pulp2debrelease',
-            name='repoid',
-            field=models.TextField(default='blub'),
+            model_name="pulp2debrelease",
+            name="repoid",
+            field=models.TextField(default="blub"),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='pulp2debcomponentpackage',
-            name='repoid',
-            field=models.TextField(default='blub'),
+            model_name="pulp2debcomponentpackage",
+            name="repoid",
+            field=models.TextField(default="blub"),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='pulp2debreleasearchitecture',
-            name='repoid',
-            field=models.TextField(default='blub'),
+            model_name="pulp2debreleasearchitecture",
+            name="repoid",
+            field=models.TextField(default="blub"),
             preserve_default=False,
         ),
         migrations.AlterUniqueTogether(
-            name='pulp2debcomponent',
-            unique_together={('component', 'codename', 'suite', 'distribution', 'repoid')},
+            name="pulp2debcomponent",
+            unique_together={
+                ("component", "codename", "suite", "distribution", "repoid")
+            },
         ),
         migrations.AlterUniqueTogether(
-            name='pulp2debrelease',
-            unique_together={('codename', 'suite', 'distribution', 'repoid')},
+            name="pulp2debrelease",
+            unique_together={("codename", "suite", "distribution", "repoid")},
         ),
         migrations.AlterUniqueTogether(
-            name='pulp2debcomponentpackage',
-            unique_together={('package_relative_path', 'package_sha256', 'component', 'distribution', 'codename', 'suite', 'repoid')},
+            name="pulp2debcomponentpackage",
+            unique_together={
+                (
+                    "package_relative_path",
+                    "package_sha256",
+                    "component",
+                    "distribution",
+                    "codename",
+                    "suite",
+                    "repoid",
+                )
+            },
         ),
         migrations.AlterUniqueTogether(
-            name='pulp2debreleasearchitecture',
-            unique_together={('architecture', 'distribution', 'codename', 'suite', 'repoid')},
+            name="pulp2debreleasearchitecture",
+            unique_together={
+                ("architecture", "distribution", "codename", "suite", "repoid")
+            },
         ),
     ]

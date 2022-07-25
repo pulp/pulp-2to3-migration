@@ -23,7 +23,9 @@ CHANGELOG_EXTS = [".feature", ".bugfix", ".doc", ".removal", ".misc", ".deprecat
 KEYWORDS = ["fixes", "closes"]
 
 sha = sys.argv[1]
-message = subprocess.check_output(["git", "log", "--format=%B", "-n 1", sha]).decode("utf-8")
+message = subprocess.check_output(["git", "log", "--format=%B", "-n 1", sha]).decode(
+    "utf-8"
+)
 g = Github(os.environ.get("GITHUB_TOKEN"))
 repo = g.get_repo("pulp/pulp-2to3-migration")
 
@@ -66,7 +68,11 @@ if issues:
         __check_changelog(issue)
 else:
     if NO_ISSUE in message:
-        print("Commit {sha} has no issues but is tagged {tag}.".format(sha=sha[0:7], tag=NO_ISSUE))
+        print(
+            "Commit {sha} has no issues but is tagged {tag}.".format(
+                sha=sha[0:7], tag=NO_ISSUE
+            )
+        )
     elif "Merge" in message and "cherry picked from commit" in message:
         pass
     else:

@@ -7,14 +7,18 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0026_task_group'),
-        ('pulp_2to3_migration', '0006_pulp2_comps'),
+        ("core", "0026_task_group"),
+        ("pulp_2to3_migration", "0006_pulp2_comps"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2repository',
-            name='pulp3_repository',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.Repository'),
+            model_name="pulp2repository",
+            name="pulp3_repository",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="core.Repository",
+            ),
         ),
     ]

@@ -30,6 +30,7 @@ class BaseTestFile:
     """
     Test ISO migration.
     """
+
     smash_cfg = smash_config.get_config()
     smash_cli_client = cli.Client(smash_cfg)
 
@@ -67,7 +68,7 @@ class BaseTestFile:
             task(pulpcore.app.models.Task): a migration task created for this plan
 
         """
-        mp = cls.migration_plans_api.create({'plan': plan})
+        mp = cls.migration_plans_api.create({"plan": plan})
         mp_run_response = cls.migration_plans_api.run(mp.pulp_href, run_params)
         task = monitor_task(mp_run_response.task)
         monitor_task_group(task.task_group)
