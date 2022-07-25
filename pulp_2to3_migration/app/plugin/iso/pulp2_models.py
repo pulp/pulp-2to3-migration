@@ -16,19 +16,20 @@ class ISO(FileContentUnit):
 
     It will become a File content type in Pulp 3 world.
     """
+
     name = StringField(required=True)
     checksum = StringField(required=True)
     size = IntField(required=True)
 
-    _ns = StringField(default='units_iso')
-    _content_type_id = StringField(required=True, default='iso')
+    _ns = StringField(default="units_iso")
+    _content_type_id = StringField(required=True, default="iso")
 
-    unit_key_fields = ('name', 'checksum', 'size')
-    unit_display_name = 'ISO'
-    unit_description = 'ISO'
+    unit_key_fields = ("name", "checksum", "size")
+    unit_display_name = "ISO"
+    unit_description = "ISO"
 
-    TYPE_ID = 'iso'
+    TYPE_ID = "iso"
 
     meta = {
-        'collection': 'units_iso',
+        "collection": "units_iso",
     }

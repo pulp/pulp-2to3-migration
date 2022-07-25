@@ -6,17 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0020_fix_defaults'),
+        ("pulp_2to3_migration", "0020_fix_defaults"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2content',
-            name='pulp2_subid',
+            model_name="pulp2content",
+            name="pulp2_subid",
             field=models.CharField(blank=True, max_length=255),
         ),
         migrations.AlterUniqueTogether(
-            name='pulp2content',
-            unique_together={('pulp2_id', 'pulp2_content_type_id', 'pulp2_repo', 'pulp2_subid')},
+            name="pulp2content",
+            unique_together={
+                ("pulp2_id", "pulp2_content_type_id", "pulp2_repo", "pulp2_subid")
+            },
         ),
     ]

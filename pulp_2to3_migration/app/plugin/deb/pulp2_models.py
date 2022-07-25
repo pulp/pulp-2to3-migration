@@ -12,12 +12,13 @@ class DebPackage(FileContentUnit):
 
     It will become a pulp_deb Package type in Pulp 3.
     """
-    TYPE_ID = 'deb'
+
+    TYPE_ID = "deb"
     UNIT_KEY_DEB = ("name", "version", "architecture", "checksumtype", "checksum")
 
     meta = {
-        'collection': 'units_deb',
-        'indexes': list(UNIT_KEY_DEB),
+        "collection": "units_deb",
+        "indexes": list(UNIT_KEY_DEB),
     }
 
     unit_key_fields = UNIT_KEY_DEB
@@ -36,7 +37,7 @@ class DebPackage(FileContentUnit):
     # Other required fields:
     filename = mongoengine.StringField(required=True)
 
-    REQUIRED_FIELDS = list(UNIT_KEY_DEB).append('filename')
+    REQUIRED_FIELDS = list(UNIT_KEY_DEB).append("filename")
 
     # Named checksum fields:
     md5sum = mongoengine.StringField()
@@ -63,8 +64,17 @@ class DebPackage(FileContentUnit):
     suggests = mongoengine.DynamicField()
 
     # List of relational fields:
-    REL_FIELDS = ['breaks', 'conflicts', 'depends', 'enhances', 'pre_depends',
-                  'provides', 'recommends', 'replaces', 'suggests']
+    REL_FIELDS = [
+        "breaks",
+        "conflicts",
+        "depends",
+        "enhances",
+        "pre_depends",
+        "provides",
+        "recommends",
+        "replaces",
+        "suggests",
+    ]
 
     # The control file fields dict:
     # Note: This stores a dict of strings as used within the python-debian
@@ -86,7 +96,7 @@ class DebPackage(FileContentUnit):
     original_maintainer = mongoengine.StringField()
 
     # Fields retained for backwards compatibility:
-    _ns = mongoengine.StringField(required=True, default=meta['collection'])
+    _ns = mongoengine.StringField(required=True, default=meta["collection"])
     _content_type_id = mongoengine.StringField(required=True, default=TYPE_ID)
 
     # A dict translating all control file field names from this class into their
@@ -121,11 +131,12 @@ class DebComponent(ContentUnit):
     """
     This unittype represents a deb release/distribution component.
     """
-    TYPE_ID = 'deb_component'
-    UNIT_KEY_DEB_COMPONENT = ('name', 'distribution', 'repoid')
+
+    TYPE_ID = "deb_component"
+    UNIT_KEY_DEB_COMPONENT = ("name", "distribution", "repoid")
     meta = {
-        'collection': "units_deb_component",
-        'indexes': list(UNIT_KEY_DEB_COMPONENT),
+        "collection": "units_deb_component",
+        "indexes": list(UNIT_KEY_DEB_COMPONENT),
     }
     unit_key_fields = UNIT_KEY_DEB_COMPONENT
 
@@ -136,7 +147,7 @@ class DebComponent(ContentUnit):
     packages = mongoengine.ListField()
 
     # For backward compatibility
-    _ns = mongoengine.StringField(required=True, default=meta['collection'])
+    _ns = mongoengine.StringField(required=True, default=meta["collection"])
     _content_type_id = mongoengine.StringField(required=True, default=TYPE_ID)
 
     @property
@@ -144,23 +155,24 @@ class DebComponent(ContentUnit):
         """
         Returns the plain component without any directory prefixes.
         """
-        return self.name.strip('/').split('/')[-1]
+        return self.name.strip("/").split("/")[-1]
 
     @property
     def prefixed_component(self):
         """
         Returns the component with additional directory prefixes for complex distributions.
         """
-        prefix = '/'.join(self.distribution.split('/')[1:]).strip('/')
-        return (prefix + '/' + self.plain_component).strip('/')
+        prefix = "/".join(self.distribution.split("/")[1:]).strip("/")
+        return (prefix + "/" + self.plain_component).strip("/")
 
 
 class DebRelease(ContentUnit):
     """
     This unittype represents a deb release (also referred to as a "distribution").
     """
-    TYPE_ID = 'deb_release'
-    UNIT_KEY_DEB_RELEASE = ('distribution', 'repoid')
+
+    TYPE_ID = "deb_release"
+    UNIT_KEY_DEB_RELEASE = ("distribution", "repoid")
     meta = dict(collection="units_deb_release", indexes=list(UNIT_KEY_DEB_RELEASE))
     unit_key_fields = UNIT_KEY_DEB_RELEASE
 
@@ -170,5 +182,5 @@ class DebRelease(ContentUnit):
     suite = mongoengine.StringField()
 
     # For backward compatibility
-    _ns = mongoengine.StringField(required=True, default=meta['collection'])
+    _ns = mongoengine.StringField(required=True, default=meta["collection"])
     _content_type_id = mongoengine.StringField(required=True, default=TYPE_ID)

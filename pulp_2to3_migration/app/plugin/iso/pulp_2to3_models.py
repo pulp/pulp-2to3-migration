@@ -12,16 +12,17 @@ class Pulp2ISO(Pulp2to3Content):
     """
     Pulp 2to3 detail content model to store pulp 2 ISO content details for Pulp 3 content creation.
     """
+
     name = models.TextField()
     checksum = models.CharField(max_length=64)
     size = models.BigIntegerField()
 
-    pulp2_type = 'iso'
-    checksum_type = 'sha256'
+    pulp2_type = "iso"
+    checksum_type = "sha256"
 
     class Meta:
-        unique_together = ('name', 'checksum', 'size', 'pulp2content')
-        default_related_name = 'iso_detail_model'
+        unique_together = ("name", "checksum", "size", "pulp2content")
+        default_related_name = "iso_detail_model"
 
     @property
     def expected_digests(self):
@@ -48,20 +49,26 @@ class Pulp2ISO(Pulp2to3Content):
 
         """
         # TODO: all pulp2content objects from the batch are in memory. Concerns?
-        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
+        pulp2_id_obj_map = {
+            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
+        }
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_iso_content_batch = ISO.objects.filter(id__in=pulp2_ids)
-        pulp2iso_to_save = [Pulp2ISO(name=iso.name,
-                                     checksum=iso.checksum,
-                                     size=iso.size,
-                                     pulp2content=pulp2_id_obj_map[iso.id])
-                            for iso in pulp2_iso_content_batch]
-        cls.objects.bulk_create(pulp2iso_to_save, ignore_conflicts=True,
-                                batch_size=DEFAULT_BATCH_SIZE)
+        pulp2iso_to_save = [
+            Pulp2ISO(
+                name=iso.name,
+                checksum=iso.checksum,
+                size=iso.size,
+                pulp2content=pulp2_id_obj_map[iso.id],
+            )
+            for iso in pulp2_iso_content_batch
+        ]
+        cls.objects.bulk_create(
+            pulp2iso_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
+        )
 
     def create_pulp3_content(self):
         """
         Create a Pulp 3 FileContent unit for saving it later in a bulk operation.
         """
-        return (FileContent(relative_path=self.name,
-                            digest=self.checksum), None)
+        return (FileContent(relative_path=self.name, digest=self.checksum), None)

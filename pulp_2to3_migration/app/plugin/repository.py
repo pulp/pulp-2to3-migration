@@ -13,6 +13,7 @@ class Pulp2to3Importer:
         pulp3_remote_models(list): a list of models for Remotes which plugin supports
 
     """
+
     pulp3_remote_models = []
 
     class Meta:
@@ -25,49 +26,52 @@ class Pulp2to3Importer:
         """
         base_config = {}
         proxy_url, credentials, host = None, None, None
-        pulp2_proxy_host = pulp2_config.get('proxy_host')
-        pulp2_proxy_port = pulp2_config.get('proxy_port')
-        pulp2_proxy_username = pulp2_config.get('proxy_username')
-        pulp2_proxy_password = pulp2_config.get('proxy_password')
+        pulp2_proxy_host = pulp2_config.get("proxy_host")
+        pulp2_proxy_port = pulp2_config.get("proxy_port")
+        pulp2_proxy_username = pulp2_config.get("proxy_username")
+        pulp2_proxy_password = pulp2_config.get("proxy_password")
         if pulp2_proxy_username:
-            credentials = '{}:{}'.format(pulp2_proxy_username, pulp2_proxy_password)
+            credentials = "{}:{}".format(pulp2_proxy_username, pulp2_proxy_password)
         if pulp2_proxy_host:
             parsed_url = urlparse(pulp2_proxy_host)
             scheme = parsed_url.scheme
             host = parsed_url.hostname
             if pulp2_proxy_port:
-                host += ':{}'.format(pulp2_proxy_port)
+                host += ":{}".format(pulp2_proxy_port)
             if credentials:
-                proxy_url = '{}://{}@{}'.format(scheme, credentials, host)
+                proxy_url = "{}://{}@{}".format(scheme, credentials, host)
             else:
-                proxy_url = '{}://{}'.format(scheme, host)
-        remote_name = '{}-{}'.format(pulp2importer.pulp2_object_id,
-                                     pulp2importer.pulp2_repo_id)
-        base_config['proxy_url'] = proxy_url
-        username = pulp2_config.get('basic_auth_username')
-        password = pulp2_config.get('basic_auth_password')
-        feed = pulp2_config.get('feed', '')  # what to do if there is no feed?
-        if feed and '@' in feed:
+                proxy_url = "{}://{}".format(scheme, host)
+        remote_name = "{}-{}".format(
+            pulp2importer.pulp2_object_id, pulp2importer.pulp2_repo_id
+        )
+        base_config["proxy_url"] = proxy_url
+        username = pulp2_config.get("basic_auth_username")
+        password = pulp2_config.get("basic_auth_password")
+        feed = pulp2_config.get("feed", "")  # what to do if there is no feed?
+        if feed and "@" in feed:
             # move out the credentials from the feed
             parsed_feed = urlparse(feed)
             if not username:
                 username = parsed_feed.username
             if not password:
                 password = parsed_feed.password
-            _, netloc_split = parsed_feed.netloc.rsplit('@', maxsplit=1)
+            _, netloc_split = parsed_feed.netloc.rsplit("@", maxsplit=1)
             feed = urlunparse(parsed_feed._replace(netloc=netloc_split))
-        base_config['url'] = feed
-        base_config['username'] = username
-        base_config['password'] = password
+        base_config["url"] = feed
+        base_config["username"] = username
+        base_config["password"] = password
 
-        base_config['ca_cert'] = pulp2_config.get('ssl_ca_cert')
-        base_config['client_cert'] = pulp2_config.get('ssl_client_cert')
-        base_config['client_key'] = pulp2_config.get('ssl_client_key')
+        base_config["ca_cert"] = pulp2_config.get("ssl_ca_cert")
+        base_config["client_cert"] = pulp2_config.get("ssl_client_cert")
+        base_config["client_key"] = pulp2_config.get("ssl_client_key")
         # True by default?
-        base_config['tls_validation'] = pulp2_config.get('ssl_validation', True)
-        base_config['download_concurrency'] = pulp2_config.get('max_downloads') or 20
-        policy = PULP_2TO3_POLICIES.get(pulp2_config.get('download_policy', 'immediate'))
-        base_config['policy'] = policy
+        base_config["tls_validation"] = pulp2_config.get("ssl_validation", True)
+        base_config["download_concurrency"] = pulp2_config.get("max_downloads") or 20
+        policy = PULP_2TO3_POLICIES.get(
+            pulp2_config.get("download_policy", "immediate")
+        )
+        base_config["policy"] = policy
         return base_config, remote_name
 
     @classmethod
@@ -97,6 +101,7 @@ class Pulp2to3Distributor:
         pulp3_distribution_models(list): a list of models for Distributions which plugin supports
 
     """
+
     pulp3_publication_models = []
     pulp3_distribution_models = []
 
@@ -109,9 +114,10 @@ class Pulp2to3Distributor:
         Parse and return basic config.
         """
         base_config = {}
-        name = '{}-{}'.format(pulp2distributor.pulp2_object_id,
-                              pulp2distributor.pulp2_repo_id)
-        base_config['name'] = name
+        name = "{}-{}".format(
+            pulp2distributor.pulp2_object_id, pulp2distributor.pulp2_repo_id
+        )
+        base_config["name"] = name
         return base_config
 
     @classmethod
@@ -181,8 +187,9 @@ def is_different_relative_url(pulp2distributor):
     if not pulp2distributor.pulp3_distribution:
         return True
 
-    new_base_path = pulp2distributor.pulp2_config.get('relative_url',
-                                                      pulp2distributor.pulp2_repo_id)
+    new_base_path = pulp2distributor.pulp2_config.get(
+        "relative_url", pulp2distributor.pulp2_repo_id
+    )
     current_base_path = pulp2distributor.pulp3_distribution.base_path
     if new_base_path != current_base_path:
         return True

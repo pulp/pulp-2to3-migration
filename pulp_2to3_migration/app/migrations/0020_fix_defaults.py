@@ -7,38 +7,38 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0019_remove_pulp2_repository'),
+        ("pulp_2to3_migration", "0019_remove_pulp2_repository"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='pulp2modulemddefaults',
-            name='profiles',
+            model_name="pulp2modulemddefaults",
+            name="profiles",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2modulemd',
-            name='dependencies',
+            model_name="pulp2modulemd",
+            name="dependencies",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=list),
         ),
         migrations.AlterField(
-            model_name='pulp2packagecategory',
-            name='desc_by_lang',
+            model_name="pulp2packagecategory",
+            name="desc_by_lang",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagecategory',
-            name='name_by_lang',
+            model_name="pulp2packagecategory",
+            name="name_by_lang",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagegroup',
-            name='desc_by_lang',
+            model_name="pulp2packagegroup",
+            name="desc_by_lang",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='pulp2packagegroup',
-            name='name_by_lang',
+            model_name="pulp2packagegroup",
+            name="name_by_lang",
             field=django.contrib.postgres.fields.jsonb.JSONField(default=dict),
         ),
     ]

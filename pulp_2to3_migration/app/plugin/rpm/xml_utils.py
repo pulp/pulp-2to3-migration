@@ -18,15 +18,15 @@ from django.template.defaulttags import TemplateTagNode
 
 
 ESCAPE_TEMPLATE_VARS_TAGS = {
-    'primary': ('description', 'summary'),
-    'other': ('changelog',),
-    'filelists': ('file',)
+    "primary": ("description", "summary"),
+    "other": ("changelog",),
+    "filelists": ("file",),
 }
-METADATA_TYPES = ('primary', 'other', 'filelists')
+METADATA_TYPES = ("primary", "other", "filelists")
 
-XmlElement = namedtuple('xml_element', ['start', 'end'])
+XmlElement = namedtuple("xml_element", ["start", "end"])
 TEMPLATETAG_MAP = dict((sym, name) for name, sym in TemplateTagNode.mapping.items())
-SYMBOLS_PATTERN = '(%s)' % '|'.join(TEMPLATETAG_MAP.keys())
+SYMBOLS_PATTERN = "(%s)" % "|".join(TEMPLATETAG_MAP.keys())
 
 
 def _substitute_special_chars(template):
@@ -44,8 +44,8 @@ def _substitute_special_chars(template):
     """
     return re.sub(
         SYMBOLS_PATTERN,
-        lambda mobj: '{%% templatetag %s %%}' % TEMPLATETAG_MAP[mobj.group(1)],
-        template
+        lambda mobj: "{%% templatetag %s %%}" % TEMPLATETAG_MAP[mobj.group(1)],
+        template,
     )
 
 
@@ -84,9 +84,9 @@ def _escape_django_syntax_chars(template, tag_name):
         str: a Django template with the escaped syntax characters in the specified element
 
     """
-    start_tag_pattern = r'<%s.*?(?<!/)>' % tag_name
-    end_tag_pattern = r'</%s>' % tag_name
-    complete_tag_pattern = r'(%s)(.*)(%s)' % (start_tag_pattern, end_tag_pattern)
+    start_tag_pattern = r"<%s.*?(?<!/)>" % tag_name
+    end_tag_pattern = r"</%s>" % tag_name
+    complete_tag_pattern = r"(%s)(.*)(%s)" % (start_tag_pattern, end_tag_pattern)
     tag_re = re.compile(complete_tag_pattern, flags=re.DOTALL)
     template = tag_re.sub(_generate_tag_replacement_str, template)
     return template
@@ -105,9 +105,9 @@ def render_primary(template, checksum, checksumtype):
         str: a rendered primary.xml snippet
 
     """
-    for tag in ESCAPE_TEMPLATE_VARS_TAGS['primary']:
+    for tag in ESCAPE_TEMPLATE_VARS_TAGS["primary"]:
         template = _escape_django_syntax_chars(template, tag)
-    context = Context({'checksum': checksum, 'checksumtype': checksumtype})
+    context = Context({"checksum": checksum, "checksumtype": checksumtype})
     return Template(template).render(context)
 
 
@@ -124,9 +124,9 @@ def render_other(template, checksum):
 
     """
 
-    for tag in ESCAPE_TEMPLATE_VARS_TAGS['other']:
+    for tag in ESCAPE_TEMPLATE_VARS_TAGS["other"]:
         template = _escape_django_syntax_chars(template, tag)
-    context = Context({'pkgid': checksum})
+    context = Context({"pkgid": checksum})
     return Template(template).render(context)
 
 
@@ -142,13 +142,14 @@ def render_filelists(template, checksum):
         str: a rendered filelists.xml snippet
 
     """
-    for tag in ESCAPE_TEMPLATE_VARS_TAGS['filelists']:
+    for tag in ESCAPE_TEMPLATE_VARS_TAGS["filelists"]:
         template = _escape_django_syntax_chars(template, tag)
-    context = Context({'pkgid': checksum})
+    context = Context({"pkgid": checksum})
     return Template(template).render(context)
 
 
 # Additional utils (not from pulp2) #
+
 
 def render_metadata(pkg, md_type):
     """
@@ -163,13 +164,13 @@ def render_metadata(pkg, md_type):
     if md_type not in METADATA_TYPES:
         return
 
-    if md_type == 'primary':
+    if md_type == "primary":
         xml_template = decompress_repodata(pkg.primary_template_gz)
         return render_primary(xml_template, pkg.checksum, pkg.checksumtype)
-    elif md_type == 'other':
+    elif md_type == "other":
         xml_template = decompress_repodata(pkg.other_template_gz)
         return render_other(xml_template, pkg.checksum)
-    elif md_type == 'filelists':
+    elif md_type == "filelists":
         xml_template = decompress_repodata(pkg.filelists_template_gz)
         return render_filelists(xml_template, pkg.checksum)
 
@@ -185,9 +186,9 @@ def get_cr_obj(pkg):
         createrepo_c.Package: createrepo_c Package object for the requested package
 
     """
-    primary_xml = render_metadata(pkg, 'primary')
-    other_xml = render_metadata(pkg, 'other')
-    filelists_xml = render_metadata(pkg, 'filelists')
+    primary_xml = render_metadata(pkg, "primary")
+    other_xml = render_metadata(pkg, "other")
+    filelists_xml = render_metadata(pkg, "filelists")
     return parse_repodata(primary_xml, filelists_xml, other_xml)
 
 

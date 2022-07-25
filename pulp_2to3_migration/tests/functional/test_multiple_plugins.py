@@ -35,7 +35,10 @@ from pulpcore.client.pulp_2to3_migration import (
     Pulp2RepositoriesApi,
 )
 
-from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
+from pulp_2to3_migration.tests.functional.util import (
+    get_psql_smash_cmd,
+    set_pulp2_snapshot,
+)
 
 from pulp_smash import cli
 from pulp_smash import config as smash_config
@@ -49,6 +52,7 @@ class BaseTestMultiplePlugins:
     """
     Test migration of multiple plugins.
     """
+
     smash_cfg = smash_config.get_config()
     smash_cli_client = cli.Client(smash_cfg)
 
@@ -78,15 +82,15 @@ class BaseTestMultiplePlugins:
         cls.rpm_distribution_api = DistributionsRpmApi(rpm_client)
         cls.rpm_publication_api = PublicationsRpmApi(rpm_client)
         cls.rpm_content_apis = {
-            'advisory': ContentAdvisoriesApi(rpm_client),
-            'disttree': ContentDistributionTreesApi(rpm_client),
-            'modulemd': ContentModulemdsApi(rpm_client),
-            'modulemd-defaults': ContentModulemdDefaultsApi(rpm_client),
-            'category': ContentPackagecategoriesApi(rpm_client),
-            'environment': ContentPackageenvironmentsApi(rpm_client),
-            'group': ContentPackagegroupsApi(rpm_client),
-            'langpack': ContentPackagelangpacksApi(rpm_client),
-            'package': ContentPackagesApi(rpm_client),
+            "advisory": ContentAdvisoriesApi(rpm_client),
+            "disttree": ContentDistributionTreesApi(rpm_client),
+            "modulemd": ContentModulemdsApi(rpm_client),
+            "modulemd-defaults": ContentModulemdDefaultsApi(rpm_client),
+            "category": ContentPackagecategoriesApi(rpm_client),
+            "environment": ContentPackageenvironmentsApi(rpm_client),
+            "group": ContentPackagegroupsApi(rpm_client),
+            "langpack": ContentPackagelangpacksApi(rpm_client),
+            "package": ContentPackagesApi(rpm_client),
         }
 
         # Create api clients for Migration
@@ -107,7 +111,7 @@ class BaseTestMultiplePlugins:
             task(pulpcore.app.models.Task): a migration task created for this plan
 
         """
-        mp = cls.migration_plans_api.create({'plan': plan})
+        mp = cls.migration_plans_api.create({"plan": plan})
         mp_run_response = cls.migration_plans_api.run(mp.pulp_href, run_params)
         task = monitor_task(mp_run_response.task)
         monitor_task_group(task.task_group)
@@ -127,12 +131,13 @@ class TestRpmIsoMigration(BaseTestMultiplePlugins, unittest.TestCase):
     """
     Test RPM and ISO migration
     """
+
     def test_rpm_iso_migration_sequential(self):
         """Test migrating RPM plugin and ISO plugin in two separate runs"""
-        set_pulp2_snapshot(name='rpm_base_4repos')
+        set_pulp2_snapshot(name="rpm_base_4repos")
         self.run_migration(RPM_SIMPLE_PLAN)
 
-        set_pulp2_snapshot(name='file_base_4repos')
+        set_pulp2_snapshot(name="file_base_4repos")
         self.run_migration(FILE_SIMPLE_PLAN)
 
         rpm_repo_count = 3

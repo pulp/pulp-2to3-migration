@@ -72,67 +72,68 @@ class RpmMigrator(Pulp2to3PluginMigrator):
         importer_migrators(dict): {'importer_type_id': 'pulp_2to3 importer interface/migrator'}
 
     """
-    pulp2_plugin = 'rpm'
+
+    pulp2_plugin = "rpm"
     pulp2_content_models = {
-        'rpm': pulp2_models.RPM,
-        'srpm': pulp2_models.SRPM,
-        'distribution': pulp2_models.Distribution,
-        'erratum': pulp2_models.Errata,
-        'modulemd': pulp2_models.Modulemd,
-        'modulemd_defaults': pulp2_models.ModulemdDefaults,
-        'yum_repo_metadata_file': pulp2_models.YumMetadataFile,
-        'package_langpacks': pulp2_models.PackageLangpacks,
-        'package_group': pulp2_models.PackageGroup,
-        'package_category': pulp2_models.PackageCategory,
-        'package_environment': pulp2_models.PackageEnvironment,
+        "rpm": pulp2_models.RPM,
+        "srpm": pulp2_models.SRPM,
+        "distribution": pulp2_models.Distribution,
+        "erratum": pulp2_models.Errata,
+        "modulemd": pulp2_models.Modulemd,
+        "modulemd_defaults": pulp2_models.ModulemdDefaults,
+        "yum_repo_metadata_file": pulp2_models.YumMetadataFile,
+        "package_langpacks": pulp2_models.PackageLangpacks,
+        "package_group": pulp2_models.PackageGroup,
+        "package_category": pulp2_models.PackageCategory,
+        "package_environment": pulp2_models.PackageEnvironment,
     }
-    pulp2_collection = 'units_rpm'
-    pulp3_plugin = 'pulp_rpm'
+    pulp2_collection = "units_rpm"
+    pulp3_plugin = "pulp_rpm"
     pulp3_repository = RpmRepository
-    content_models = OrderedDict([
-        ('rpm', Pulp2Rpm),
-        ('srpm', Pulp2Srpm),
-        ('distribution', Pulp2Distribution),
-        ('erratum', Pulp2Erratum),
-        ('modulemd', Pulp2Modulemd),
-        ('modulemd_defaults', Pulp2ModulemdDefaults),
-        ('yum_repo_metadata_file', Pulp2YumRepoMetadataFile),
-        ('package_langpacks', Pulp2PackageLangpacks),
-        ('package_group', Pulp2PackageGroup),
-        ('package_category', Pulp2PackageCategory),
-        ('package_environment', Pulp2PackageEnvironment),
-    ])
+    content_models = OrderedDict(
+        [
+            ("rpm", Pulp2Rpm),
+            ("srpm", Pulp2Srpm),
+            ("distribution", Pulp2Distribution),
+            ("erratum", Pulp2Erratum),
+            ("modulemd", Pulp2Modulemd),
+            ("modulemd_defaults", Pulp2ModulemdDefaults),
+            ("yum_repo_metadata_file", Pulp2YumRepoMetadataFile),
+            ("package_langpacks", Pulp2PackageLangpacks),
+            ("package_group", Pulp2PackageGroup),
+            ("package_category", Pulp2PackageCategory),
+            ("package_environment", Pulp2PackageEnvironment),
+        ]
+    )
     mutable_content_models = {
-        'erratum': Pulp2Erratum,
-        'modulemd': Pulp2Modulemd,
-        'modulemd_defaults': Pulp2ModulemdDefaults,
+        "erratum": Pulp2Erratum,
+        "modulemd": Pulp2Modulemd,
+        "modulemd_defaults": Pulp2ModulemdDefaults,
     }
     importer_migrators = {
-        'yum_importer': RpmImporter,
+        "yum_importer": RpmImporter,
     }
     distributor_migrators = {
-        'yum_distributor': RpmDistributor,
+        "yum_distributor": RpmDistributor,
     }
     lazy_types = {
-        'distribution': Pulp2Distribution,
-        'rpm': Pulp2Rpm,
-        'srpm': Pulp2Srpm,
+        "distribution": Pulp2Distribution,
+        "rpm": Pulp2Rpm,
+        "srpm": Pulp2Srpm,
     }
     future_types = {
-        'rpm': Pulp2Rpm,
+        "rpm": Pulp2Rpm,
     }
     artifactless_types = {
-        'erratum': Pulp2Erratum,
-        'package_langpacks': Pulp2PackageLangpacks,
-        'package_group': Pulp2PackageGroup,
-        'package_category': Pulp2PackageCategory,
-        'package_environment': Pulp2PackageEnvironment,
+        "erratum": Pulp2Erratum,
+        "package_langpacks": Pulp2PackageLangpacks,
+        "package_group": Pulp2PackageGroup,
+        "package_category": Pulp2PackageCategory,
+        "package_environment": Pulp2PackageEnvironment,
     }
-    multi_artifact_types = {
-        'distribution': Pulp2Distribution
-    }
+    multi_artifact_types = {"distribution": Pulp2Distribution}
     premigrate_hook = {
-        'yum_repo_metadata_file': exclude_unsupported_metadata,
+        "yum_repo_metadata_file": exclude_unsupported_metadata,
     }
 
     @classmethod
@@ -193,6 +194,7 @@ class InterrelateContent(Stage):
         Relate each item in the input queue to objects specified on the DeclarativeContent.
         """
         async for batch in self.batches():
+
             def process_batch():
                 modulemd_packages_batch = []
                 with transaction.atomic():
@@ -202,9 +204,11 @@ class InterrelateContent(Stage):
                             modulemd_packages_batch.extend(thru)
 
                     ModulemdPackages = Modulemd.packages.through
-                    ModulemdPackages.objects.bulk_create(objs=modulemd_packages_batch,
-                                                         ignore_conflicts=True,
-                                                         batch_size=DEFAULT_BATCH_SIZE)
+                    ModulemdPackages.objects.bulk_create(
+                        objs=modulemd_packages_batch,
+                        ignore_conflicts=True,
+                        batch_size=DEFAULT_BATCH_SIZE,
+                    )
 
             await sync_to_async(process_batch)()
             for dc in batch:
@@ -231,12 +235,15 @@ class InterrelateContent(Stage):
                 version=nevra[2],
                 release=nevra[3],
                 arch=nevra[4],
-                is_modular=True)
+                is_modular=True,
+            )
         packages_list = []
         if pq:
-            packages_list = Package.objects.filter(pq).only(
-                'pk', 'name', 'epoch', 'version', 'release', 'arch'
-            ).iterator()
+            packages_list = (
+                Package.objects.filter(pq)
+                .only("pk", "name", "epoch", "version", "release", "arch")
+                .iterator()
+            )
 
         thru = []
         # keep track of rpm nevra for which we already created a relation with module.
@@ -246,6 +253,10 @@ class InterrelateContent(Stage):
         for pkg in packages_list:
             nevra = pkg.nevra
             if nevra not in already_related:
-                thru.append(ModulemdPackages(package_id=pkg.pk, modulemd_id=module_dc.content.pk))
+                thru.append(
+                    ModulemdPackages(
+                        package_id=pkg.pk, modulemd_id=module_dc.content.pk
+                    )
+                )
                 already_related.append(nevra)
         return thru

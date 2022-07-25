@@ -6,12 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0026_p2content_UQ'),
+        ("pulp_2to3_migration", "0026_p2content_UQ"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='pulp2repocontent',
-            index=models.Index(fields=['pulp2_created'], name='pulp_2to3_m_pulp2_c_267ffa_idx'),
+            model_name="pulp2repocontent",
+            index=models.Index(
+                fields=["pulp2_created"], name="pulp_2to3_m_pulp2_c_267ffa_idx"
+            ),
         ),
     ]

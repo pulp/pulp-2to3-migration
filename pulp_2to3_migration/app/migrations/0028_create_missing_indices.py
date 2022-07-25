@@ -6,41 +6,57 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0027_pulp2repocontent_created_index'),
+        ("pulp_2to3_migration", "0027_pulp2repocontent_created_index"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='pulp2content',
-            index=models.Index(fields=['pulp2_last_updated'], name='pulp_2to3_m_pulp2_l_c8b0d6_idx'),
+            model_name="pulp2content",
+            index=models.Index(
+                fields=["pulp2_last_updated"], name="pulp_2to3_m_pulp2_l_c8b0d6_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2distributor',
-            index=models.Index(fields=['pulp2_last_updated'], name='pulp_2to3_m_pulp2_l_2c5996_idx'),
+            model_name="pulp2distributor",
+            index=models.Index(
+                fields=["pulp2_last_updated"], name="pulp_2to3_m_pulp2_l_2c5996_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2distributor',
-            index=models.Index(fields=['pulp2_repo_id'], name='pulp_2to3_m_pulp2_r_77bd32_idx'),
+            model_name="pulp2distributor",
+            index=models.Index(
+                fields=["pulp2_repo_id"], name="pulp_2to3_m_pulp2_r_77bd32_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2importer',
-            index=models.Index(fields=['pulp2_last_updated'], name='pulp_2to3_m_pulp2_l_2bbfde_idx'),
+            model_name="pulp2importer",
+            index=models.Index(
+                fields=["pulp2_last_updated"], name="pulp_2to3_m_pulp2_l_2bbfde_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2repository',
-            index=models.Index(fields=['pulp2_last_unit_added'], name='pulp_2to3_m_pulp2_l_270629_idx'),
+            model_name="pulp2repository",
+            index=models.Index(
+                fields=["pulp2_last_unit_added"], name="pulp_2to3_m_pulp2_l_270629_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2repository',
-            index=models.Index(fields=['pulp2_last_unit_removed'], name='pulp_2to3_m_pulp2_l_2de33d_idx'),
+            model_name="pulp2repository",
+            index=models.Index(
+                fields=["pulp2_last_unit_removed"],
+                name="pulp_2to3_m_pulp2_l_2de33d_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2repository',
-            index=models.Index(fields=['pulp2_repo_id'], name='pulp_2to3_m_pulp2_r_68b419_idx'),
+            model_name="pulp2repository",
+            index=models.Index(
+                fields=["pulp2_repo_id"], name="pulp_2to3_m_pulp2_r_68b419_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='pulp2importer',
-            index=models.Index(fields=['pulp2_repo_id'], name='pulp_2to3_m_pulp2_r_46adaf_idx'),
+            model_name="pulp2importer",
+            index=models.Index(
+                fields=["pulp2_repo_id"], name="pulp_2to3_m_pulp2_r_46adaf_idx"
+            ),
         ),
-
     ]

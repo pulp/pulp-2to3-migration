@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0011_lce_revision'),
+        ("pulp_2to3_migration", "0011_lce_revision"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='pulp2rpm',
-            name='size',
+            model_name="pulp2rpm",
+            name="size",
             field=models.BigIntegerField(),
         ),
         migrations.AlterField(
-            model_name='pulp2srpm',
-            name='size',
+            model_name="pulp2srpm",
+            name="size",
             field=models.BigIntegerField(),
         ),
     ]

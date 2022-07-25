@@ -27,24 +27,25 @@ class IsoMigrator(Pulp2to3PluginMigrator):
         importer_migrators(dict): {'importer_type_id': 'pulp_2to3 importer interface/migrator'}
 
     """
-    pulp2_plugin = 'iso'
+
+    pulp2_plugin = "iso"
     pulp2_content_models = {
-        'iso': ISO,
+        "iso": ISO,
     }
-    pulp2_collection = 'units_iso'
-    pulp3_plugin = 'pulp_file'
+    pulp2_collection = "units_iso"
+    pulp3_plugin = "pulp_file"
     pulp3_repository = FileRepository
     content_models = {
-        'iso': Pulp2ISO,
+        "iso": Pulp2ISO,
     }
     importer_migrators = {
-        'iso_importer': IsoImporter,
+        "iso_importer": IsoImporter,
     }
     distributor_migrators = {
-        'iso_distributor': IsoDistributor,
+        "iso_distributor": IsoDistributor,
     }
     lazy_types = {
-        'iso': Pulp2ISO,
+        "iso": Pulp2ISO,
     }
 
     @classmethod

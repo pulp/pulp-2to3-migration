@@ -1,7 +1,10 @@
 import time
 import unittest
 
-from pulp_2to3_migration.tests.functional.util import get_psql_smash_cmd, set_pulp2_snapshot
+from pulp_2to3_migration.tests.functional.util import (
+    get_psql_smash_cmd,
+    set_pulp2_snapshot,
+)
 from pulpcore.client.pulp_2to3_migration.exceptions import ApiException
 
 from pulp_smash.pulp3.bindings import monitor_task, monitor_task_group
@@ -12,8 +15,8 @@ from .file_base import BaseTestFile
 
 
 PULP_2_ISO_FIXTURE_DATA = {
-    'repositories': 4,
-    'content': 266,
+    "repositories": 4,
+    "content": 266,
 }
 
 
@@ -26,7 +29,7 @@ class TestMigrationPlanReset(BaseTestFile, unittest.TestCase):
         Populate needed pulp2 snapshot.
         """
         super().setUpClass()
-        set_pulp2_snapshot(name='file_base_4repos')
+        set_pulp2_snapshot(name="file_base_4repos")
 
     def tearDown(self):
         """
@@ -46,17 +49,22 @@ class TestMigrationPlanReset(BaseTestFile, unittest.TestCase):
         self.run_migration(FILE_SIMPLE_PLAN)
 
         # Assert that pre-migrated data is there
-        self.assertEqual(self.pulp2repositories_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.pulp2content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.pulp2repositories_api.list().count,
+            PULP_2_ISO_FIXTURE_DATA["repositories"],
+        )
+        self.assertEqual(
+            self.pulp2content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
         # Assert that Pulp 3 data is there
-        self.assertEqual(self.file_repo_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.file_content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.file_repo_api.list().count, PULP_2_ISO_FIXTURE_DATA["repositories"]
+        )
+        self.assertEqual(
+            self.file_content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
 
-        mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
+        mp = self.migration_plans_api.create({"plan": FILE_SIMPLE_PLAN})
         self._reset_pulp3_data(mp)
         # Assert that pre-migrated data is no longer there
         self.assertEqual(self.pulp2repositories_api.list().count, 0)
@@ -74,44 +82,59 @@ class TestMigrationPlanReset(BaseTestFile, unittest.TestCase):
         """
         self.run_migration(FILE_SIMPLE_PLAN)
         # Assert that pre-migrated data is there
-        self.assertEqual(self.pulp2repositories_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.pulp2content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.pulp2repositories_api.list().count,
+            PULP_2_ISO_FIXTURE_DATA["repositories"],
+        )
+        self.assertEqual(
+            self.pulp2content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
         # Assert that Pulp 3 data is there
-        self.assertEqual(self.file_repo_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.file_content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.file_repo_api.list().count, PULP_2_ISO_FIXTURE_DATA["repositories"]
+        )
+        self.assertEqual(
+            self.file_content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
 
-        mp_rpm = self.migration_plans_api.create({'plan': RPM_SIMPLE_PLAN})
+        mp_rpm = self.migration_plans_api.create({"plan": RPM_SIMPLE_PLAN})
         self._reset_pulp3_data(mp_rpm)
         # Assert that pre-migrated data is still there
-        self.assertEqual(self.pulp2repositories_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.pulp2content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.pulp2repositories_api.list().count,
+            PULP_2_ISO_FIXTURE_DATA["repositories"],
+        )
+        self.assertEqual(
+            self.pulp2content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
         # Assert that Pulp 3 data is still there
-        self.assertEqual(self.file_repo_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.file_content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.file_repo_api.list().count, PULP_2_ISO_FIXTURE_DATA["repositories"]
+        )
+        self.assertEqual(
+            self.file_content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
 
     def test_migrate_after_reset(self):
         """Test that migration runs successfully after the reset of Pulp 3 and pre-migrated data."""
         self.run_migration(FILE_SIMPLE_PLAN)
         # Assert that pre-migrated data is there
-        self.assertEqual(self.pulp2repositories_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.pulp2content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.pulp2repositories_api.list().count,
+            PULP_2_ISO_FIXTURE_DATA["repositories"],
+        )
+        self.assertEqual(
+            self.pulp2content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
         # Assert that Pulp 3 data is there
-        self.assertEqual(self.file_repo_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.file_content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.file_repo_api.list().count, PULP_2_ISO_FIXTURE_DATA["repositories"]
+        )
+        self.assertEqual(
+            self.file_content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
 
-        mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
+        mp = self.migration_plans_api.create({"plan": FILE_SIMPLE_PLAN})
         self._reset_pulp3_data(mp)
         # Assert that pre-migrated data is no longer there
         self.assertEqual(self.pulp2repositories_api.list().count, 0)
@@ -122,19 +145,24 @@ class TestMigrationPlanReset(BaseTestFile, unittest.TestCase):
 
         self.run_migration(FILE_SIMPLE_PLAN)
         # Assert that pre-migrated data is back there
-        self.assertEqual(self.pulp2repositories_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.pulp2content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.pulp2repositories_api.list().count,
+            PULP_2_ISO_FIXTURE_DATA["repositories"],
+        )
+        self.assertEqual(
+            self.pulp2content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
         # Assert that Pulp 3 data is back there
-        self.assertEqual(self.file_repo_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['repositories'])
-        self.assertEqual(self.file_content_api.list().count,
-                         PULP_2_ISO_FIXTURE_DATA['content'])
+        self.assertEqual(
+            self.file_repo_api.list().count, PULP_2_ISO_FIXTURE_DATA["repositories"]
+        )
+        self.assertEqual(
+            self.file_content_api.list().count, PULP_2_ISO_FIXTURE_DATA["content"]
+        )
 
     def test_no_reset_when_migration(self):
         """Test that reset is not run when migration is."""
-        mp = self.migration_plans_api.create({'plan': FILE_SIMPLE_PLAN})
+        mp = self.migration_plans_api.create({"plan": FILE_SIMPLE_PLAN})
 
         # run the migration plan and then immediately run reset without waiting
         mp_run_response = self.migration_plans_api.run(mp.pulp_href, {})

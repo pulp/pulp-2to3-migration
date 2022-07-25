@@ -37,17 +37,16 @@ def get_pulp_href(obj):
 
 class MigrationPlanSerializer(ModelSerializer):
     """Serializer for migration plan model."""
-    pulp_href = IdentityField(
-        view_name='migration-plans-detail'
-    )
+
+    pulp_href = IdentityField(view_name="migration-plans-detail")
 
     plan = serializers.JSONField(
-        help_text=_('Migration Plan in JSON format'),
+        help_text=_("Migration Plan in JSON format"),
         required=True,
     )
 
     class Meta:
-        fields = ModelSerializer.Meta.fields + ('plan', )
+        fields = ModelSerializer.Meta.fields + ("plan",)
         model = MigrationPlan
 
     def validate(self, data):
@@ -59,10 +58,10 @@ class MigrationPlanSerializer(ModelSerializer):
         """
         schema = json.loads(SCHEMA)
         validator = Draft7Validator(schema)
-        if isinstance(data['plan'], str):
-            loaded_plan = json.loads(data['plan'])
-        elif isinstance(data['plan'], dict):
-            loaded_plan = data['plan']
+        if isinstance(data["plan"], str):
+            loaded_plan = json.loads(data["plan"])
+        elif isinstance(data["plan"], dict):
+            loaded_plan = data["plan"]
         else:
             raise serializers.ValidationError(
                 _("Must provide a (JSON-encoded) string or dict for 'plan', not list")
@@ -75,11 +74,13 @@ class MigrationPlanSerializer(ModelSerializer):
                 _("Provided Migration Plan format is invalid:'{}'".format(err))
             )
         plugins_to_migrate = set()
-        for plugin_type in loaded_plan['plugins']:
-            plugins_to_migrate.add(plugin_type['type'])
-        if len(loaded_plan['plugins']) != len(plugins_to_migrate):
+        for plugin_type in loaded_plan["plugins"]:
+            plugins_to_migrate.add(plugin_type["type"])
+        if len(loaded_plan["plugins"]) != len(plugins_to_migrate):
             raise serializers.ValidationError(
-                _("Provided Migration Plan contains same plugin type specified more that once.")
+                _(
+                    "Provided Migration Plan contains same plugin type specified more that once."
+                )
             )
         # MongoDB connection initialization
         connection.initialize()
@@ -100,7 +101,7 @@ class MigrationPlanSerializer(ModelSerializer):
                 raise serializers.ValidationError(
                     _("Plugin {} is not installed in pulp2.".format(plugin))
                 )
-        data['plan'] = loaded_plan
+        data["plan"] = loaded_plan
         return data
 
 
@@ -108,28 +109,35 @@ class MigrationPlanRunSerializer(serializers.Serializer):
     """
     A serializer for running a migration plan.
     """
+
     validate = serializers.BooleanField(
-        help_text=_('If ``True``, migration cannot happen without successful validation '
-                    'of the Migration Plan.'),
+        help_text=_(
+            "If ``True``, migration cannot happen without successful validation "
+            "of the Migration Plan."
+        ),
         required=False,
         default=False,
-        write_only=True
+        write_only=True,
     )
     dry_run = serializers.BooleanField(
-        help_text=_('If ``True``, performs validation of a Migration Plan only, no migration is '
-                    'run.'),
+        help_text=_(
+            "If ``True``, performs validation of a Migration Plan only, no migration is "
+            "run."
+        ),
         required=False,
         default=False,
-        write_only=True
+        write_only=True,
     )
     skip_corrupted = serializers.BooleanField(
-        help_text=_('If ``True``, skips corrupted or missing Pulp 2 content without causing a task '
-                    'failure. If you need this content, run a sync task in Pulp 3 for a repo of '
-                    'interest to bring any missing content back. Alternatively, repair it in Pulp 2'
-                    'and re-run the migration task.'),
+        help_text=_(
+            "If ``True``, skips corrupted or missing Pulp 2 content without causing a task "
+            "failure. If you need this content, run a sync task in Pulp 3 for a repo of "
+            "interest to bring any missing content back. Alternatively, repair it in Pulp 2"
+            "and re-run the migration task."
+        ),
         required=False,
         default=False,
-        write_only=True
+        write_only=True,
     )
 
 
@@ -137,16 +145,17 @@ class Pulp2ContentSerializer(ModelSerializer):
     """
     A serializer for the Pulp2Content model
     """
-    pulp_href = IdentityField(
-        view_name='pulp2content-detail'
-    )
+
+    pulp_href = IdentityField(view_name="pulp2content-detail")
     pulp2_id = serializers.CharField(max_length=255)
     pulp2_content_type_id = serializers.CharField(max_length=255)
     pulp2_last_updated = serializers.IntegerField()
     pulp2_storage_path = serializers.CharField(allow_null=True)
     downloaded = serializers.BooleanField(default=False)
     pulp3_content = DetailRelatedField(
-        required=False, allow_null=True, queryset=Pulp2Content.objects.all(),
+        required=False,
+        allow_null=True,
+        queryset=Pulp2Content.objects.all(),
         view_name_pattern=r"content(-.*/.*)?-detail",
     )
 
@@ -172,15 +181,20 @@ class Pulp2ContentSerializer(ModelSerializer):
         content doesn't belong to any pulp3_repository_version.
         """
         result = super(Pulp2ContentSerializer, self).to_representation(instance)
-        if not result.get('pulp3_repository_version'):
-            result.pop('pulp3_repository_version', None)
+        if not result.get("pulp3_repository_version"):
+            result.pop("pulp3_repository_version", None)
         return result
 
     class Meta:
-        fields = ModelSerializer.Meta.fields + ('pulp2_id', 'pulp2_content_type_id',
-                                                'pulp2_last_updated', 'pulp2_storage_path',
-                                                'downloaded', 'pulp3_content',
-                                                'pulp3_repository_version')
+        fields = ModelSerializer.Meta.fields + (
+            "pulp2_id",
+            "pulp2_content_type_id",
+            "pulp2_last_updated",
+            "pulp2_storage_path",
+            "downloaded",
+            "pulp3_content",
+            "pulp3_repository_version",
+        )
         model = Pulp2Content
 
 
@@ -188,9 +202,8 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
     """
     A serializer for the Pulp2Repositories
     """
-    pulp_href = IdentityField(
-        view_name='pulp2repositories-detail'
-    )
+
+    pulp_href = IdentityField(view_name="pulp2repositories-detail")
     pulp2_object_id = serializers.CharField(max_length=255)
     pulp2_repo_id = serializers.CharField()
     pulp2_repo_type = serializers.CharField()
@@ -199,7 +212,7 @@ class Pulp2RepositoriesSerializer(ModelSerializer):
 
     pulp3_repository_version = RepositoryVersionRelatedField(
         required=False,
-        help_text=_('RepositoryVersion to be served'),
+        help_text=_("RepositoryVersion to be served"),
         allow_null=True,
     )
 

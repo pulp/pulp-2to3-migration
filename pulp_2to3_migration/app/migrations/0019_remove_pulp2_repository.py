@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0018_pulp2distributor_pulp2_repos'),
+        ("pulp_2to3_migration", "0018_pulp2distributor_pulp2_repos"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='pulp2distributor',
-            unique_together={('pulp2_object_id',)},
+            name="pulp2distributor",
+            unique_together={("pulp2_object_id",)},
         ),
         migrations.RemoveField(
-            model_name='pulp2distributor',
-            name='pulp2_repository',
+            model_name="pulp2distributor",
+            name="pulp2_repository",
         ),
     ]

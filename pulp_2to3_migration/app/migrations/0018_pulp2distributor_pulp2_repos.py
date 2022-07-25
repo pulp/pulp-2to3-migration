@@ -7,7 +7,7 @@ def make_pulp2repos_m2m(apps, schema_editor):
     """
     Add many2many relation between pulp2repo and pulp2dist.
     """
-    Pulp2Distributor = apps.get_model('pulp_2to3_migration', 'Pulp2Distributor')
+    Pulp2Distributor = apps.get_model("pulp_2to3_migration", "Pulp2Distributor")
     pulp2_dists_qs = Pulp2Distributor.objects.all()
 
     for dist in pulp2_dists_qs.iterator():
@@ -18,14 +18,16 @@ def make_pulp2repos_m2m(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pulp_2to3_migration', '0017_pulp2debpackage'),
+        ("pulp_2to3_migration", "0017_pulp2debpackage"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pulp2distributor',
-            name='pulp2_repos',
-            field=models.ManyToManyField(related_name='pulp2_dists', to='pulp_2to3_migration.Pulp2Repository'),
+            model_name="pulp2distributor",
+            name="pulp2_repos",
+            field=models.ManyToManyField(
+                related_name="pulp2_dists", to="pulp_2to3_migration.Pulp2Repository"
+            ),
         ),
         migrations.RunPython(make_pulp2repos_m2m),
     ]

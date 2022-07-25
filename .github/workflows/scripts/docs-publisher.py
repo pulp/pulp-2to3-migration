@@ -112,7 +112,9 @@ def main():
         if exit_code != 0:
             raise RuntimeError("An error occurred while pushing docs.")
     elif build_type == "tag":
-        if (not re.search("[a-zA-Z]", branch) or "post" in branch) and len(branch.split(".")) > 2:
+        if (not re.search("[a-zA-Z]", branch) or "post" in branch) and len(
+            branch.split(".")
+        ) > 2:
             # Only publish docs at the root if this is the latest version
             r = requests.get("https://pypi.org/pypi/pulp-2to3-migration/json")
             latest_version = version.parse(json.loads(r.text)["info"]["version"])
@@ -131,7 +133,9 @@ def main():
             # publish to the root of docs.pulpproject.org
             if publish_at_root:
                 version_components = branch.split(".")
-                x_y_version = "{}.{}".format(version_components[0], version_components[1])
+                x_y_version = "{}.{}".format(
+                    version_components[0], version_components[1]
+                )
                 remote_path_arg = "%s@%s:%s" % (USERNAME, HOSTNAME, SITE_ROOT)
                 rsync_command = [
                     "rsync",

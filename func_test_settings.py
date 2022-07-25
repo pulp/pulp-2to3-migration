@@ -1,7 +1,1 @@
-DATABASES = {
-    "default": {
-        "NAME": "pulp",
-        "USER": "pulp",
-        "PASSWORD": "pulp"
-    }
-}
+DATABASES = {"default": {"NAME": "pulp", "USER": "pulp", "PASSWORD": "pulp"}}

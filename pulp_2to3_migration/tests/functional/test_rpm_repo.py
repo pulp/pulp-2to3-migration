@@ -8,65 +8,68 @@ from .common_plans import RPM_SIMPLE_PLAN, RPM_COMPLEX_PLAN
 from .constants import FIXTURES_BASE_URL
 from .rpm_base import BaseTestRpm, RepoInfo
 
-RPM_KICKSTART_NO_IMPORTER_PLAN = json.dumps({
-    "plugins": [{
-        "type": "rpm",
-        "repositories": [
+RPM_KICKSTART_NO_IMPORTER_PLAN = json.dumps(
+    {
+        "plugins": [
             {
-                "name": "c8base",
-                "repository_versions": [
+                "type": "rpm",
+                "repositories": [
                     {
-                        "pulp2_repository_id": "c8base",
-                        "pulp2_distributor_repository_ids": ["c8base"]
-                    },
-                ]
+                        "name": "c8base",
+                        "repository_versions": [
+                            {
+                                "pulp2_repository_id": "c8base",
+                                "pulp2_distributor_repository_ids": ["c8base"],
+                            },
+                        ],
+                    }
+                ],
             }
         ]
-    }]
-})
+    }
+)
 
 PULP_2_RPM_DATA = {
-    'remotes': 3,
-    'content_initial': {
-        'rpm-empty': {},
-        'rpm-empty-for-copy': {},
-        'rpm-with-modules': {
-            'advisory': 6,
-            'modulemd': 10,
-            'modulemd-defaults': 3,
-            'category': 1,
-            'group': 2,
-            'langpack': 1,
-            'package': 35,
+    "remotes": 3,
+    "content_initial": {
+        "rpm-empty": {},
+        "rpm-empty-for-copy": {},
+        "rpm-with-modules": {
+            "advisory": 6,
+            "modulemd": 10,
+            "modulemd-defaults": 3,
+            "category": 1,
+            "group": 2,
+            "langpack": 1,
+            "package": 35,
         },
-        'rpm-distribution-tree': {
-            'disttree': 1,
-            'environment': 1,
-            'category': 1,
-            'group': 1,
-            'langpack': 1,
-            'package': 1,
+        "rpm-distribution-tree": {
+            "disttree": 1,
+            "environment": 1,
+            "category": 1,
+            "group": 1,
+            "langpack": 1,
+            "package": 1,
         },
-        'srpm-unsigned': {
-            'advisory': 2,
-            'category': 1,
-            'group': 2,
-            'langpack': 1,
-            'package': 3,
+        "srpm-unsigned": {
+            "advisory": 2,
+            "category": 1,
+            "group": 2,
+            "langpack": 1,
+            "package": 3,
         },
     },
-    'content_total': {
-        'package': 38,
-        'advisory': 8,
-        'modulemd': 10,
-        'modulemd-defaults': 3,
-        'disttree': 1,
-        'environment': 1,
-        'category': 3,
-        'group': 5,
-        'langpack': 3,
+    "content_total": {
+        "package": 38,
+        "advisory": 8,
+        "modulemd": 10,
+        "modulemd-defaults": 3,
+        "disttree": 1,
+        "environment": 1,
+        "category": 3,
+        "group": 5,
+        "langpack": 3,
     },
-
 }
 
 
@@ -74,6 +77,7 @@ class BaseTestRpmRepo(BaseTestRpm):
     """
     Test RPM repo, importer and distributor migration.
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -81,7 +85,7 @@ class BaseTestRpmRepo(BaseTestRpm):
         """
         super().setUpClass()
 
-        set_pulp2_snapshot(name='rpm_base_4repos')
+        set_pulp2_snapshot(name="rpm_base_4repos")
         cls.run_migration(cls.plan_initial)
 
     def test_rpm_repo_migration(self):
@@ -91,12 +95,16 @@ class BaseTestRpmRepo(BaseTestRpm):
         Check that names are migrated correctly and that the number of versions and content count is
         correct.
         """
-        self.assertEqual(self.rpm_repo_api.list().count, len(self.repo_info.repositories))
+        self.assertEqual(
+            self.rpm_repo_api.list().count, len(self.repo_info.repositories)
+        )
 
         # content count in total
         for content_type, api in self.rpm_content_apis.items():
             with self.subTest(content_type=content_type):
-                self.assertEqual(api.list().count, self.repo_info.content_total[content_type])
+                self.assertEqual(
+                    api.list().count, self.repo_info.content_total[content_type]
+                )
 
         for repo in self.rpm_repo_api.list().results:
             with self.subTest(repo=repo):
@@ -107,10 +115,12 @@ class BaseTestRpmRepo(BaseTestRpm):
                 # content count per repo
                 for content_type, api in self.rpm_content_apis.items():
                     with self.subTest(content_type=content_type):
-                        repo_content = api.list(repository_version=repo.latest_version_href)
+                        repo_content = api.list(
+                            repository_version=repo.latest_version_href
+                        )
                         self.assertEqual(
                             repo_content.count,
-                            self.repo_info.repositories[repo.name].get(content_type, 0)
+                            self.repo_info.repositories[repo.name].get(content_type, 0),
                         )
 
     def test_rpm_importer_migration(self):
@@ -120,20 +130,24 @@ class BaseTestRpmRepo(BaseTestRpm):
         self.assertEqual(self.rpm_remote_api.list().count, self.repo_info.remotes)
         for remote in self.rpm_remote_api.list().results:
             with self.subTest(remote=remote):
-                repo_name = '-'.join(remote.name.split('-')[1:])
-                repo_url = os.path.join(FIXTURES_BASE_URL, repo_name) + '/'
+                repo_name = "-".join(remote.name.split("-")[1:])
+                repo_url = os.path.join(FIXTURES_BASE_URL, repo_name) + "/"
                 self.assertEqual(remote.url, repo_url)
-                self.assertEqual(remote.policy, 'on_demand')
+                self.assertEqual(remote.policy, "on_demand")
 
     def test_rpm_distributor_migration(self):
         """
         Test that RPM distributors are correctly migrated.
         """
-        self.assertEqual(self.rpm_publication_api.list().count, self.repo_info.publications)
-        self.assertEqual(self.rpm_distribution_api.list().count, self.repo_info.distributions)
+        self.assertEqual(
+            self.rpm_publication_api.list().count, self.repo_info.publications
+        )
+        self.assertEqual(
+            self.rpm_distribution_api.list().count, self.repo_info.distributions
+        )
         for dist in self.rpm_distribution_api.list().results:
             with self.subTest(dist=dist):
-                base_path = '-'.join(dist.name.split('-')[1:])
+                base_path = "-".join(dist.name.split("-")[1:])
                 self.assertEqual(dist.base_path, base_path)
 
 
@@ -141,6 +155,7 @@ class TestRpmRepoMigrationSimplePlan(BaseTestRpmRepo, unittest.TestCase):
     """
     Test RPM repo migration using simple migration plan.
     """
+
     plan_initial = RPM_SIMPLE_PLAN
     repo_info = RepoInfo(PULP_2_RPM_DATA, is_simple=True)
 
@@ -149,16 +164,20 @@ class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
     """
     Test RPM repo migration using complex migration plan.
     """
+
     plan_initial = RPM_COMPLEX_PLAN
     repo_info = RepoInfo(PULP_2_RPM_DATA)
 
 
-@unittest.skip('The image files of a kickstart repo are too large for github, need to find '
-               'smaller ones.')
+@unittest.skip(
+    "The image files of a kickstart repo are too large for github, need to find "
+    "smaller ones."
+)
 class TestRpmKickstartImmediateNoImporterPlan(unittest.TestCase):
     """
     Test RPM repo migration when a kickstart tree is downloaded but its importer is not migrated.
     """
+
     @classmethod
     def setUpClass(cls):
         """
@@ -166,7 +185,7 @@ class TestRpmKickstartImmediateNoImporterPlan(unittest.TestCase):
         """
         super().setUpClass()
 
-        set_pulp2_snapshot(name='rpm_kickstart_immediate_no_rpm')
+        set_pulp2_snapshot(name="rpm_kickstart_immediate_no_rpm")
 
     def test_rpm_repo_migration(self):
         """

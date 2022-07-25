@@ -7,6 +7,7 @@ class DockerImporter(Pulp2to3Importer):
     """
     Interface to migrate Pulp 2 Docker importer
     """
+
     pulp3_remote_models = [ContainerRemote]
 
     @classmethod
@@ -24,8 +25,8 @@ class DockerImporter(Pulp2to3Importer):
         pulp2_config = pulp2importer.pulp2_config
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
         # what to do if there is no upstream name?
-        base_config['upstream_name'] = pulp2_config.get('upstream_name', '')
-        base_config['include_tags'] = pulp2_config.get('tags')
+        base_config["upstream_name"] = pulp2_config.get("upstream_name", "")
+        base_config["include_tags"] = pulp2_config.get("tags")
         return ContainerRemote.objects.update_or_create(name=name, defaults=base_config)
 
 
@@ -33,6 +34,7 @@ class DockerDistributor(Pulp2to3Distributor):
     """
     Interface to migrate Pulp 2 Docker distributor
     """
+
     pulp3_distribution_models = [ContainerDistribution]
 
     @classmethod
@@ -50,17 +52,21 @@ class DockerDistributor(Pulp2to3Distributor):
         """
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
+            repo = pulp2distributor.pulp2_repos.filter(
+                not_in_plan=False, is_migrated=True
+            )
             repo_version = repo[0].pulp3_repository_version
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
-        base_config['base_path'] = pulp2_config.get(
-            'repo-registry-id', pulp2distributor.pulp2_repo_id)
-        base_config['repository_version'] = repo_version
+        base_config["base_path"] = pulp2_config.get(
+            "repo-registry-id", pulp2distributor.pulp2_repo_id
+        )
+        base_config["repository_version"] = repo_version
         distribution, created = ContainerDistribution.objects.update_or_create(
-            name=base_config['name'],
-            base_path=base_config['base_path'],
-            defaults=base_config)
+            name=base_config["name"],
+            base_path=base_config["base_path"],
+            defaults=base_config,
+        )
         return None, distribution, created
 
     @classmethod
@@ -93,8 +99,9 @@ class DockerDistributor(Pulp2to3Distributor):
         if not pulp2distributor.pulp3_distribution:
             return True
 
-        new_base_path = pulp2distributor.pulp2_config.get('repo-registry-id',
-                                                          pulp2distributor.pulp2_repo_id)
+        new_base_path = pulp2distributor.pulp2_config.get(
+            "repo-registry-id", pulp2distributor.pulp2_repo_id
+        )
         current_base_path = pulp2distributor.pulp3_distribution.base_path
         if new_base_path != current_base_path:
             return True
