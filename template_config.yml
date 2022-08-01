@@ -18,7 +18,7 @@ additional_repos:
   pip_version_specifier: ~=2.18.0
 aiohttp_fixtures_origin: 172.18.0.1
 api_root: /pulp/
-black: false
+black: true
 check_commit_message: true
 check_gettext: true
 check_manifest: true
