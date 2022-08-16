@@ -6,26 +6,26 @@
 # For more info visit https://github.com/pulp/plugin_template
 
 import re
-import subprocess
 import sys
-import warnings
 from pathlib import Path
+import subprocess
 
 
 import os
+import warnings
 from github import Github
 
 
 NO_ISSUE = "[noissue]"
 CHANGELOG_EXTS = [".feature", ".bugfix", ".doc", ".removal", ".misc", ".deprecation"]
-
-
-KEYWORDS = ["fixes", "closes"]
-
 sha = sys.argv[1]
 message = subprocess.check_output(["git", "log", "--format=%B", "-n 1", sha]).decode(
     "utf-8"
 )
+
+
+KEYWORDS = ["fixes", "closes"]
+
 g = Github(os.environ.get("GITHUB_TOKEN"))
 repo = g.get_repo("pulp/pulp-2to3-migration")
 
