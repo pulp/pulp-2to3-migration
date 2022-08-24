@@ -1,0 +1,5 @@
+Fix premigrate_hook results exceeding BSON limit
+
+Use pagination to perform query returned by premigrate_hook.
+This will limit each query size and will prevent the BSON too
+large error. Mongodb has 16MB BSON limit for query size.
