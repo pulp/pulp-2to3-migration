@@ -106,6 +106,18 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2_content_type_id=content_type, pulp2_id__in=content_ids_to_delete
             ).delete()
 
+    def mongo_content_qs_generator(
+        mongo_content_qs_list, mongo_fields, batch_size, as_pymongo=False
+    ):
+        i = 0
+        for mongo_content_qs in mongo_content_qs_list:
+            if as_pymongo:
+                mongo_content_qs = mongo_content_qs.as_pymongo()
+
+            for record in mongo_content_qs.only(*mongo_fields).batch_size(batch_size).no_cache():
+                yield i, record
+                i += 1
+
     batch_size = (
         settings.DEB_COMPONENT_BATCH_SIZE
         if content_model.pulp2.TYPE_ID == "deb_component"
@@ -130,16 +142,28 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         )
     )
 
-    query_args = {}
+    mongo_content_qs_list = []
     if premigrate_hook:
         pulp2_content_ids = premigrate_hook()
-        query_args["id__in"] = pulp2_content_ids
+        # Based on testing, 340000 uuids in BSON is about 16548955 bytes.
+        # Max BSON size is 16777216 bytes.
+        bson_limit = 340000
+        paginator = Paginator(pulp2_content_ids, bson_limit)
+        for page in range(1, paginator.num_pages + 1):
+            mongo_content_qs = content_model.pulp2.objects(
+                _last_updated__gte=last_updated, id__in=paginator.page(page).object_list
+            ).order_by("_last_updated")
+            mongo_content_qs_list.append(mongo_content_qs)
+    else:
+        mongo_content_qs = content_model.pulp2.objects(_last_updated__gte=last_updated).order_by(
+            "_last_updated"
+        )
+        mongo_content_qs_list.append(mongo_content_qs)
 
-    mongo_content_qs = content_model.pulp2.objects(
-        _last_updated__gte=last_updated, **query_args
-    ).order_by("_last_updated")
+    total_content = 0
+    for mongo_content_qs in mongo_content_qs_list:
+        total_content += mongo_content_qs.count()
 
-    total_content = mongo_content_qs.count()
     _logger.debug(
         "Total count for {type} content to migrate: {total}".format(
             type=content_type, total=total_content
@@ -165,7 +189,10 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
     if mutable_type:
         pulp2_content_ids = []
 
-        for c in mongo_content_qs.only("id", "_last_updated").no_cache().as_pymongo():
+        mongo_fields = set(["id", "_last_updated"])
+        for i, c in mongo_content_qs_generator(
+            mongo_content_qs_list, mongo_fields, batch_size, as_pymongo=True
+        ):
             if c["_last_updated"] == last_updated:
                 if Pulp2Content.objects.filter(
                     pulp2_last_updated=last_updated, pulp2_id=c["_id"]
@@ -186,8 +213,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
     if hasattr(content_model.pulp2, "downloaded"):
         mongo_fields.add("downloaded")
 
-    batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(batch_size)
-    for i, record in enumerate(batched_mongo_content_qs.no_cache()):
+    for i, record in mongo_content_qs_generator(mongo_content_qs_list, mongo_fields, batch_size):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
             # check if this content is already pre-migrated
