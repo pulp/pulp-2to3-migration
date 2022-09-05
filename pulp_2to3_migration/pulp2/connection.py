@@ -40,9 +40,7 @@ except AttributeError:
     raise ConfigurationError(_("PULP2_MONGODB is not configured in your settings."))
 
 
-def initialize(
-    name=None, seeds=None, max_pool_size=None, replica_set=None, max_timeout=32
-):
+def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_timeout=32):
     """
     Initialize the connection pool and top-level database for pulp. Calling this more than once will
     raise a RuntimeError.
@@ -90,9 +88,7 @@ def initialize(
             if ssl_certfile:
                 connection_kwargs["ssl_certfile"] = ssl_certfile
             verify_ssl = pulp2_mongodb.get("verify_ssl")
-            connection_kwargs["ssl_cert_reqs"] = (
-                ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
-            )
+            connection_kwargs["ssl_cert_reqs"] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
             connection_kwargs["ssl_ca_certs"] = pulp2_mongodb.get("ca_path")
 
         # If username & password have been specified in the database config,
@@ -125,26 +121,17 @@ def initialize(
                     )
                 )
             while True:
-                _CONNECTION = _connect_to_one_of_seeds(
-                    connection_kwargs, seeds_list, name
-                )
+                _CONNECTION = _connect_to_one_of_seeds(connection_kwargs, seeds_list, name)
                 if _CONNECTION:
-                    db_version = semantic_version.Version(
-                        _CONNECTION.server_info()["version"]
-                    )
+                    db_version = semantic_version.Version(_CONNECTION.server_info()["version"])
                     if db_version < MONGO_MINIMUM_VERSION:
                         raise RuntimeError(
-                            _(
-                                "Pulp requires Mongo version %s, but DB is reporting"
-                                "version %s"
-                            )
+                            _("Pulp requires Mongo version %s, but DB is reporting" "version %s")
                             % (MONGO_MINIMUM_VERSION, db_version)
                         )
                     break
                 else:
-                    next_delay = min(
-                        next(mongo_retry_timeout_seconds_generator), max_timeout
-                    )
+                    next_delay = min(next(mongo_retry_timeout_seconds_generator), max_timeout)
                     msg = _(
                         "Could not connect to any of MongoDB seeds at %(url)s:\n... Waiting "
                         "%(retry_timeout)s seconds and trying again."
@@ -153,19 +140,14 @@ def initialize(
                     time.sleep(next_delay)
         else:
             raise ConfigurationError(
-                _(
-                    "Database 'seeds' config must include at least one "
-                    "hostname:port value."
-                )
+                _("Database 'seeds' config must include at least one " "hostname:port value.")
             )
 
         try:
             _DATABASE = mongoengine.connection.get_db()
         except OperationFailure as error:
             if error.code == 18:
-                msg = _(
-                    "Authentication to MongoDB " "with username and password failed."
-                )
+                msg = _("Authentication to MongoDB " "with username and password failed.")
                 raise RuntimeError(msg)
 
         _DATABASE.add_son_manipulator(NamespaceInjector())

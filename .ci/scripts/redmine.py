@@ -20,9 +20,7 @@ redmine = Redmine(REDMINE_QUERY_URL.split("issues")[0], key=REDMINE_API_KEY)
 query_issues = REDMINE_QUERY_URL.split("=")[-1].split(",")
 milestone_name = redmine.version.get(MILESTONE_URL.split("/")[-1].split(".")[0]).name
 if milestone_name != RELEASE:
-    raise RuntimeError(
-        f"Milestone name, '{milestone_name}', does not match version, '{RELEASE}'."
-    )
+    raise RuntimeError(f"Milestone name, '{milestone_name}', does not match version, '{RELEASE}'.")
 
 to_update = []
 for issue in query_issues:

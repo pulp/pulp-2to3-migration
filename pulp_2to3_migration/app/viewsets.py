@@ -89,18 +89,14 @@ class MigrationPlanViewSet(
     def run(self, request, pk):
         """Run the migration plan."""
         migration_plan = self.get_object()
-        serializer = MigrationPlanRunSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = MigrationPlanRunSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         validate = serializer.validated_data.get("validate", False)
         dry_run = serializer.validated_data.get("dry_run", False)
         skip_corrupted = serializer.validated_data.get("skip_corrupted", False)
 
         if is_migration_plan_running():
-            raise ValidationError(
-                _("Only one migration plan can run or be reset at a time")
-            )
+            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
 
         result = dispatch(
             migrate_from_pulp2,
@@ -126,9 +122,7 @@ class MigrationPlanViewSet(
         migration_plan = self.get_object()
 
         if is_migration_plan_running():
-            raise ValidationError(
-                _("Only one migration plan can run or be reset at a time")
-            )
+            raise ValidationError(_("Only one migration plan can run or be reset at a time"))
 
         result = dispatch(
             reset_pulp3_data,
@@ -160,9 +154,7 @@ class Pulp2ContentFilter(BaseFilterSet):
         }
 
 
-class Pulp2ContentViewSet(
-    NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
-):
+class Pulp2ContentViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     """
     ViewSet for Pulp2Content model.
     """
@@ -191,9 +183,7 @@ class Pulp2RepositoriesFilter(BaseFilterSet):
         }
 
 
-class Pulp2RepositoriesViewSet(
-    NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin
-):
+class Pulp2RepositoriesViewSet(NamedModelViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     """
     ViewSet for Pulp2Repositories model.
     """

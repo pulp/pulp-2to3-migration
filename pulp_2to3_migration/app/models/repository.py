@@ -53,14 +53,10 @@ class Pulp2Repository(BaseModel):
     )
 
     # The same importer/remote can be used for multiple repositories, thus it's a foreign key.
-    pulp3_repository_remote = models.ForeignKey(
-        Remote, on_delete=models.SET_NULL, null=True
-    )
+    pulp3_repository_remote = models.ForeignKey(Remote, on_delete=models.SET_NULL, null=True)
 
     # This is needed for migrating Variants of the DistributionTree
-    pulp3_repository = models.ForeignKey(
-        Repository, on_delete=models.SET_NULL, null=True
-    )
+    pulp3_repository = models.ForeignKey(Repository, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         indexes = [
@@ -174,15 +170,11 @@ class Pulp2Distributor(BaseModel):
     pulp2_repos = models.ManyToManyField(Pulp2Repository, related_name="pulp2_dists")
 
     # the same publication/repo version can be published by multiple distributors
-    pulp3_publication = models.ForeignKey(
-        Publication, on_delete=models.SET_NULL, null=True
-    )
+    pulp3_publication = models.ForeignKey(Publication, on_delete=models.SET_NULL, null=True)
 
     # due to base_path overlap restriction, a distribution can't correspond to multiple pulp 2
     # distributors, thus one-to-one relationship.
-    pulp3_distribution = models.OneToOneField(
-        Distribution, on_delete=models.SET_NULL, null=True
-    )
+    pulp3_distribution = models.OneToOneField(Distribution, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ("pulp2_object_id",)

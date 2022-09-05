@@ -69,9 +69,7 @@ class RpmDistributor(Pulp2to3Distributor):
 
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(
-                not_in_plan=False, is_migrated=True
-            )
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
         publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
@@ -135,13 +133,9 @@ class RpmDistributor(Pulp2to3Distributor):
             return True
 
         new_checksum_type = pulp2distributor.pulp2_config.get("checksum_type")
-        current_checksum_type = (
-            pulp2distributor.pulp3_publication.cast().metadata_checksum_type
-        )
+        current_checksum_type = pulp2distributor.pulp3_publication.cast().metadata_checksum_type
 
-        is_default_checksum_type = (
-            new_checksum_type is None and current_checksum_type == "sha256"
-        )
+        is_default_checksum_type = new_checksum_type is None and current_checksum_type == "sha256"
         if new_checksum_type != current_checksum_type and not is_default_checksum_type:
             return True
 

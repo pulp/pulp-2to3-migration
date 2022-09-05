@@ -95,16 +95,12 @@ class BaseTestRpmRepo(BaseTestRpm):
         Check that names are migrated correctly and that the number of versions and content count is
         correct.
         """
-        self.assertEqual(
-            self.rpm_repo_api.list().count, len(self.repo_info.repositories)
-        )
+        self.assertEqual(self.rpm_repo_api.list().count, len(self.repo_info.repositories))
 
         # content count in total
         for content_type, api in self.rpm_content_apis.items():
             with self.subTest(content_type=content_type):
-                self.assertEqual(
-                    api.list().count, self.repo_info.content_total[content_type]
-                )
+                self.assertEqual(api.list().count, self.repo_info.content_total[content_type])
 
         for repo in self.rpm_repo_api.list().results:
             with self.subTest(repo=repo):
@@ -115,9 +111,7 @@ class BaseTestRpmRepo(BaseTestRpm):
                 # content count per repo
                 for content_type, api in self.rpm_content_apis.items():
                     with self.subTest(content_type=content_type):
-                        repo_content = api.list(
-                            repository_version=repo.latest_version_href
-                        )
+                        repo_content = api.list(repository_version=repo.latest_version_href)
                         self.assertEqual(
                             repo_content.count,
                             self.repo_info.repositories[repo.name].get(content_type, 0),
@@ -139,12 +133,8 @@ class BaseTestRpmRepo(BaseTestRpm):
         """
         Test that RPM distributors are correctly migrated.
         """
-        self.assertEqual(
-            self.rpm_publication_api.list().count, self.repo_info.publications
-        )
-        self.assertEqual(
-            self.rpm_distribution_api.list().count, self.repo_info.distributions
-        )
+        self.assertEqual(self.rpm_publication_api.list().count, self.repo_info.publications)
+        self.assertEqual(self.rpm_distribution_api.list().count, self.repo_info.distributions)
         for dist in self.rpm_distribution_api.list().results:
             with self.subTest(dist=dist):
                 base_path = "-".join(dist.name.split("-")[1:])
@@ -170,8 +160,7 @@ class TestRpmRepoMigrationComplexPlan(BaseTestRpmRepo, unittest.TestCase):
 
 
 @unittest.skip(
-    "The image files of a kickstart repo are too large for github, need to find "
-    "smaller ones."
+    "The image files of a kickstart repo are too large for github, need to find " "smaller ones."
 )
 class TestRpmKickstartImmediateNoImporterPlan(unittest.TestCase):
     """

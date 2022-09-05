@@ -42,9 +42,7 @@ class Pulp2to3Importer:
                 proxy_url = "{}://{}@{}".format(scheme, credentials, host)
             else:
                 proxy_url = "{}://{}".format(scheme, host)
-        remote_name = "{}-{}".format(
-            pulp2importer.pulp2_object_id, pulp2importer.pulp2_repo_id
-        )
+        remote_name = "{}-{}".format(pulp2importer.pulp2_object_id, pulp2importer.pulp2_repo_id)
         base_config["proxy_url"] = proxy_url
         username = pulp2_config.get("basic_auth_username")
         password = pulp2_config.get("basic_auth_password")
@@ -68,9 +66,7 @@ class Pulp2to3Importer:
         # True by default?
         base_config["tls_validation"] = pulp2_config.get("ssl_validation", True)
         base_config["download_concurrency"] = pulp2_config.get("max_downloads") or 20
-        policy = PULP_2TO3_POLICIES.get(
-            pulp2_config.get("download_policy", "immediate")
-        )
+        policy = PULP_2TO3_POLICIES.get(pulp2_config.get("download_policy", "immediate"))
         base_config["policy"] = policy
         return base_config, remote_name
 
@@ -114,9 +110,7 @@ class Pulp2to3Distributor:
         Parse and return basic config.
         """
         base_config = {}
-        name = "{}-{}".format(
-            pulp2distributor.pulp2_object_id, pulp2distributor.pulp2_repo_id
-        )
+        name = "{}-{}".format(pulp2distributor.pulp2_object_id, pulp2distributor.pulp2_repo_id)
         base_config["name"] = name
         return base_config
 
