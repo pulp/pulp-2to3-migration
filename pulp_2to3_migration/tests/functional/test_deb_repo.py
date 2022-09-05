@@ -64,9 +64,7 @@ class BaseTestDebRepo(BaseTestDeb):
         Check that names are migrated correctly and that the number of versions and content count is
         correct.
         """
-        self.assertEqual(
-            self.deb_repo_api.list().count, len(self.repo_info.repositories)
-        )
+        self.assertEqual(self.deb_repo_api.list().count, len(self.repo_info.repositories))
 
         # content count in total
         for content_type, api in self.deb_content_apis.items():
@@ -86,9 +84,7 @@ class BaseTestDebRepo(BaseTestDeb):
                 # content count per repo
                 for content_type, api in self.deb_content_apis.items():
                     with self.subTest(content_type=content_type):
-                        repo_content = api.list(
-                            repository_version=repo.latest_version_href
-                        )
+                        repo_content = api.list(repository_version=repo.latest_version_href)
                         self.assertEqual(
                             repo_content.count,
                             self.repo_info.repositories[repo.name].get(content_type, 0),
@@ -111,12 +107,8 @@ class BaseTestDebRepo(BaseTestDeb):
         """
         Test that DEB distributors are correctly migrated.
         """
-        self.assertEqual(
-            self.deb_publication_api.list().count, self.repo_info.publications
-        )
-        self.assertEqual(
-            self.deb_distribution_api.list().count, self.repo_info.distributions
-        )
+        self.assertEqual(self.deb_publication_api.list().count, self.repo_info.publications)
+        self.assertEqual(self.deb_distribution_api.list().count, self.repo_info.distributions)
         for dist in self.deb_distribution_api.list().results:
             with self.subTest(dist=dist):
                 base_path = "-".join(dist.name.split("-")[1:])

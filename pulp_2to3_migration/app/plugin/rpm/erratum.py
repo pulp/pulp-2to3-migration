@@ -200,9 +200,7 @@ def get_datetime(datetime_str):
             pass
 
         # We don't know what else to do with it
-        _logger.warn(
-            f"Unsupported datetime format {datetime_str}, resetting to 1970-01-01 00:00"
-        )
+        _logger.warn(f"Unsupported datetime format {datetime_str}, resetting to 1970-01-01 00:00")
         datetime_obj = datetime.datetime(1970, 1, 1, 0, 0)
 
     return datetime_obj

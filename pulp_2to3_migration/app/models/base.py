@@ -67,10 +67,7 @@ def get_repo_types(plan):
         #  - Filter by repos from the plan
         #  - Query any but one record for a repo
         for rec in (
-            RepositoryContentUnit.objects()
-            .only("repo_id", "unit_type_id")
-            .as_pymongo()
-            .no_cache()
+            RepositoryContentUnit.objects().only("repo_id", "unit_type_id").as_pymongo().no_cache()
         ):
             repo_id = rec["repo_id"]
             unit_type_id = rec["unit_type_id"]
@@ -120,9 +117,7 @@ class MigrationPlan(BaseModel):
                     # to happen after the migration plan has been parsed.
                     repository_ids = self.type_to_repo_ids[plugin_plan.type]
                     repositories = (
-                        Repository.objects()
-                        .filter(repo_id__in=repository_ids)
-                        .only("repo_id")
+                        Repository.objects().filter(repo_id__in=repository_ids).only("repo_id")
                     )
 
                     for repository in repositories.as_pymongo().no_cache():
@@ -140,9 +135,7 @@ class MigrationPlan(BaseModel):
                         plugin_plan.repositories_importers_to_migrate.append(repo_id)
                         plugin_plan.repositories_to_migrate.append(repo_id)
                         plugin_plan.repositories_distributors_to_migrate.append(repo_id)
-                        RepoSetup.set_importer(
-                            repo_id, plugin_plan.type, importer_repo_id=repo_id
-                        )
+                        RepoSetup.set_importer(repo_id, plugin_plan.type, importer_repo_id=repo_id)
                         RepoSetup.set_distributors(
                             repo_id, plugin_plan.type, distributor_repo_ids=[repo_id]
                         )
@@ -173,9 +166,7 @@ class MigrationPlan(BaseModel):
         if self.plan_view.missing_repositories:
             ret["repositories"] = self.plan_view.missing_repositories
         if self.plan_view.repositories_missing_importers:
-            ret[
-                "repositories_missing_importers"
-            ] = self.plan_view.repositories_missing_importers
+            ret["repositories_missing_importers"] = self.plan_view.repositories_missing_importers
         if self.plan_view.repositories_missing_distributors:
             ret[
                 "repositories_missing_distributors"
@@ -203,10 +194,7 @@ class _InternalMigrationPlan:
         # flat list of all importers to migrate
         return list(
             itertools.chain.from_iterable(
-                [
-                    plugin.repositories_importers_to_migrate
-                    for plugin in self._plugin_plans
-                ]
+                [plugin.repositories_importers_to_migrate for plugin in self._plugin_plans]
             )
         )
 
@@ -224,25 +212,22 @@ class _InternalMigrationPlan:
         # flat list of all distributors to migrate
         return list(
             itertools.chain.from_iterable(
-                [
-                    plugin.repositories_distributors_to_migrate
-                    for plugin in self._plugin_plans
-                ]
+                [plugin.repositories_distributors_to_migrate for plugin in self._plugin_plans]
             )
         )
 
     def _check_missing(self):
-        importers = Importer.objects(
-            repo_id__in=self.all_repositories_importers_to_migrate
-        ).only("repo_id")
+        importers = Importer.objects(repo_id__in=self.all_repositories_importers_to_migrate).only(
+            "repo_id"
+        )
         present = set(importer.repo_id for importer in importers)
         expected = set(self.all_repositories_importers_to_migrate)
 
         self.repositories_missing_importers = list(expected - present)
 
-        repositories = Repository.objects(
-            repo_id__in=self.all_repositories_to_migrate
-        ).only("repo_id")
+        repositories = Repository.objects(repo_id__in=self.all_repositories_to_migrate).only(
+            "repo_id"
+        )
         present = set(repository.repo_id for repository in repositories)
         expected = set(self.all_repositories_to_migrate)
 
@@ -356,9 +341,7 @@ class PluginMigrationPlan:
                     distributor_repo_ids = repository_version.get(
                         "pulp2_distributor_repository_ids", []
                     )
-                    self.repositories_distributors_to_migrate.extend(
-                        distributor_repo_ids
-                    )
+                    self.repositories_distributors_to_migrate.extend(distributor_repo_ids)
 
                     repository_versions.append(
                         {
@@ -369,12 +352,8 @@ class PluginMigrationPlan:
 
                     signing_service = repository.get("signing_service")
 
-                    RepoSetup.set_importer(
-                        pulp2_repository_id, self.type, importer_repo_id
-                    )
-                    RepoSetup.set_distributors(
-                        pulp2_repository_id, self.type, distributor_repo_ids
-                    )
+                    RepoSetup.set_importer(pulp2_repository_id, self.type, importer_repo_id)
+                    RepoSetup.set_distributors(pulp2_repository_id, self.type, distributor_repo_ids)
 
                 self.repositories_to_create[name] = {
                     "pulp2_importer_repository_id": importer_repo_id,
@@ -542,6 +521,6 @@ class RepoSetup(BaseModel):
             .only("pulp2_repo_id")
             .values_list("pulp2_repo_id", flat=True)
         )
-        Pulp2Repository.objects.filter(
-            pulp2_repo_id__in=changed_relations_repo_ids
-        ).update(is_migrated=False)
+        Pulp2Repository.objects.filter(pulp2_repo_id__in=changed_relations_repo_ids).update(
+            is_migrated=False
+        )

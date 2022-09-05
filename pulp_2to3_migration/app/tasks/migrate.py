@@ -27,9 +27,7 @@ from pulp_2to3_migration.pulp2 import connection
 _logger = logging.getLogger(__name__)
 
 
-def migrate_from_pulp2(
-    migration_plan_pk, validate=False, dry_run=False, skip_corrupted=False
-):
+def migrate_from_pulp2(migration_plan_pk, validate=False, dry_run=False, skip_corrupted=False):
     """
     Main task to migrate from Pulp 2 to Pulp 3.
 

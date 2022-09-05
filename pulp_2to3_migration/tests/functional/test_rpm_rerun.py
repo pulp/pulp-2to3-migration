@@ -27,9 +27,7 @@ RERUN_REPOSITORIES = INITIAL_REPOSITORIES + [
     }
 ]
 
-RPM_RERUN_PLAN = json.dumps(
-    {"plugins": [{"type": "rpm", "repositories": RERUN_REPOSITORIES}]}
-)
+RPM_RERUN_PLAN = json.dumps({"plugins": [{"type": "rpm", "repositories": RERUN_REPOSITORIES}]})
 
 COPY_INTO_SAME_REPO_PLAN = json.dumps(
     {
@@ -43,15 +41,11 @@ COPY_INTO_SAME_REPO_PLAN = json.dumps(
                         "repository_versions": [
                             {
                                 "pulp2_repository_id": "rpm-with-modules",
-                                "pulp2_distributor_repository_ids": [
-                                    "rpm-with-modules"
-                                ],
+                                "pulp2_distributor_repository_ids": ["rpm-with-modules"],
                             },
                             {
                                 "pulp2_repository_id": "rpm-with-modules-copy",
-                                "pulp2_distributor_repository_ids": [
-                                    "rpm-with-modules-copy"
-                                ],
+                                "pulp2_distributor_repository_ids": ["rpm-with-modules-copy"],
                             },
                         ],
                     }
@@ -73,9 +67,7 @@ COPY_INTO_NEW_REPO_PLAN = json.dumps(
                         "repository_versions": [
                             {
                                 "pulp2_repository_id": "rpm-with-modules",
-                                "pulp2_distributor_repository_ids": [
-                                    "rpm-with-modules"
-                                ],
+                                "pulp2_distributor_repository_ids": ["rpm-with-modules"],
                             }
                         ],
                     },
@@ -85,9 +77,7 @@ COPY_INTO_NEW_REPO_PLAN = json.dumps(
                         "repository_versions": [
                             {
                                 "pulp2_repository_id": "rpm-with-modules-copy",
-                                "pulp2_distributor_repository_ids": [
-                                    "rpm-with-modules-copy"
-                                ],
+                                "pulp2_distributor_repository_ids": ["rpm-with-modules-copy"],
                             }
                         ],
                     },
@@ -206,9 +196,7 @@ class BaseTestRpmRerun(BaseTestRpm):
                 "pulp2content": defaultdict(dict),
             }
             for repo in cls.rpm_repo_api.list().results:
-                latest_version = cls.rpm_repo_versions_api.read(
-                    repo.latest_version_href
-                )
+                latest_version = cls.rpm_repo_versions_api.read(repo.latest_version_href)
                 data["repos"][repo.name] = {
                     "created": repo.pulp_created,
                     "latest_version_number": latest_version.number,
@@ -250,9 +238,7 @@ class BaseTestRpmRerun(BaseTestRpm):
         # content count in total
         for content_type, api in self.rpm_content_apis.items():
             with self.subTest(content_type=content_type):
-                self.assertEqual(
-                    api.list().count, self.repo_info.content_total[content_type]
-                )
+                self.assertEqual(api.list().count, self.repo_info.content_total[content_type])
 
     def test_rpm_only_added_or_changed_repos(self):
         """
@@ -260,9 +246,7 @@ class BaseTestRpmRerun(BaseTestRpm):
 
         Compare timestamps from initial run. And make sure repos are migrated correctly.
         """
-        self.assertEqual(
-            self.rpm_repo_api.list().count, len(self.repo_info.repositories)
-        )
+        self.assertEqual(self.rpm_repo_api.list().count, len(self.repo_info.repositories))
         new_repo_count = 0
         for repo in self.rpm_repo_api.list().results:
             with self.subTest(repo=repo):
@@ -272,23 +256,17 @@ class BaseTestRpmRerun(BaseTestRpm):
                         repo.pulp_href, number=repo_data["latest_version_number"]
                     ).results[0]
                     self.assertEqual(repo.pulp_created, repo_data["created"])
-                    self.assertEqual(
-                        repo_version.pulp_created, repo_data["latest_version_created"]
-                    )
+                    self.assertEqual(repo_version.pulp_created, repo_data["latest_version_created"])
                 else:
                     new_repo_count += 1
 
                 repo_versions = self.rpm_repo_versions_api.list(repo.pulp_href)
-                self.assertEqual(
-                    repo_versions.count, self.repo_info["versions"][repo.name]
-                )
+                self.assertEqual(repo_versions.count, self.repo_info["versions"][repo.name])
 
                 # content count per repo
                 for content_type, api in self.rpm_content_apis.items():
                     with self.subTest(content_type=content_type):
-                        repo_content = api.list(
-                            repository_version=repo.latest_version_href
-                        )
+                        repo_content = api.list(repository_version=repo.latest_version_href)
                         self.assertEqual(
                             repo_content.count,
                             self.repo_info.repositories[repo.name].get(content_type, 0),
@@ -342,12 +320,8 @@ class BaseTestRpmRerun(BaseTestRpm):
             REPO_CHECKSUMTYPE_CHANGE,
             REPO_BASE_PATH_CHANGE,
         )
-        self.assertEqual(
-            self.rpm_publication_api.list().count, self.repo_info.publications
-        )
-        self.assertEqual(
-            self.rpm_distribution_api.list().count, self.repo_info.distributions
-        )
+        self.assertEqual(self.rpm_publication_api.list().count, self.repo_info.publications)
+        self.assertEqual(self.rpm_distribution_api.list().count, self.repo_info.distributions)
         new_publication_count = 0
         for pub in self.rpm_publication_api.list().results:
             with self.subTest(pub=pub):
@@ -442,18 +416,12 @@ class TestRpmRerunCopy(BaseTestRpm, unittest.TestCase):
         set_pulp2_snapshot(name="rpm_base_4repos_rerun_copy")
         self.task_rerun = self.run_migration(COPY_INTO_SAME_REPO_PLAN)
 
-        pulp2repo = self.pulp2repositories_api.list(
-            pulp2_repo_id="rpm-with-modules"
-        ).results[0]
+        pulp2repo = self.pulp2repositories_api.list(pulp2_repo_id="rpm-with-modules").results[0]
         version_href = pulp2repo.pulp3_repository_version
-        repo_advisories = self.rpm_content_apis["advisory"].list(
-            repository_version=version_href
-        )
+        repo_advisories = self.rpm_content_apis["advisory"].list(repository_version=version_href)
 
         self.assertEqual(repo_advisories.count, 6)
-        self.assertEqual(
-            self.rpm_distribution_api.list(base_path="rpm-with-modules-copy").count, 1
-        )
+        self.assertEqual(self.rpm_distribution_api.list(base_path="rpm-with-modules-copy").count, 1)
 
     def test_migrate_copy_into_new_repo(self):
         """
@@ -466,16 +434,12 @@ class TestRpmRerunCopy(BaseTestRpm, unittest.TestCase):
         set_pulp2_snapshot(name="rpm_base_4repos_rerun_copy")
         self.task_rerun = self.run_migration(COPY_INTO_NEW_REPO_PLAN)
 
-        pulp2repo = self.pulp2repositories_api.list(
-            pulp2_repo_id="rpm-with-modules-copy"
-        ).results[0]
+        pulp2repo = self.pulp2repositories_api.list(pulp2_repo_id="rpm-with-modules-copy").results[
+            0
+        ]
         version_href = pulp2repo.pulp3_repository_version
-        repo_advisories = self.rpm_content_apis["advisory"].list(
-            repository_version=version_href
-        )
+        repo_advisories = self.rpm_content_apis["advisory"].list(repository_version=version_href)
 
         self.assertEqual(self.rpm_repo_versions_api.read(version_href).number, 1)
         self.assertEqual(repo_advisories.count, 6)
-        self.assertEqual(
-            self.rpm_distribution_api.list(base_path="rpm-with-modules-copy").count, 1
-        )
+        self.assertEqual(self.rpm_distribution_api.list(base_path="rpm-with-modules-copy").count, 1)

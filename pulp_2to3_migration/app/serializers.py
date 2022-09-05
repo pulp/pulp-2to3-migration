@@ -78,9 +78,7 @@ class MigrationPlanSerializer(ModelSerializer):
             plugins_to_migrate.add(plugin_type["type"])
         if len(loaded_plan["plugins"]) != len(plugins_to_migrate):
             raise serializers.ValidationError(
-                _(
-                    "Provided Migration Plan contains same plugin type specified more that once."
-                )
+                _("Provided Migration Plan contains same plugin type specified more that once.")
             )
         # MongoDB connection initialization
         connection.initialize()
@@ -121,8 +119,7 @@ class MigrationPlanRunSerializer(serializers.Serializer):
     )
     dry_run = serializers.BooleanField(
         help_text=_(
-            "If ``True``, performs validation of a Migration Plan only, no migration is "
-            "run."
+            "If ``True``, performs validation of a Migration Plan only, no migration is " "run."
         ),
         required=False,
         default=False,

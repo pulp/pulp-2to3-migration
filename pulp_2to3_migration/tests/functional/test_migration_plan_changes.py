@@ -111,51 +111,35 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
         """
         # run for the first time with the standard plan
         self.run_migration(FILE_COMPLEX_PLAN)
-        pulp2repo_file_1run = self.pulp2repositories_api.list(
-            pulp2_repo_id="file"
-        ).results[0]
+        pulp2repo_file_1run = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
         pulp2repo_filemany_1run = self.pulp2repositories_api.list(
             pulp2_repo_id="file-many"
         ).results[0]
-        pulp3_repo_file_1run = self.file_repo_api.read(
-            pulp2repo_file_1run.pulp3_repository_href
-        )
+        pulp3_repo_file_1run = self.file_repo_api.read(pulp2repo_file_1run.pulp3_repository_href)
         pulp3_repo_filemany_1run = self.file_repo_api.read(
             pulp2repo_filemany_1run.pulp3_repository_href
         )
-        pulp3_remote_file_1run = self.file_remote_api.read(
-            pulp2repo_file_1run.pulp3_remote_href
-        )
+        pulp3_remote_file_1run = self.file_remote_api.read(pulp2repo_file_1run.pulp3_remote_href)
         pulp3_remote_filemany_1run = self.file_remote_api.read(
             pulp2repo_filemany_1run.pulp3_remote_href
         )
 
         self.assertEqual(pulp3_remote_file_1run.url, FILE_URL)
         self.assertEqual(pulp3_remote_filemany_1run.url, FILE_MANY_URL)
-        self.assertEqual(
-            pulp3_repo_file_1run.remote, pulp2repo_file_1run.pulp3_remote_href
-        )
-        self.assertEqual(
-            pulp3_repo_filemany_1run.remote, pulp2repo_filemany_1run.pulp3_remote_href
-        )
+        self.assertEqual(pulp3_repo_file_1run.remote, pulp2repo_file_1run.pulp3_remote_href)
+        self.assertEqual(pulp3_repo_filemany_1run.remote, pulp2repo_filemany_1run.pulp3_remote_href)
 
         # run a plan with swapped importers
         self.run_migration(FILE_IMPORTER_DIFF_PLAN)
-        pulp2repo_file_2run = self.pulp2repositories_api.list(
-            pulp2_repo_id="file"
-        ).results[0]
+        pulp2repo_file_2run = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
         pulp2repo_filemany_2run = self.pulp2repositories_api.list(
             pulp2_repo_id="file-many"
         ).results[0]
-        pulp3_repo_file_2run = self.file_repo_api.read(
-            pulp2repo_file_2run.pulp3_repository_href
-        )
+        pulp3_repo_file_2run = self.file_repo_api.read(pulp2repo_file_2run.pulp3_repository_href)
         pulp3_repo_filemany_2run = self.file_repo_api.read(
             pulp2repo_filemany_2run.pulp3_repository_href
         )
-        pulp3_remote_file_2run = self.file_remote_api.read(
-            pulp2repo_file_2run.pulp3_remote_href
-        )
+        pulp3_remote_file_2run = self.file_remote_api.read(pulp2repo_file_2run.pulp3_remote_href)
         pulp3_remote_filemany_2run = self.file_remote_api.read(
             pulp2repo_filemany_2run.pulp3_remote_href
         )
@@ -164,12 +148,8 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
         self.assertEqual(pulp3_remote_file_1run, pulp3_remote_filemany_2run)
         self.assertEqual(pulp3_remote_filemany_1run, pulp3_remote_file_2run)
         # both Pulp2Repository and Pulp 3 "Repository" should still match
-        self.assertEqual(
-            pulp3_repo_file_2run.remote, pulp2repo_file_2run.pulp3_remote_href
-        )
-        self.assertEqual(
-            pulp3_repo_filemany_2run.remote, pulp2repo_filemany_2run.pulp3_remote_href
-        )
+        self.assertEqual(pulp3_repo_file_2run.remote, pulp2repo_file_2run.pulp3_remote_href)
+        self.assertEqual(pulp3_repo_filemany_2run.remote, pulp2repo_filemany_2run.pulp3_remote_href)
 
     def test_distributor_swap(self):
         """
@@ -180,9 +160,7 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
         """
         # run for the first time with the standard plan
         self.run_migration(FILE_COMPLEX_PLAN)
-        pulp2repo_file_1run = self.pulp2repositories_api.list(
-            pulp2_repo_id="file"
-        ).results[0]
+        pulp2repo_file_1run = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
         pulp2repo_filemany_1run = self.pulp2repositories_api.list(
             pulp2_repo_id="file-many"
         ).results[0]
@@ -201,9 +179,7 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
 
         # run a plan with swapped distributors
         self.run_migration(FILE_DISTRIBUTOR_DIFF_PLAN)
-        pulp2repo_file_2run = self.pulp2repositories_api.list(
-            pulp2_repo_id="file"
-        ).results[0]
+        pulp2repo_file_2run = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
         pulp2repo_filemany_2run = self.pulp2repositories_api.list(
             pulp2_repo_id="file-many"
         ).results[0]
@@ -222,12 +198,8 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
 
         self.assertEqual(pulp3_dist_file_1run.base_path, "file")
         self.assertEqual(pulp3_dist_filemany_1run.base_path, "file-many")
-        self.assertEqual(
-            pulp3_dist_file_1run.base_path, pulp3_dist_filemany_2run.base_path
-        )
-        self.assertEqual(
-            pulp3_dist_filemany_1run.base_path, pulp3_dist_file_2run.base_path
-        )
+        self.assertEqual(pulp3_dist_file_1run.base_path, pulp3_dist_filemany_2run.base_path)
+        self.assertEqual(pulp3_dist_filemany_1run.base_path, pulp3_dist_file_2run.base_path)
 
         # No publications should be re-used
         self.assertNotEqual(pulp3_pub_file_1run, pulp3_pub_file_2run)
@@ -245,12 +217,8 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
         """Test when a distributor moved from one repo to another in the migration plan."""
         # run for the first time with the plan for 2 distributors in one repo
         self.run_migration(FILE_2DISTRIBUTORS_PLAN)
-        pulp2repo_file = self.pulp2repositories_api.list(pulp2_repo_id="file").results[
-            0
-        ]
-        pulp2repo_file2 = self.pulp2repositories_api.list(
-            pulp2_repo_id="file2"
-        ).results[0]
+        pulp2repo_file = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
+        pulp2repo_file2 = self.pulp2repositories_api.list(pulp2_repo_id="file2").results[0]
 
         pulp3_file_dist_base_paths_1run = []
         pulp3_file2_dist_base_paths_1run = []
@@ -263,12 +231,8 @@ class TestMigrationPlanChanges(BaseTestFile, unittest.TestCase):
 
         # run a plan with one distributor moved to another repo in the plan
         self.run_migration(FILE_2DISTRIBUTORS_MOVED_PLAN)
-        pulp2repo_file = self.pulp2repositories_api.list(pulp2_repo_id="file").results[
-            0
-        ]
-        pulp2repo_file2 = self.pulp2repositories_api.list(
-            pulp2_repo_id="file2"
-        ).results[0]
+        pulp2repo_file = self.pulp2repositories_api.list(pulp2_repo_id="file").results[0]
+        pulp2repo_file2 = self.pulp2repositories_api.list(pulp2_repo_id="file2").results[0]
 
         pulp3_file_dist_base_paths_2run = []
         pulp3_file2_dist_base_paths_2run = []

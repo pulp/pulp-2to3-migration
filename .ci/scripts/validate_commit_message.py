@@ -19,9 +19,7 @@ from github import Github
 NO_ISSUE = "[noissue]"
 CHANGELOG_EXTS = [".feature", ".bugfix", ".doc", ".removal", ".misc", ".deprecation"]
 sha = sys.argv[1]
-message = subprocess.check_output(["git", "log", "--format=%B", "-n 1", sha]).decode(
-    "utf-8"
-)
+message = subprocess.check_output(["git", "log", "--format=%B", "-n 1", sha]).decode("utf-8")
 
 
 KEYWORDS = ["fixes", "closes"]
@@ -68,11 +66,7 @@ if issues:
         __check_changelog(issue)
 else:
     if NO_ISSUE in message:
-        print(
-            "Commit {sha} has no issues but is tagged {tag}.".format(
-                sha=sha[0:7], tag=NO_ISSUE
-            )
-        )
+        print("Commit {sha} has no issues but is tagged {tag}.".format(sha=sha[0:7], tag=NO_ISSUE))
     elif "Merge" in message and "cherry picked from commit" in message:
         pass
     else:

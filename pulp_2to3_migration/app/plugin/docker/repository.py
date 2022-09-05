@@ -52,9 +52,7 @@ class DockerDistributor(Pulp2to3Distributor):
         """
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(
-                not_in_plan=False, is_migrated=True
-            )
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)

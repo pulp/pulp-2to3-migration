@@ -34,9 +34,7 @@ class DebImporter(Pulp2to3Importer):
         """
         pulp2_config = pulp2importer.pulp2_config
         base_config, name = cls.parse_base_config(pulp2importer, pulp2_config)
-        base_config["distributions"] = pulp2_config.get("releases", "stable").replace(
-            ",", " "
-        )
+        base_config["distributions"] = pulp2_config.get("releases", "stable").replace(",", " ")
         components = pulp2_config.get("components")
         if components:
             base_config["components"] = components.replace(",", " ")
@@ -72,9 +70,7 @@ class DebDistributor(Pulp2to3Distributor):
         signing_service_pk = signing_service.pk if signing_service else None
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(
-                not_in_plan=False, is_migrated=True
-            )
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
         publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:

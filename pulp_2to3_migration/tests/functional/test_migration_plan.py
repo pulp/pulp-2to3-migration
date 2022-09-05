@@ -26,9 +26,7 @@ MISSING_RESOURCE_PLAN = json.dumps(
                         "repository_versions": [
                             {
                                 "pulp2_repository_id": "non-existing repo",  # content count: iso-3
-                                "pulp2_distributor_repository_ids": [
-                                    "non-existing distributor"
-                                ],
+                                "pulp2_distributor_repository_ids": ["non-existing distributor"],
                             }
                         ],
                     }
@@ -104,9 +102,7 @@ class TestMigrationPlan(BaseTestFile, unittest.TestCase):
         mp_run_response = self.migration_plans_api.run(mp.pulp_href, {"validate": True})
         with self.assertRaises(PulpTaskError) as exc:
             monitor_task(mp_run_response.task)
-        self.assertEqual(
-            exc.exception.task.error["description"], MISSING_RESOURCE_ERROR
-        )
+        self.assertEqual(exc.exception.task.error["description"], MISSING_RESOURCE_ERROR)
 
     def test_run_only_one_plan(self):
         """Test that only one plan can be run at a time"""

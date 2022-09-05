@@ -64,9 +64,7 @@ def reset_pulp3_data(migration_plan_pk):
 
             pb.increment()
 
-    pb_data = dict(
-        message="Removing pre-migrated data", code="reset.premigrated.data", total=1
-    )
+    pb_data = dict(message="Removing pre-migrated data", code="reset.premigrated.data", total=1)
     with ProgressReport(**pb_data) as pb:
         for plugin in plan.get_plugin_plans():
             for (
@@ -74,24 +72,18 @@ def reset_pulp3_data(migration_plan_pk):
                 pulp2to3_content_model,
             ) in plugin.migrator.content_models.items():
                 pulp2to3_content_model.objects.all().only("pk").delete()
-                Pulp2Content.objects.filter(pulp2_content_type_id=content_type).only(
+                Pulp2Content.objects.filter(pulp2_content_type_id=content_type).only("pk").delete()
+                Pulp2LazyCatalog.objects.filter(pulp2_content_type_id=content_type).only(
                     "pk"
                 ).delete()
-                Pulp2LazyCatalog.objects.filter(
-                    pulp2_content_type_id=content_type
-                ).only("pk").delete()
-                Pulp2RepoContent.objects.filter(
-                    pulp2_content_type_id=content_type
-                ).only("pk").delete()
+                Pulp2RepoContent.objects.filter(pulp2_content_type_id=content_type).only(
+                    "pk"
+                ).delete()
             for importer_type in plugin.migrator.importer_migrators:
-                Pulp2Importer.objects.filter(pulp2_type_id=importer_type).only(
-                    "pk"
-                ).delete()
+                Pulp2Importer.objects.filter(pulp2_type_id=importer_type).only("pk").delete()
             for dist_type in plugin.migrator.distributor_migrators:
-                Pulp2Distributor.objects.filter(pulp2_type_id=dist_type).only(
-                    "pk"
-                ).delete()
-            Pulp2Repository.objects.filter(
-                pulp2_repo_type=plugin.migrator.pulp2_plugin
-            ).only("pk").delete()
+                Pulp2Distributor.objects.filter(pulp2_type_id=dist_type).only("pk").delete()
+            Pulp2Repository.objects.filter(pulp2_repo_type=plugin.migrator.pulp2_plugin).only(
+                "pk"
+            ).delete()
             pb.increment()

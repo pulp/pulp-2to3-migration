@@ -50,9 +50,7 @@ class Pulp2Blob(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_blob_content_batch = pulp2_models.Blob.objects.filter(id__in=pulp2_ids)
         pulp2blob_to_save = [
@@ -122,11 +120,7 @@ class Pulp2Manifest(Pulp2to3Content):
             """
             Return media_type of the manifest.
             """
-            return (
-                MEDIA_TYPE.MANIFEST_V2
-                if schema_version == 2
-                else MEDIA_TYPE.MANIFEST_V1
-            )
+            return MEDIA_TYPE.MANIFEST_V2 if schema_version == 2 else MEDIA_TYPE.MANIFEST_V1
 
         def _get_blobs(layers):
             """
@@ -138,9 +132,7 @@ class Pulp2Manifest(Pulp2to3Content):
                     blobs.append(layer.blob_sum)
             return blobs
 
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_m_content_batch = pulp2_models.Manifest.objects.filter(id__in=pulp2_ids)
         pulp2m_to_save = []
@@ -218,13 +210,9 @@ class Pulp2ManifestList(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
-        pulp2_m_content_batch = pulp2_models.ManifestList.objects.filter(
-            id__in=pulp2_ids
-        )
+        pulp2_m_content_batch = pulp2_models.ManifestList.objects.filter(id__in=pulp2_ids)
         pulp2m_to_save = [
             Pulp2ManifestList(
                 digest=m.digest,
@@ -285,9 +273,7 @@ class Pulp2Tag(Pulp2to3Content):
              content_batch(list of Pulp2Content): pre-migrated generic data for Pulp 2 content.
 
         """
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_tag_content_batch = pulp2_models.Tag.objects.filter(id__in=pulp2_ids)
         pulp2tag_to_save = [

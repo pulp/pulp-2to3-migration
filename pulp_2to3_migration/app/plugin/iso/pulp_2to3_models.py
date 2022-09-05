@@ -49,9 +49,7 @@ class Pulp2ISO(Pulp2to3Content):
 
         """
         # TODO: all pulp2content objects from the batch are in memory. Concerns?
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_iso_content_batch = ISO.objects.filter(id__in=pulp2_ids)
         pulp2iso_to_save = [

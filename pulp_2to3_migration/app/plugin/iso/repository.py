@@ -63,9 +63,7 @@ class IsoDistributor(Pulp2to3Distributor):
 
         # this will go away with the simple-complex plan conversion work
         if not repo_version:
-            repo = pulp2distributor.pulp2_repos.filter(
-                not_in_plan=False, is_migrated=True
-            )
+            repo = pulp2distributor.pulp2_repos.filter(not_in_plan=False, is_migrated=True)
             repo_version = repo[0].pulp3_repository_version
         publication = repo_version.publication_set.filter(complete=True).first()
         if not publication:
@@ -75,9 +73,7 @@ class IsoDistributor(Pulp2to3Distributor):
         # create distribution
         pulp2_config = pulp2distributor.pulp2_config
         base_config = cls.parse_base_config(pulp2distributor, pulp2_config)
-        base_config["base_path"] = pulp2_config.get(
-            "relative_url", pulp2distributor.pulp2_repo_id
-        )
+        base_config["base_path"] = pulp2_config.get("relative_url", pulp2distributor.pulp2_repo_id)
         base_config["publication"] = publication
         distribution, created = FileDistribution.objects.update_or_create(
             name=base_config["name"],

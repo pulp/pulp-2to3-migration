@@ -38,9 +38,7 @@ def migrate_content(plan, skip_corrupted=False):
                                 no task failure.
 
     """
-    progress_data = dict(
-        message="Migrating content to Pulp 3", code="migrating.content", total=0
-    )
+    progress_data = dict(message="Migrating content to Pulp 3", code="migrating.content", total=0)
     with ProgressReport(**progress_data) as pb:
         # schedule content migration into Pulp 3 using pre-migrated Pulp 2 content
         for plugin in plan.get_plugin_plans():
@@ -99,9 +97,7 @@ def migrate_repositories(plan):
                 )
 
                 pulp2_repo_ids = []
-                repo_version_setup = repos_to_create[pulp3_repo_name].get(
-                    "repository_versions"
-                )
+                repo_version_setup = repos_to_create[pulp3_repo_name].get("repository_versions")
                 for repo_version in repo_version_setup:
                     pulp2_repo_ids.append(repo_version["repo_id"])
                 pulp2repos_qs = Pulp2Repository.objects.filter(
@@ -133,9 +129,7 @@ def migrate_importers(plan):
         message="Migrating importers to Pulp 3", code="migrating.importers", total=0
     )
     with ProgressReport(**progress_data) as pb:
-        pulp2importers_qs = Pulp2Importer.objects.filter(
-            is_migrated=False, not_in_plan=False
-        )
+        pulp2importers_qs = Pulp2Importer.objects.filter(is_migrated=False, not_in_plan=False)
         pb.total += pulp2importers_qs.count()
         pb.save()
 
@@ -173,22 +167,16 @@ def complex_repo_migration(plugin_type, pulp3_repo_setup, repo_name):
     signing_service = None
     signing_service_name = pulp3_repo_setup[repo_name].get("signing_service")
     if signing_service_name:
-        _logger.info(
-            "Signing Service %r requested for %r", signing_service_name, repo_name
-        )
+        _logger.info("Signing Service %r requested for %r", signing_service_name, repo_name)
         try:
             signing_service = SigningService.objects.get(name=signing_service_name)
         except SigningService.DoesNotExist:
-            _logger.warning(
-                "Could not find signing-service named %r", signing_service_name
-            )
+            _logger.warning("Could not find signing-service named %r", signing_service_name)
             raise
 
     # importer might not be migrated, e.g. config is empty or it's not specified in a MP
     pulp3_remote = None
-    pulp2_importer_repo_id = pulp3_repo_setup[repo_name].get(
-        "pulp2_importer_repository_id"
-    )
+    pulp2_importer_repo_id = pulp3_repo_setup[repo_name].get("pulp2_importer_repository_id")
     if pulp2_importer_repo_id:
         try:
             pulp2_importer = Pulp2Importer.objects.get(
@@ -281,15 +269,9 @@ def create_repoversions_publications_distributions(plan, parallel=True):
         # no need to proceed - everything is migrated
         if not not_migrated_repos and not not_migrated_dists:
             continue
-        not_migrated_repo_ids = not_migrated_repos.values_list(
-            "pulp2_repo_id", flat=True
-        )
-        not_migrated_repo_ids_dists = not_migrated_dists.values_list(
-            "pulp2_repo_id", flat=True
-        )
-        repos_ids_to_check = set(not_migrated_repo_ids).union(
-            not_migrated_repo_ids_dists
-        )
+        not_migrated_repo_ids = not_migrated_repos.values_list("pulp2_repo_id", flat=True)
+        not_migrated_repo_ids_dists = not_migrated_dists.values_list("pulp2_repo_id", flat=True)
+        repos_ids_to_check = set(not_migrated_repo_ids).union(not_migrated_repo_ids_dists)
 
         pulp3_repo_setup = plugin.get_repo_creation_setup()
 
@@ -331,13 +313,9 @@ def create_repoversions_publications_distributions(plan, parallel=True):
                     complex_repo_migration(*task_args)
 
         task_group = TaskGroup.current()
-        progress_rv = task_group.group_progress_reports.filter(
-            code="create.repo_version"
-        )
+        progress_rv = task_group.group_progress_reports.filter(code="create.repo_version")
         progress_rv.update(total=F("total") + repo_ver_to_create)
-        progress_dist = task_group.group_progress_reports.filter(
-            code="create.distribution"
-        )
+        progress_dist = task_group.group_progress_reports.filter(code="create.distribution")
         progress_dist.update(total=F("total") + dist_to_create)
 
 
@@ -406,9 +384,9 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
                 overlap resolution
 
         """
-        paths = ContentArtifact.objects.filter(
-            content__pk__in=version.content
-        ).values_list("relative_path", flat=True)
+        paths = ContentArtifact.objects.filter(content__pk__in=version.content).values_list(
+            "relative_path", flat=True
+        )
         paths = list(paths)
         max_conflicts = version.content.count() - 1
 
@@ -437,9 +415,7 @@ def create_repo_version(progress_rv, pulp2_repo, pulp3_remote=None):
                     _(
                         "Duplicated paths have been found in Pulp 3 repo `{repo}`: {path}. "
                         "Removed: {num}."
-                    ).format(
-                        repo=version.repository.name, path=bad_path, num=removed_count
-                    )
+                    ).format(repo=version.repository.name, path=bad_path, num=removed_count)
                 )
                 for j in range(removed_count):
                     paths.remove(bad_path)

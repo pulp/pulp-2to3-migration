@@ -156,9 +156,7 @@ class ContentMigrationFirstStage(Stage):
             )
 
         pulp3_storage_relative_path = storage.get_artifact_path(artifact.sha256)
-        pulp3_storage_path = os.path.join(
-            settings.MEDIA_ROOT, pulp3_storage_relative_path
-        )
+        pulp3_storage_path = os.path.join(settings.MEDIA_ROOT, pulp3_storage_relative_path)
         os.makedirs(os.path.dirname(pulp3_storage_path), exist_ok=True)
 
         is_copied = False
@@ -260,9 +258,7 @@ class ContentMigrationFirstStage(Stage):
             )
         else:
             # go through all of the content that haven't been migrated
-            pulp_2to3_detail_qs = content_model.objects.filter(
-                pulp2content__pulp3_content=None
-            )
+            pulp_2to3_detail_qs = content_model.objects.filter(pulp2content__pulp3_content=None)
 
         # order by pulp2_repo if it's set
         if content_model.set_pulp2_repo:
@@ -297,9 +293,7 @@ class ContentMigrationFirstStage(Stage):
                         pulp2_unit_id=pulp2content.pulp2_id,
                         is_migrated=False,
                     )
-                    await sync_to_async(bool)(
-                        pulp2lazycatalog
-                    )  # force queryset to evaluate
+                    await sync_to_async(bool)(pulp2lazycatalog)  # force queryset to evaluate
 
                     if not pulp2content.downloaded and not pulp2lazycatalog:
                         # A distribution tree can be from an on_demand repo but without any images,
@@ -308,18 +302,12 @@ class ContentMigrationFirstStage(Stage):
                             _logger.warn(
                                 _(
                                     "On_demand content cannot be migrated without an entry in the "
-                                    "lazy catalog, pulp2 unit_id: {}".format(
-                                        pulp2content.pulp2_id
-                                    )
+                                    "lazy catalog, pulp2 unit_id: {}".format(pulp2content.pulp2_id)
                                 )
                             )
                             continue
 
-                if (
-                    pulp2content.pulp3_content is not None
-                    and is_lazy_type
-                    and pulp2lazycatalog
-                ):
+                if pulp2content.pulp3_content is not None and is_lazy_type and pulp2lazycatalog:
                     # find already created pulp3 content
                     pulp3content = pulp2content.pulp3_content
                     extra_info = None
@@ -330,9 +318,7 @@ class ContentMigrationFirstStage(Stage):
                             _logger.warning(
                                 _(
                                     "Failed to find or instantiate extra_info for multi-artifact "
-                                    "pulp2 unit_id: {} ; skipping".format(
-                                        pulp2content.pulp2_id
-                                    )
+                                    "pulp2 unit_id: {} ; skipping".format(pulp2content.pulp2_id)
                                 )
                             )
                             continue
@@ -439,12 +425,8 @@ class ContentMigrationFirstStage(Stage):
 
                     # We do this last because we need the remote url which is only found in the LCE
                     # of the image files. There is no LCE for the .treeinfo file itself.
-                    relative_path = (
-                        pulp_2to3_detail_content.relative_path_for_content_artifact
-                    )
-                    treeinfo_path = os.path.join(
-                        pulp2content.pulp2_storage_path, relative_path
-                    )
+                    relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
+                    treeinfo_path = os.path.join(pulp2content.pulp2_storage_path, relative_path)
                     artifact = await self.create_artifact(
                         treeinfo_path, None, None, downloaded=True
                     )
@@ -469,9 +451,7 @@ class ContentMigrationFirstStage(Stage):
                             deferred_download=False,
                         )
                         d_artifacts.append(da)
-                    dc = DeclarativeContent(
-                        content=pulp3content, d_artifacts=d_artifacts
-                    )
+                    dc = DeclarativeContent(content=pulp3content, d_artifacts=d_artifacts)
                     dc.extra_data = future_relations
                     await self.put(dc)
                 # not all content units have files, create DC without artifact
@@ -494,9 +474,7 @@ class ContentMigrationFirstStage(Stage):
                             await pb.aincrement()
                         continue
 
-                    relative_path = (
-                        pulp_2to3_detail_content.relative_path_for_content_artifact
-                    )
+                    relative_path = pulp_2to3_detail_content.relative_path_for_content_artifact
                     remote_lce_tuples = []
                     deferred_download = not pulp2content.downloaded
 
@@ -525,9 +503,7 @@ class ContentMigrationFirstStage(Stage):
                                 deferred_download=deferred_download,
                             )
                             lce.is_migrated = True
-                            dc = DeclarativeContent(
-                                content=pulp3content, d_artifacts=[da]
-                            )
+                            dc = DeclarativeContent(content=pulp3content, d_artifacts=[da])
 
                             # yes, all LCEs are assigned for each dc to be resolved at a later
                             # stage. Some LCEs might be "bad" and not have a migrated importer

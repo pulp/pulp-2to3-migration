@@ -133,9 +133,7 @@ class Pulp2DebPackage(Pulp2to3Content):
                 "control_fields",
             ]
         )
-        pulp2_id_obj_map = {
-            pulp2content.pulp2_id: pulp2content for pulp2content in content_batch
-        }
+        pulp2_id_obj_map = {pulp2content.pulp2_id: pulp2content for pulp2content in content_batch}
         pulp2_ids = pulp2_id_obj_map.keys()
         pulp2_content_batch = (
             pulp2_models.DebPackage.objects.filter(
@@ -242,9 +240,7 @@ class Pulp2DebRelease(Pulp2to3Content):
             for release in pulp2_unit_batch
         ]
 
-        cls.objects.bulk_create(
-            units_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE
-        )
+        cls.objects.bulk_create(units_to_save, ignore_conflicts=True, batch_size=DEFAULT_BATCH_SIZE)
 
     def create_pulp3_content(self):
         """
@@ -327,9 +323,7 @@ class Pulp2DebComponent(Pulp2to3Content):
             )
             architectures = set()
             for package_id in component_unit.packages:
-                package_unit = pulp2_models.DebPackage.objects.filter(
-                    id__in=[package_id]
-                ).first()
+                package_unit = pulp2_models.DebPackage.objects.filter(id__in=[package_id]).first()
                 package_relative_path = package_unit.filename
                 package_sha256 = package_unit.checksum
 
@@ -353,9 +347,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                     pulp2_storage_path=pulp2_base_record.pulp2_storage_path,
                     downloaded=pulp2_base_record.downloaded,
                 )
-                _logger.debug(
-                    "Adding Pulp2Content subrecord {}".format(pulp2_sub_record)
-                )
+                _logger.debug("Adding Pulp2Content subrecord {}".format(pulp2_sub_record))
                 pulp2_sub_records_to_save.append(pulp2_sub_record)
 
                 component_package_units_to_save.append(
@@ -375,9 +367,7 @@ class Pulp2DebComponent(Pulp2to3Content):
             architectures.discard("all")
             for architecture in architectures:
                 # We are using the sha256 of the concatenated unique_together fields for the subid:
-                pulp2_subid_string = (
-                    architecture + distribution + codename + suite + repoid
-                )
+                pulp2_subid_string = architecture + distribution + codename + suite + repoid
                 pulp2_subid = sha256(pulp2_subid_string.encode("utf-8")).hexdigest()
 
                 pulp2_sub_record = Pulp2Content(
@@ -388,9 +378,7 @@ class Pulp2DebComponent(Pulp2to3Content):
                     pulp2_storage_path=pulp2_base_record.pulp2_storage_path,
                     downloaded=pulp2_base_record.downloaded,
                 )
-                _logger.debug(
-                    "Adding Pulp2Content subrecord {}".format(pulp2_sub_record)
-                )
+                _logger.debug("Adding Pulp2Content subrecord {}".format(pulp2_sub_record))
                 pulp2_sub_records_to_save.append(pulp2_sub_record)
 
                 release_architecture_units_to_save.append(

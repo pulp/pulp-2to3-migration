@@ -110,23 +110,16 @@ class TestMigrationPlan(BaseTestFile, unittest.TestCase):
             # Assert that there is a result
             self.failIf(
                 not pulp3repos.results,
-                "Missing a Pulp 3 repository for Pulp 2 "
-                "repository id '{}'".format(repo_id),
+                "Missing a Pulp 3 repository for Pulp 2 " "repository id '{}'".format(repo_id),
             )
             repo_href = pulp3repos.results[0].pulp_href
             # Assert that the name in pulp 3 matches the repo_id in pulp 2
             self.assertEqual(repo_id, pulp3repos.results[0].name)
             # Assert that there is a Repository Version with the same number of content units as
             # associated with the repository in Pulp 2.
-            repo_version_href = (
-                self.file_repo_versions_api.list(repo_href).results[0].pulp_href
-            )
-            repo_version_content = self.file_content_api.list(
-                repository_version=repo_version_href
-            )
-            self.assertEqual(
-                PULP_2_ISO_FIXTURE_DATA[repo_id], repo_version_content.count
-            )
+            repo_version_href = self.file_repo_versions_api.list(repo_href).results[0].pulp_href
+            repo_version_content = self.file_content_api.list(repository_version=repo_version_href)
+            self.assertEqual(PULP_2_ISO_FIXTURE_DATA[repo_id], repo_version_content.count)
         # TODO: count only not_in_plan=False repositories from ../pulp2repositories/ endpoint
         self.assertEqual(len(repos), self.file_repo_api.list().count)
 

@@ -37,9 +37,7 @@ DEB_COMPLEX_PLAN = json.dumps(
                         "repository_versions": [
                             {
                                 "pulp2_repository_id": "debian-complex-dists",
-                                "pulp2_distributor_repository_ids": [
-                                    "debian-complex-dists"
-                                ],
+                                "pulp2_distributor_repository_ids": ["debian-complex-dists"],
                             }
                         ],
                     },
@@ -229,9 +227,7 @@ FILE_IMPORTER_DIFF_PLAN = json.dumps(
                         "name": "file-many",
                         "pulp2_importer_repository_id": "file",  # policy: immediate
                         "repository_versions": [
-                            {
-                                "pulp2_repository_id": "file-many"  # content count: iso - 250
-                            }
+                            {"pulp2_repository_id": "file-many"}  # content count: iso - 250
                         ],
                     },
                 ],

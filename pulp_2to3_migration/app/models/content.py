@@ -37,9 +37,7 @@ class Pulp2Content(BaseModel):
     pulp2_storage_path = models.TextField(null=True)
     downloaded = models.BooleanField(default=False)
     pulp3_content = models.ForeignKey(Content, on_delete=models.SET_NULL, null=True)
-    pulp2_repo = models.ForeignKey(
-        Pulp2Repository, on_delete=models.SET_NULL, null=True
-    )
+    pulp2_repo = models.ForeignKey(Pulp2Repository, on_delete=models.SET_NULL, null=True)
     pulp2_subid = models.CharField(max_length=255, blank=True)
 
     class Meta:

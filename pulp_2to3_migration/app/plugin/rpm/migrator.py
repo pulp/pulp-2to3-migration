@@ -253,10 +253,6 @@ class InterrelateContent(Stage):
         for pkg in packages_list:
             nevra = pkg.nevra
             if nevra not in already_related:
-                thru.append(
-                    ModulemdPackages(
-                        package_id=pkg.pk, modulemd_id=module_dc.content.pk
-                    )
-                )
+                thru.append(ModulemdPackages(package_id=pkg.pk, modulemd_id=module_dc.content.pk))
                 already_related.append(nevra)
         return thru

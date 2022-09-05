@@ -62,20 +62,14 @@ def pre_migrate_all_content(plan):
                 pulp2=pulp2_content_model, pulp_2to3_detail=pulp_2to3_detail_model
             )
             # identify wether the content is mutable
-            mutable_type = (
-                content_model.pulp2.TYPE_ID in plugin.migrator.mutable_content_models
-            )
+            mutable_type = content_model.pulp2.TYPE_ID in plugin.migrator.mutable_content_models
             # identify wether the content is lazy
             lazy_type = content_model.pulp2.TYPE_ID in plugin.migrator.lazy_types
             # check if the content type has a premigration hook
             premigrate_hook = None
             if content_model.pulp2.TYPE_ID in plugin.migrator.premigrate_hook:
-                premigrate_hook = plugin.migrator.premigrate_hook[
-                    content_model.pulp2.TYPE_ID
-                ]
-            pre_migrate_content_type(
-                content_model, mutable_type, lazy_type, premigrate_hook
-            )
+                premigrate_hook = plugin.migrator.premigrate_hook[content_model.pulp2.TYPE_ID]
+            pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_hook)
 
 
 def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_hook):
@@ -129,9 +123,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
 
     # the latest timestamp we have in the migration tool Pulp2Content table for this content type
     content_qs = Pulp2Content.objects.filter(pulp2_content_type_id=content_type)
-    last_updated = (
-        content_qs.aggregate(Max("pulp2_last_updated"))["pulp2_last_updated__max"] or 0
-    )
+    last_updated = content_qs.aggregate(Max("pulp2_last_updated"))["pulp2_last_updated__max"] or 0
     _logger.debug(
         "The latest migrated {type} content has {timestamp} timestamp.".format(
             type=content_type, timestamp=last_updated
@@ -194,9 +186,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
     if hasattr(content_model.pulp2, "downloaded"):
         mongo_fields.add("downloaded")
 
-    batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(
-        batch_size
-    )
+    batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(batch_size)
     for i, record in enumerate(batched_mongo_content_qs.no_cache()):
         if record._last_updated == last_updated:
             # corner case - content with the last``last_updated`` date might be pre-migrated;
@@ -240,9 +230,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                     downloaded=downloaded,
                     pulp2_repo=relation.pulp2_repository,
                 )
-                _logger.debug(
-                    "Add content item to the list to migrate: {item}".format(item=item)
-                )
+                _logger.debug("Add content item to the list to migrate: {item}".format(item=item))
                 pulp2content.append(item)
                 pulp2content_pb.total += 1
                 pulp2detail_pb.total += 1
@@ -259,21 +247,15 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 pulp2_storage_path=record._storage_path,
                 downloaded=downloaded,
             )
-            _logger.debug(
-                "Add content item to the list to migrate: {item}".format(item=item)
-            )
+            _logger.debug("Add content item to the list to migrate: {item}".format(item=item))
             pulp2content.append(item)
 
         # determine if the batch needs to be saved, also take into account whether there is
         # anything in the pulp2content to be saved
-        save_batch = pulp2content and (
-            len(pulp2content) >= batch_size or i == total_content - 1
-        )
+        save_batch = pulp2content and (len(pulp2content) >= batch_size or i == total_content - 1)
         if save_batch:
             _logger.debug(
-                "Bulk save for generic content info, saved so far: {index}".format(
-                    index=i + 1
-                )
+                "Bulk save for generic content info, saved so far: {index}".format(index=i + 1)
             )
             pulp2content_batch = Pulp2Content.objects.bulk_create(
                 pulp2content, ignore_conflicts=True
@@ -301,9 +283,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
             pulp2content_pb.done += content_saved
             pulp2content_pb.save()
 
-            content_model.pulp_2to3_detail.pre_migrate_content_detail(
-                pulp2content_batch
-            )
+            content_model.pulp_2to3_detail.pre_migrate_content_detail(pulp2content_batch)
 
             pulp2detail_pb.done += content_saved
             pulp2detail_pb.save()
@@ -343,12 +323,8 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         pulp2_content_by_id = {}
         paginator = Paginator(pulp2_unit_id_qs, batch_size)
         for page in range(1, paginator.num_pages + 1):
-            mongo_content_qs = content_model.pulp2.objects(
-                id__in=paginator.page(page).object_list
-            )
-            batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(
-                batch_size
-            )
+            mongo_content_qs = content_model.pulp2.objects(id__in=paginator.page(page).object_list)
+            batched_mongo_content_qs = mongo_content_qs.only(*mongo_fields).batch_size(batch_size)
             for record in batched_mongo_content_qs.no_cache():
                 pulp2_content_by_id[record.id] = record
 
@@ -384,9 +360,7 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
                 downloaded=downloaded,
                 pulp2_repo=relation.pulp2_repository,
             )
-            _logger.debug(
-                "Add content item to the list to migrate: {item}".format(item=item)
-            )
+            _logger.debug("Add content item to the list to migrate: {item}".format(item=item))
             pulp2content.append(item)
             pulp2content_pb.total += 1
             pulp2detail_pb.total += 1
@@ -409,15 +383,11 @@ def pre_migrate_content_type(content_model, mutable_type, lazy_type, premigrate_
         # in this case, we still need to update the is_migrated flag manually because of errata.
         # in pulp2 sync and copy cases of updated errata are not covered
         # only when uploading errata last_unit_added is updated on all the repos that contain it
-        mutated_content = Pulp2RepoContent.objects.filter(
-            pulp2_unit_id__in=pulp2mutatedcontent
-        )
+        mutated_content = Pulp2RepoContent.objects.filter(pulp2_unit_id__in=pulp2mutatedcontent)
         repo_to_update_ids = mutated_content.values_list(
             "pulp2_repository_id", flat=True
         ).distinct()
-        Pulp2Repository.objects.filter(pk__in=repo_to_update_ids).update(
-            is_migrated=False
-        )
+        Pulp2Repository.objects.filter(pk__in=repo_to_update_ids).update(is_migrated=False)
 
     if lazy_type:
         pre_migrate_lazycatalog(content_type)
@@ -455,9 +425,7 @@ def pre_migrate_lazycatalog(content_type):
         pulp2lazycatalog.append(item)
 
         if len(pulp2lazycatalog) >= batch_size:
-            Pulp2LazyCatalog.objects.bulk_create(
-                pulp2lazycatalog, ignore_conflicts=True
-            )
+            Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
             pulp2lazycatalog.clear()
     else:
         Pulp2LazyCatalog.objects.bulk_create(pulp2lazycatalog, ignore_conflicts=True)
@@ -521,24 +489,20 @@ def pre_migrate_all_without_content(plan):
                 or epoch
             )
             imp_premigrated_last = (
-                Pulp2Importer.objects.filter(imp_type_q).aggregate(
-                    Max("pulp2_last_updated")
-                )["pulp2_last_updated__max"]
+                Pulp2Importer.objects.filter(imp_type_q).aggregate(Max("pulp2_last_updated"))[
+                    "pulp2_last_updated__max"
+                ]
                 or epoch
             )
             dist_premigrated_last = (
-                Pulp2Distributor.objects.filter(dist_type_q).aggregate(
-                    Max("pulp2_last_updated")
-                )["pulp2_last_updated__max"]
+                Pulp2Distributor.objects.filter(dist_type_q).aggregate(Max("pulp2_last_updated"))[
+                    "pulp2_last_updated__max"
+                ]
                 or epoch
             )
 
-            is_content_added_q = mongo_Q(
-                last_unit_added__gte=repo_premigrated_last_by_added
-            )
-            is_content_removed_q = mongo_Q(
-                last_unit_removed__gte=repo_premigrated_last_by_removed
-            )
+            is_content_added_q = mongo_Q(last_unit_added__gte=repo_premigrated_last_by_added)
+            is_content_removed_q = mongo_Q(last_unit_removed__gte=repo_premigrated_last_by_removed)
             is_new_enough_repo_q = is_content_added_q | is_content_removed_q
             is_empty_repo_q = mongo_Q(last_unit_added__exists=False)
             is_new_enough_imp_q = mongo_Q(last_updated__gte=imp_premigrated_last)
@@ -547,19 +511,17 @@ def pre_migrate_all_without_content(plan):
             imp_repo_id_q = mongo_Q(repo_id__in=importers_repos)
             dist_repo_id_q = mongo_Q(repo_id__in=distributors_repos)
 
-            updated_importers = Importer.objects(
-                imp_repo_id_q & is_new_enough_imp_q
-            ).only("repo_id")
+            updated_importers = Importer.objects(imp_repo_id_q & is_new_enough_imp_q).only(
+                "repo_id"
+            )
             updated_imp_repos = set(imp.repo_id for imp in updated_importers)
-            updated_distributors = Distributor.objects(
-                dist_repo_id_q & is_new_enough_dist_q
-            ).only("repo_id")
+            updated_distributors = Distributor.objects(dist_repo_id_q & is_new_enough_dist_q).only(
+                "repo_id"
+            )
             updated_dist_repos = set(dist.repo_id for dist in updated_distributors)
             updated_impdist_repos = updated_imp_repos | updated_dist_repos
 
-            mongo_updated_repo_q = repo_repo_id_q & (
-                is_new_enough_repo_q | is_empty_repo_q
-            )
+            mongo_updated_repo_q = repo_repo_id_q & (is_new_enough_repo_q | is_empty_repo_q)
             mongo_updated_imp_dist_repo_q = mongo_Q(repo_id__in=updated_impdist_repos)
 
             mongo_repo_qs = Repository.objects(
@@ -715,9 +677,7 @@ def pre_migrate_distributor(repo_id, distributor_migrators):
         distributor_migrators(dict): supported distributor types and their models for migration
     """
     distributor_types = list(distributor_migrators.keys())
-    mongo_distributor_q = mongo_Q(
-        repo_id=repo_id, distributor_type_id__in=distributor_types
-    )
+    mongo_distributor_q = mongo_Q(repo_id=repo_id, distributor_type_id__in=distributor_types)
 
     mongo_distributor_qs = Distributor.objects(mongo_distributor_q)
     if not mongo_distributor_qs:
@@ -753,23 +713,15 @@ def pre_migrate_distributor(repo_id, distributor_migrators):
                 distributor.is_migrated = False
                 dist_migrator = distributor_migrators.get(distributor.pulp2_type_id)
                 needs_new_publication = dist_migrator.needs_new_publication(distributor)
-                needs_new_distribution = dist_migrator.needs_new_distribution(
-                    distributor
-                )
-                remove_publication = (
-                    needs_new_publication and distributor.pulp3_publication
-                )
-                remove_distribution = (
-                    needs_new_distribution and distributor.pulp3_distribution
-                )
+                needs_new_distribution = dist_migrator.needs_new_distribution(distributor)
+                remove_publication = needs_new_publication and distributor.pulp3_publication
+                remove_distribution = needs_new_distribution and distributor.pulp3_distribution
 
                 if remove_publication:
                     # check if publication is shared by multiple distributions
                     # on the corresponding distributor flip the flag to false so the affected
                     # distribution will be updated with the new publication
-                    pulp2dists = (
-                        distributor.pulp3_publication.pulp2distributor_set.all()
-                    )
+                    pulp2dists = distributor.pulp3_publication.pulp2distributor_set.all()
                     for dist in pulp2dists:
                         if dist.is_migrated:
                             dist.is_migrated = False
@@ -801,9 +753,7 @@ def pre_migrate_repocontent(repo):
     mongo_repocontent_qs = RepositoryContentUnit.objects(mongo_repocontent_q)
 
     repocontent = []
-    for repocontent_data in (
-        mongo_repocontent_qs.exclude("repo_id").as_pymongo().no_cache()
-    ):
+    for repocontent_data in mongo_repocontent_qs.exclude("repo_id").as_pymongo().no_cache():
         item = Pulp2RepoContent(
             pulp2_unit_id=repocontent_data["unit_id"],
             pulp2_content_type_id=repocontent_data["unit_type_id"],
@@ -841,43 +791,31 @@ def handle_outdated_resources(plan):
         repos_to_consider = set(inplan_repos).intersection(repos_to_consider)
 
         mongo_repo_q = mongo_Q(repo_id__in=repos_to_consider)
-        mongo_repo_obj_ids = set(
-            str(i.id) for i in Repository.objects(mongo_repo_q).only("id")
-        )
+        mongo_repo_obj_ids = set(str(i.id) for i in Repository.objects(mongo_repo_q).only("id"))
 
         repo_type_q = Q(pulp2_repo_type=plugin_plan.type)
         inplan_repo_q = Q(pulp2_object_id__in=mongo_repo_obj_ids)
-        Pulp2Repository.objects.filter(repo_type_q).exclude(inplan_repo_q).update(
-            not_in_plan=True
-        )
+        Pulp2Repository.objects.filter(repo_type_q).exclude(inplan_repo_q).update(not_in_plan=True)
 
         # Mark removed or excluded importers
         inplan_imp_repos = plugin_plan.get_importers_repos()
         mongo_imp_q = mongo_Q(repo_id__in=inplan_imp_repos)
-        mongo_imp_obj_ids = set(
-            str(i.id) for i in Importer.objects(mongo_imp_q).only("id")
-        )
+        mongo_imp_obj_ids = set(str(i.id) for i in Importer.objects(mongo_imp_q).only("id"))
         imp_types = plugin_plan.migrator.importer_migrators.keys()
 
         imp_type_q = Q(pulp2_type_id__in=imp_types)
         inplan_imp_q = Q(pulp2_object_id__in=mongo_imp_obj_ids)
-        Pulp2Importer.objects.filter(imp_type_q).exclude(inplan_imp_q).update(
-            not_in_plan=True
-        )
+        Pulp2Importer.objects.filter(imp_type_q).exclude(inplan_imp_q).update(not_in_plan=True)
 
         # Mark removed or excluded distributors
         inplan_dist_repos = plugin_plan.get_distributors_repos()
         mongo_dist_q = mongo_Q(repo_id__in=inplan_dist_repos)
-        mongo_dist_obj_ids = set(
-            str(i.id) for i in Distributor.objects(mongo_dist_q).only("id")
-        )
+        mongo_dist_obj_ids = set(str(i.id) for i in Distributor.objects(mongo_dist_q).only("id"))
         dist_types = plugin_plan.migrator.distributor_migrators.keys()
 
         dist_type_q = Q(pulp2_type_id__in=dist_types)
         inplan_dist_q = Q(pulp2_object_id__in=mongo_dist_obj_ids)
-        Pulp2Distributor.objects.filter(dist_type_q).exclude(inplan_dist_q).update(
-            not_in_plan=True
-        )
+        Pulp2Distributor.objects.filter(dist_type_q).exclude(inplan_dist_q).update(not_in_plan=True)
 
     # Delete old Publications/Distributions which are no longer present in Pulp2.
 
@@ -892,12 +830,8 @@ def handle_outdated_resources(plan):
         Q(is_migrated=False) | Q(not_in_plan=True)
     )
 
-    old_dist_query = Q(pulp3_distribution__isnull=False) | Q(
-        pulp3_publication__isnull=False
-    )
-    old_dist_query &= Q(pulp2_repos__in=repos_with_old_distributions_qs) | Q(
-        not_in_plan=True
-    )
+    old_dist_query = Q(pulp3_distribution__isnull=False) | Q(pulp3_publication__isnull=False)
+    old_dist_query &= Q(pulp2_repos__in=repos_with_old_distributions_qs) | Q(not_in_plan=True)
 
     with transaction.atomic():
         pulp2distributors_with_old_distributions_qs = Pulp2Distributor.objects.filter(
@@ -929,9 +863,7 @@ def handle_outdated_resources(plan):
         # Pulp2Distributors with is_migrated=false is handled and re-added properly at
         # migration stage.
         # NOTE: this needs to be removed last, the queries above use this relation.
-        not_migrated_dists = Pulp2Distributor.objects.filter(is_migrated=False).only(
-            "pulp_id"
-        )
+        not_migrated_dists = Pulp2Distributor.objects.filter(is_migrated=False).only("pulp_id")
         Pulp2Distributor.pulp2_repos.through.objects.filter(
             pulp2distributor__in=not_migrated_dists
         ).delete()
