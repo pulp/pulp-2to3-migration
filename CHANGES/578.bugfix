@@ -1,7 +1,0 @@
-Fix invalid BSON size error when migrating docker contents
-
-The size limit for a single document in Mongodb is 16MB so
-migrating many docker tags could exceed this limit. This commit
-fixes this issue by fetching the docker tags in a specified
-batch size instead of fetching all and returning a large
-results into a single document.
