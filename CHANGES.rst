@@ -13,6 +13,44 @@ Changelog
 
 .. towncrier release notes start
 
+0.17.0 (2022-09-20)
+===================
+
+Bugfixes
+--------
+
+- Fixed issue where migration.py passes a Content object to remove_content(),
+  which ends up breaking pulpcore's remove_content() further down the line with
+  a traceback stating, 'Content' object has no attribute 'count'.
+
+  Pulpcore's remove_content() will not face this issue anymore as it will now
+  always receive a QuerySet object from migration.py.
+  `#550 <https://github.com/pulp/pulp-2to3-migration/issues/550>`__
+- Migration may stuck for many days when migrating an environment with massive number of rpms. This commit fixed the issue.
+  `#568 <https://github.com/pulp/pulp-2to3-migration/issues/568>`__
+- When pre-migrating errata, make query in batch to prevent the BSON too large error.
+  `#572 <https://github.com/pulp/pulp-2to3-migration/issues/572>`__
+- Fix invalid BSON size error when migrating docker contents
+
+  The size limit for a single document in Mongodb is 16MB so
+  migrating many docker tags could exceed this limit. This commit
+  fixes this issue by fetching the docker tags in a specified
+  batch size instead of fetching all and returning a large
+  results into a single document.
+  `#578 <https://github.com/pulp/pulp-2to3-migration/issues/578>`__
+
+
+Improved Documentation
+----------------------
+
+- Added steps to remove the plugin and announced its EOL.
+  Pulp-2to3-migration plugin reaches its EOL on December 31, 2022. The last supported pulpcore version is 3.19.
+  `#534 <https://github.com/pulp/pulp-2to3-migration/issues/534>`__
+
+
+----
+
+
 0.16.0 (2022-03-15)
 ===================
 
