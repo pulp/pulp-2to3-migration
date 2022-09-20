@@ -48,8 +48,6 @@ fi
 PULPCORE=./pulpcore
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
-elif [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
-  PLUGIN_NAME=./pulp-2to3-migration/dist/pulp_2to3_migration-$PLUGIN_VERSION-py3-none-any.whl
 else
   PLUGIN_NAME=./pulp-2to3-migration
 fi
