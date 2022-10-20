@@ -13,6 +13,21 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.12 (2022-10-20)
+====================
+
+Bugfixes
+--------
+
+- Migration may stuck for many days when migrating an environment with massive number of rpms. This commit fixed the issue.
+  `#568 <https://pulp.plan.io/issues/568>`_
+- When pre-migrating errata, make query in batch to prevent the BSON too large error.
+  `#572 <https://pulp.plan.io/issues/572>`_
+
+
+----
+
+
 0.11.11 (2022-06-06)
 ====================
 
