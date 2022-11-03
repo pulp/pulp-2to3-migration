@@ -13,6 +13,19 @@ Changelog
 
 .. towncrier release notes start
 
+0.11.13 (2022-11-03)
+====================
+
+Bugfixes
+--------
+
+- Fixed failure when encountering overlapping content.
+  `#593 <https://pulp.plan.io/issues/593>`_
+
+
+----
+
+
 0.11.12 (2022-10-20)
 ====================
 
