@@ -24,7 +24,7 @@ env:
 
 jobs:
   build-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     strategy:
       fail-fast: false
@@ -74,7 +74,7 @@ jobs:
   test:
     needs: build-artifacts
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     strategy:
       fail-fast: false
@@ -241,7 +241,7 @@ jobs:
 
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     needs: test
 
     env:
