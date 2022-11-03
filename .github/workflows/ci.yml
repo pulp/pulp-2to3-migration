@@ -25,10 +25,10 @@ jobs:
       run: git branch main origin/main
     - name: Commit Count Check
       run: test `git log  --oneline --no-merges HEAD ^main  | wc -l ` = 1
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     
 
     steps:
@@ -78,7 +78,7 @@ jobs:
         run: sh .ci/scripts/check_gettext.sh
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     # run only after lint finishes
     needs: lint
     strategy:
@@ -201,7 +201,7 @@ jobs:
           docker exec pulp cat /etc/yum.repos.d/* || true
           docker exec pulp pip3 list
   deprecations:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     if: always()
     needs: test
     steps:
