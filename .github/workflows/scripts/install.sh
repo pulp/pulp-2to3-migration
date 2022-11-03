@@ -22,36 +22,30 @@ if [[ "$TEST" = "docs" || "$TEST" = "publish" ]]; then
   pip install -r doc_requirements.txt
 fi
 
-pip install -e ../pulpcore
-pip install -r functest_requirements.txt
-
 cd .ci/ansible/
 
 TAG=ci_build
-
 if [ -e $REPO_ROOT/../pulp_file ]; then
   PULP_FILE=./pulp_file
 else
   PULP_FILE=git+https://github.com/pulp/pulp_file.git@1.6
 fi
-
 if [ -e $REPO_ROOT/../pulp_container ]; then
   PULP_CONTAINER=./pulp_container
 else
   PULP_CONTAINER=git+https://github.com/pulp/pulp_container.git@2.1
 fi
-
 if [ -e $REPO_ROOT/../pulp_rpm ]; then
   PULP_RPM=./pulp_rpm
 else
   PULP_RPM=git+https://github.com/pulp/pulp_rpm.git@3.11
 fi
-
 if [ -e $REPO_ROOT/../pulp_deb ]; then
   PULP_DEB=./pulp_deb
 else
   PULP_DEB=git+https://github.com/pulp/pulp_deb.git@2.9
 fi
+PULPCORE=./pulpcore
 if [[ "$TEST" == "plugin-from-pypi" ]]; then
   PLUGIN_NAME=pulp-2to3-migration
 elif [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
@@ -79,6 +73,8 @@ plugins:
     source: pulp_rpm~=3.11.0
   - name: pulp_deb
     source: pulp_deb~=2.9.0
+  - name: pulp-smash
+    source: ./pulp-smash
 VARSYAML
 else
   cat >> vars/main.yaml << VARSYAML
@@ -97,7 +93,9 @@ plugins:
   - name: pulp_deb
     source: $PULP_DEB
   - name: pulpcore
-    source: ./pulpcore
+    source: "${PULPCORE}"
+  - name: pulp-smash
+    source: ./pulp-smash
 VARSYAML
 fi
 
@@ -108,6 +106,10 @@ services:
     volumes:
       - ./settings:/etc/pulp
       - ./ssh:/keys/
+      - ~/.config:/var/lib/pulp/.config
+      - ../../../pulp-openapi-generator:/root/pulp-openapi-generator
+    env:
+      PULP_WORKERS: "4"
 VARSYAML
 
 cat >> vars/main.yaml << VARSYAML
@@ -118,10 +120,6 @@ pulp_container_tag: python36
 
 VARSYAML
 
-if [ "$TEST" = "upgrade" ]; then
-  sed -i "/^pulp_container_tag:.*/s//pulp_container_tag: upgrade/" vars/main.yaml
-fi
-
 echo "PULP_API_ROOT=${PULP_API_ROOT}" >> "$GITHUB_ENV"
 
 if [ "${PULP_API_ROOT:-}" ]; then
@@ -130,6 +128,15 @@ fi
 
 ansible-playbook build_container.yaml
 ansible-playbook start_container.yaml
+
+# .config needs to be accessible by the pulp user in the container, but some
+# files will likely be modified on the host by post/pre scripts.
+chmod 777 ~/.config/pulp_smash/
+chmod 666 ~/.config/pulp_smash/settings.json
+sudo chown -R 700:700 ~runner/.config
+# Plugins often write to ~/.config/pulp/cli.toml from the host
+sudo chmod 777 ~runner/.config/pulp
+sudo chmod 666 ~runner/.config/pulp/cli.toml
 
 if [[ "$TEST" = "azure" ]]; then
   AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://ci-azurite:10000/devstoreaccount1;'

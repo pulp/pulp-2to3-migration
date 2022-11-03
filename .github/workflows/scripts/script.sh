@@ -61,92 +61,56 @@ if [[ "$TEST" == "plugin-from-pypi" ]]; then
   git checkout ${COMPONENT_VERSION} -- pulp-2to3-migration/tests/
 fi
 
-cd ../pulp-openapi-generator
-./generate.sh pulpcore python
-pip install ./pulpcore-client
-rm -rf ./pulpcore-client
-if [[ "$TEST" = 'bindings' ]]; then
-  ./generate.sh pulpcore ruby 0
-  cd pulpcore-client
-  gem build pulpcore_client.gemspec
-  gem install --both ./pulpcore_client-0.gem
-fi
-./generate.sh pulp_file python
-pip install ./pulp_file-client
-rm -rf ./pulp_file-client
-if [[ "$TEST" = 'bindings' ]]; then
-  ./generate.sh pulp_file ruby 0
-  cd pulp_file-client
-  gem build pulp_file_client.gemspec
-  gem install --both ./pulp_file_client-0.gem
-  cd ..
-fi
-./generate.sh pulp_container python
-pip install ./pulp_container-client
-rm -rf ./pulp_container-client
-if [[ "$TEST" = 'bindings' ]]; then
-  ./generate.sh pulp_container ruby 0
-  cd pulp_container-client
-  gem build pulp_container_client.gemspec
-  gem install --both ./pulp_container_client-0.gem
-  cd ..
-fi
-./generate.sh pulp_rpm python
-pip install ./pulp_rpm-client
-rm -rf ./pulp_rpm-client
-if [[ "$TEST" = 'bindings' ]]; then
-  ./generate.sh pulp_rpm ruby 0
-  cd pulp_rpm-client
-  gem build pulp_rpm_client.gemspec
-  gem install --both ./pulp_rpm_client-0.gem
-  cd ..
-fi
-./generate.sh pulp_deb python
-pip install ./pulp_deb-client
-rm -rf ./pulp_deb-client
-if [[ "$TEST" = 'bindings' ]]; then
-  ./generate.sh pulp_deb ruby 0
-  cd pulp_deb-client
-  gem build pulp_deb_client.gemspec
-  gem install --both ./pulp_deb_client-0.gem
-  cd ..
-fi
-cd $REPO_ROOT
-
-if [[ "$TEST" = 'bindings' ]]; then
-  if [ -f $REPO_ROOT/.ci/assets/bindings/test_bindings.py ]; then
-    python $REPO_ROOT/.ci/assets/bindings/test_bindings.py
-  fi
-  if [ -f $REPO_ROOT/.ci/assets/bindings/test_bindings.rb ]; then
-    ruby $REPO_ROOT/.ci/assets/bindings/test_bindings.rb
-  fi
-  exit
-fi
+echo "machine pulp
+login admin
+password password
+" | cmd_user_stdin_prefix bash -c "cat >> ~pulp/.netrc"
+# Some commands like ansible-galaxy specifically require 600
+cmd_user_stdin_prefix bash -c "chmod 600 ~pulp/.netrc"
 
 cat unittest_requirements.txt | cmd_stdin_prefix bash -c "cat > /tmp/unittest_requirements.txt"
+cat functest_requirements.txt | cmd_stdin_prefix bash -c "cat > /tmp/functest_requirements.txt"
 cmd_prefix pip3 install -r /tmp/unittest_requirements.txt
+cmd_prefix pip3 install -r /tmp/functest_requirements.txt
+cmd_prefix pip3 install --upgrade ../pulp-smash
+
+cd ../pulp-openapi-generator
+./generate.sh pulp_2to3_migration python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulp_2to3_migration-client
+sudo rm -rf ./pulp_2to3_migration-client
+./generate.sh pulpcore python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulpcore-client
+sudo rm -rf ./pulpcore-client
+./generate.sh pulp_file python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulp_file-client
+sudo rm -rf ./pulp_file-client
+./generate.sh pulp_container python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulp_container-client
+sudo rm -rf ./pulp_container-client
+./generate.sh pulp_rpm python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulp_rpm-client
+sudo rm -rf ./pulp_rpm-client
+./generate.sh pulp_deb python
+cmd_prefix pip3 install /root/pulp-openapi-generator/pulp_deb-client
+sudo rm -rf ./pulp_deb-client
+cd $REPO_ROOT
+
+CERTIFI=$(cmd_prefix python3 -c 'import certifi; print(certifi.where())')
+cmd_prefix bash -c "cat /etc/pulp/certs/pulp_webserver.crt  | tee -a "$CERTIFI" > /dev/null"
 
 # check for any uncommitted migrations
 echo "Checking for uncommitted migrations..."
-cmd_prefix bash -c "django-admin makemigrations --check --dry-run"
+cmd_user_prefix bash -c "django-admin makemigrations --check --dry-run"
 
-if [[ "$TEST" != "upgrade" ]]; then
-  # Run unit tests.
-  cmd_prefix bash -c "PULP_DATABASES__default__USER=postgres pytest -v -r sx --color=yes -p no:pulpcore --pyargs pulp_2to3_migration.tests.unit"
-fi
+# Run unit tests.
+cmd_user_prefix bash -c "PULP_DATABASES__default__USER=postgres pytest -v -r sx --color=yes -p no:pulpcore --pyargs pulp_2to3_migration.tests.unit"
 
 # Run functional tests
-export PYTHONPATH=$REPO_ROOT/../pulp_file${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT/../pulp_container${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT/../pulp_rpm${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT/../pulp_deb${PYTHONPATH:+:${PYTHONPATH}}
-export PYTHONPATH=$REPO_ROOT${PYTHONPATH:+:${PYTHONPATH}}
-
 if [[ "$TEST" == "performance" ]]; then
   if [[ -z ${PERFORMANCE_TEST+x} ]]; then
-    pytest -vv -r sx --color=yes --pyargs --capture=no --durations=0 pulp_2to3_migration.tests.performance
+    cmd_user_prefix bash -c "pytest -vv -r sx --color=yes --pyargs --capture=no --durations=0 pulp_2to3_migration.tests.performance"
   else
-    pytest -vv -r sx --color=yes --pyargs --capture=no --durations=0 pulp_2to3_migration.tests.performance.test_$PERFORMANCE_TEST
+    cmd_user_prefix bash -c "pytest -vv -r sx --color=yes --pyargs --capture=no --durations=0 pulp_2to3_migration.tests.performance.test_$PERFORMANCE_TEST"
   fi
   exit
 fi
@@ -155,20 +119,21 @@ if [ -f $FUNC_TEST_SCRIPT ]; then
   source $FUNC_TEST_SCRIPT
 else
 
-    if [[ "$GITHUB_WORKFLOW" == "2To3-Migration Nightly CI/CD" ]]; then
-        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m parallel -n 8
-        pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m "not parallel"
+    if [[ "$GITHUB_WORKFLOW" == "2To3-Migration Nightly CI/CD" ]] || [[ "${RELEASE_WORKFLOW:-false}" == "true" ]]; then
+        cmd_user_prefix bash -c "pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m parallel -n 8 --nightly"
+        cmd_user_prefix bash -c "pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m 'not parallel' --nightly"
 
     
     else
-        pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m "parallel and not nightly" -n 8
-        pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m "not parallel and not nightly"
+        cmd_user_prefix bash -c "pytest -v -r sx --color=yes --suppress-no-test-exit-code --pyargs pulp_2to3_migration.tests.functional -m parallel -n 8"
+        cmd_user_prefix bash -c "pytest -v -r sx --color=yes --pyargs pulp_2to3_migration.tests.functional -m 'not parallel'"
 
     
     fi
 
 fi
 pushd ../pulp-cli
+pip install -r test_requirements.txt
 pytest -v -m pulp_2to3_migration
 popd
 
