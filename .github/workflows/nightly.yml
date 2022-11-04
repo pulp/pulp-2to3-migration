@@ -16,7 +16,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       fail-fast: false
@@ -166,7 +166,7 @@ jobs:
           docker exec pulp bash -c "pip3 list && pip3 install pipdeptree && pipdeptree"
 
   changelog:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -209,7 +209,7 @@ jobs:
           delete-branch: true
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: test
 
     env:
