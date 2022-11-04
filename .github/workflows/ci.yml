@@ -25,10 +25,10 @@ jobs:
       run: git branch main origin/main
     - name: Commit Count Check
       run: test `git log  --oneline --no-merges HEAD ^main  | wc -l ` = 1
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     
 
     steps:
@@ -85,7 +85,7 @@ jobs:
         run: python .ci/scripts/upper_bound.py
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     # run only after lint finishes
     needs: lint
     strategy:
@@ -203,7 +203,7 @@ jobs:
           docker exec pulp cat /etc/yum.repos.d/* || true
           docker exec pulp bash -c "pip3 list && pip3 install pipdeptree && pipdeptree"
   deprecations:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: always()
     needs: test
     steps:
