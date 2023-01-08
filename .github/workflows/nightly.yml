@@ -16,7 +16,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
@@ -25,6 +25,7 @@ jobs:
           - TEST: pulp
           - TEST: docs
           - TEST: generate-bindings
+          - TEST: lowerbounds
 
     steps:
       - uses: actions/checkout@v3
@@ -166,7 +167,7 @@ jobs:
           docker exec pulp bash -c "pip3 list && pip3 install pipdeptree && pipdeptree"
 
   changelog:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -209,7 +210,7 @@ jobs:
           delete-branch: true
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: test
 
     env:

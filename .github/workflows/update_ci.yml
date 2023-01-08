@@ -23,7 +23,7 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
@@ -52,9 +52,7 @@ jobs:
 
       - name: Set short_ref
         id: vars
-        run: echo ::set-output name=short_ref::${GITHUB_REF#refs/*/}
-
-      
+        run: echo short_ref=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
 
       - name: Run update
         run: |

@@ -24,7 +24,7 @@ env:
 
 jobs:
   build-artifacts:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
@@ -43,7 +43,7 @@ jobs:
       - name: Install python dependencies
         run: |
           echo ::group::PYDEPS
-          pip install bandersnatch bump2version gitpython python-redmine towncrier==19.9.0 wheel
+          pip install packaging~=21.3 bandersnatch bump2version gitpython python-redmine towncrier==19.9.0 wheel
           echo ::endgroup::
 
       - name: Configure Git with pulpbot name and email
@@ -74,7 +74,7 @@ jobs:
   test:
     needs: build-artifacts
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
@@ -83,6 +83,7 @@ jobs:
           - TEST: pulp
           - TEST: docs
           - TEST: generate-bindings
+          - TEST: lowerbounds
 
     steps:
       - uses: actions/download-artifact@v3
@@ -241,7 +242,7 @@ jobs:
 
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: test
 
     env:
@@ -290,7 +291,7 @@ jobs:
       - name: Install python dependencies
         run: |
           echo ::group::PYDEPS
-          pip install gitpython python-redmine requests packaging tweepy
+          pip install gitpython python-redmine requests packaging~=21.3 tweepy
           echo ::endgroup::
 
       - name: Push branch and tag to GitHub

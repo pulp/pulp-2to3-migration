@@ -25,10 +25,10 @@ jobs:
       run: git branch main origin/main
     - name: Commit Count Check
       run: test `git log  --oneline --no-merges HEAD ^main  | wc -l ` = 1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     
 
     steps:
@@ -85,7 +85,7 @@ jobs:
         run: python .ci/scripts/upper_bound.py
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     # run only after lint finishes
     needs: lint
     strategy:
@@ -94,8 +94,10 @@ jobs:
         env:
           - TEST: pulp
           - TEST: docs
+          - TEST: lowerbounds
     outputs:
       deprecations-pulp: ${{ steps.deprecations.outputs.deprecations-pulp }}
+      deprecations-lowerbounds: ${{ steps.deprecations.outputs.deprecations-lowerbounds }}
 
     steps:
       - uses: actions/checkout@v3
@@ -189,7 +191,7 @@ jobs:
 
       - name: Extract Deprecations from Logs
         id: deprecations
-        run: echo "::set-output name=deprecations-${{ matrix.env.TEST }}::$(docker logs pulp 2>&1 | grep -i pulpcore.deprecation | base64 -w 0)"
+        run: echo deprecations-${{ matrix.env.TEST }}=$(docker logs pulp 2>&1 | grep -i pulpcore.deprecation | base64 -w 0) >> $GITHUB_OUTPUT
 
       - name: Logs
         if: always()
@@ -203,16 +205,18 @@ jobs:
           docker exec pulp cat /etc/yum.repos.d/* || true
           docker exec pulp bash -c "pip3 list && pip3 install pipdeptree && pipdeptree"
   deprecations:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: always()
     needs: test
     steps:
       - name: Fail on deprecations
         run: |
           test -z "${{ needs.test.outputs.deprecations-pulp }}"
+          test -z "${{ needs.test.outputs.deprecations-lowerbounds }}"
       - name: Print deprecations
         if: failure()
         run: |
           echo "${{ needs.test.outputs.deprecations-pulp }}" | base64 -d
+          echo "${{ needs.test.outputs.deprecations-lowerbounds }}" | base64 -d
 
 
