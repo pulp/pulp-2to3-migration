@@ -1,3 +1,5 @@
+:warning: :no_entry: Pulp-2to3-migration is EOL as of December 31 2022, for more info visit this link https://discourse.pulpproject.org/t/pulp-2to3-migration-plugin-end-of-life-eol-date/457/4 . :warning: :no_entry:
+
 # pulp-2to3-migration
 
 A [Pulp 3](https://pulpproject.org/) plugin to migrate from Pulp 2 to Pulp 3.
